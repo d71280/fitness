@@ -20,6 +20,19 @@ export default function DashboardLayout({
   const router = useRouter()
 
   useEffect(() => {
+    // 開発環境での簡単アクセス（URLパラメーターでスキップ）
+    const urlParams = new URLSearchParams(window.location.search)
+    const devMode = urlParams.get('dev') === 'true'
+    
+    if (devMode) {
+      // 開発用の仮ユーザーを設定
+      const devUser = { email: 'dev@admin.com', name: '開発用管理者' }
+      setUser(devUser)
+      localStorage.setItem('user', JSON.stringify(devUser))
+      setLoading(false)
+      return
+    }
+
     // ローカルストレージからユーザー情報を取得
     const userStr = localStorage.getItem('user')
     
