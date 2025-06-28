@@ -4,5 +4,31 @@
       "path": "/api/cron/daily-reminders",
       "schedule": "0 19 * * *"
     }
+  ],
+  "functions": {
+    "app/api/webhook/lstep/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/reservations/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/test-line-notification/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        }
+      ]
+    }
   ]
 }
