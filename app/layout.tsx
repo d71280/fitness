@@ -18,8 +18,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        {/* LIFF SDK */}
+        {/* LIFF SDK - 公式ドキュメント推奨設定 */}
         <script 
+          charSet="utf-8"
           src="https://static.line-scdn.net/liff/edge/2/sdk.js"
           defer
         ></script>

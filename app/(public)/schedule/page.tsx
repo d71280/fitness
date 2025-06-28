@@ -33,8 +33,9 @@ export default function SchedulePage() {
   const [liffUserId, setLiffUserId] = useState<string | null>(null)
   const [isLiffInitialized, setIsLiffInitialized] = useState(false)
   const [liffError, setLiffError] = useState<string | null>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
 
-  // LIFF初期化とユーザー情報取得（必須）
+  // LIFF初期化とユーザー情報取得（公式ドキュメント準拠）
   useEffect(() => {
     const initializeLiff = async () => {
       try {
@@ -46,31 +47,82 @@ export default function SchedulePage() {
 
         console.log('🔄 LIFF初期化開始...')
         
-        // LIFF_IDは環境変数で設定（環境変数がない場合はダミー値）
+        // LIFF_IDの取得（環境変数または開発用デフォルト）
         const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2000000000-abcdefgh'
+        console.log('📋 LIFF ID:', liffId)
         
+        // LIFF初期化
         await window.liff.init({ liffId })
         setIsLiffInitialized(true)
         console.log('✅ LIFF初期化完了')
+
+        // LIFF環境の確認
+        const isInClient = window.liff.isInClient()
+        const os = window.liff.getOS()
+        const language = window.liff.getLanguage()
+        console.log('📱 LIFF環境:', { isInClient, os, language })
         
+        // ログイン状態確認
         if (window.liff.isLoggedIn()) {
-          const profile = await window.liff.getProfile()
-          console.log('👤 LIFFユーザー情報取得:', profile)
-          setLiffUserId(profile.userId)
+          console.log('✅ ログイン済み')
+          
+          // プロフィール取得API可用性チェック
+          if (window.liff.isApiAvailable('getProfile')) {
+            try {
+              const profile = await window.liff.getProfile()
+              console.log('👤 ユーザープロフィール取得成功:', {
+                userId: profile.userId,
+                displayName: profile.displayName,
+                pictureUrl: profile.pictureUrl
+              })
+              setLiffUserId(profile.userId)
+              setUserProfile(profile)
+            } catch (profileError) {
+              console.error('❌ プロフィール取得エラー:', profileError)
+              setLiffError('ユーザー情報の取得に失敗しました。再度お試しください。')
+            }
+          } else {
+            console.error('❌ getProfile API が利用できません')
+            setLiffError('この環境では一部機能が制限されています。')
+          }
         } else {
-          console.log('❌ LIFFログインが必要です')
-          setLiffError('LINEへのログインが必要です。ログインしてから再度お試しください。')
-          // 自動ログインプロンプト
-          window.liff.login()
+          console.log('❌ ログインが必要です')
+          
+          // LINEアプリ内の場合は自動ログイン
+          if (isInClient) {
+            try {
+              await window.liff.login()
+            } catch (loginError) {
+              console.error('❌ 自動ログインエラー:', loginError)
+              setLiffError('LINEログインに失敗しました。アプリを再起動してお試しください。')
+            }
+          } else {
+            setLiffError('LINEアプリからアクセスしてください。外部ブラウザでは一部機能が制限されます。')
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ LIFF初期化エラー:', error)
-        setLiffError('LIFFの初期化に失敗しました。LINEアプリから再度アクセスしてください。')
+        if (error?.code === 'INVALID_LIFF_ID') {
+          setLiffError('LIFF設定エラー：管理者にお問い合わせください。')
+        } else if (error?.code === 'FORBIDDEN') {
+          setLiffError('アクセス権限がありません。正しいリンクからアクセスしてください。')
+        } else {
+          setLiffError('LIFFの初期化に失敗しました。LINEアプリから再度アクセスしてください。')
+        }
       }
     }
 
-    // 少し遅延させてLIFF SDKの読み込みを待つ
-    setTimeout(initializeLiff, 500)
+    // LIFF SDKの読み込み待ち
+    const checkLiffReady = () => {
+      if (typeof window !== 'undefined' && window.liff) {
+        initializeLiff()
+      } else {
+        console.log('⏳ LIFF SDK読み込み待ち...')
+        setTimeout(checkLiffReady, 200)
+      }
+    }
+
+    checkLiffReady()
   }, [])
 
   const handleAddSchedule = (date: string) => {
@@ -113,8 +165,9 @@ export default function SchedulePage() {
   if (!isLiffInitialized && !liffError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="text-6xl mb-4">⏳</div>
         <div className="text-lg mb-4">LINE認証を確認中...</div>
-        <div className="text-sm text-gray-500">少々お待ちください</div>
+        <div className="text-sm text-gray-500">LIFF SDKを読み込んでいます</div>
       </div>
     )
   }
@@ -131,8 +184,9 @@ export default function SchedulePage() {
             <p className="mb-2"><strong>解決方法：</strong></p>
             <ol className="text-left list-decimal list-inside space-y-1">
               <li>LINEアプリを開く</li>
-              <li>提供されたリンクから再度アクセス</li>
+              <li>提供されたLIFFリンクから再度アクセス</li>
               <li>LINE内ブラウザでページを開く</li>
+              <li>問題が続く場合は管理者にお問い合わせください</li>
             </ol>
           </div>
         </div>
@@ -185,7 +239,9 @@ export default function SchedulePage() {
         <div className="mb-4 p-3 bg-green-100 rounded-md text-sm">
           <div><strong>✅ LIFF認証済み</strong></div>
           <div>ユーザーID: {liffUserId}</div>
+          <div>表示名: {userProfile?.displayName || '取得中...'}</div>
           <div>LIFF初期化: {isLiffInitialized ? '✅' : '❌'}</div>
+          <div>LINEアプリ内: {typeof window !== 'undefined' && window.liff?.isInClient() ? '✅' : '❌'}</div>
         </div>
       )}
 
