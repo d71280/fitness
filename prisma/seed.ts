@@ -1,0 +1,143 @@
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // Admin user
+  const hashedPassword = await bcrypt.hash('admin123', 12)
+  
+  await prisma.admin.upsert({
+    where: { email: 'admin@studio.com' },
+    update: {},
+    create: {
+      email: 'admin@studio.com',
+      password: hashedPassword,
+      name: 'Admin User',
+      role: 'admin',
+    },
+  })
+
+  // Studios
+  const studio1 = await prisma.studio.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      name: 'スタジオ1',
+      capacity: 30,
+      equipment: ['ヨガマット', 'ダンベル', '音響設備'],
+      description: 'メインスタジオ',
+      operating_hours: { start: '06:00', end: '23:00' },
+    },
+  })
+
+  const studio2 = await prisma.studio.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      name: 'スタジオ2',
+      capacity: 20,
+      equipment: ['ヨガマット', 'ピラティスボール', '音響設備'],
+      description: 'サブスタジオ',
+      operating_hours: { start: '07:00', end: '22:00' },
+    },
+  })
+
+  // Programs
+  const yoga = await prisma.program.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      name: 'ヨガ',
+      color_class: 'bg-green-500',
+      text_color_class: 'text-white',
+      default_duration: 60,
+      description: 'リラックス効果のあるヨガクラス',
+    },
+  })
+
+  const pilates = await prisma.program.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      name: 'ピラティス',
+      color_class: 'bg-purple-500',
+      text_color_class: 'text-white',
+      default_duration: 45,
+      description: 'コア強化に特化したピラティス',
+    },
+  })
+
+  const zumba = await prisma.program.upsert({
+    where: { id: 3 },
+    update: {},
+    create: {
+      name: 'ズンバ',
+      color_class: 'bg-red-500',
+      text_color_class: 'text-white',
+      default_duration: 60,
+      description: 'ダンスフィットネス',
+    },
+  })
+
+  const hiit = await prisma.program.upsert({
+    where: { id: 4 },
+    update: {},
+    create: {
+      name: 'HIIT',
+      color_class: 'bg-orange-500',
+      text_color_class: 'text-white',
+      default_duration: 30,
+      description: '高強度インターバルトレーニング',
+    },
+  })
+
+  // Instructors
+  const instructor1 = await prisma.instructor.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      name: '田中 美香',
+      email: 'mika.tanaka@studio.com',
+      phone: '090-1234-5678',
+      specialties: ['ヨガ', 'ピラティス'],
+      bio: 'ヨガインストラクター歴10年のベテラン講師',
+    },
+  })
+
+  const instructor2 = await prisma.instructor.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      name: '佐藤 健太',
+      email: 'kenta.sato@studio.com',
+      phone: '090-2345-6789',
+      specialties: ['HIIT', 'ズンバ'],
+      bio: 'エネルギッシュなレッスンが人気の講師',
+    },
+  })
+
+  const instructor3 = await prisma.instructor.upsert({
+    where: { id: 3 },
+    update: {},
+    create: {
+      name: '山田 さくら',
+      email: 'sakura.yamada@studio.com',
+      phone: '090-3456-7890',
+      specialties: ['ピラティス', 'ヨガ'],
+      bio: '丁寧な指導で初心者にも人気',
+    },
+  })
+
+  console.log('Seed data created successfully!')
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  })

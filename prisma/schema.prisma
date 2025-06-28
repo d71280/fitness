@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Program {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
+  color_class     String   @default("bg-blue-500")
+  text_color_class String  @default("text-white")
+  default_duration Int     @default(60)
+  description     String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  schedules Schedule[]
+
+  @@map("programs")
+}
+
+model Instructor {
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String?
+  phone            String?
+  specialties      String[]
+  bio              String?
+  profile_image_url String?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  schedules Schedule[]
+
+  @@map("instructors")
+}
+
+model Studio {
+  id              Int      @id @default(autoincrement())
+  name            String
+  capacity        Int
+  equipment       String[]
+  description     String?
+  operating_hours Json?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+
+  schedules Schedule[]
+
+  @@map("studios")
+}
+
+model Schedule {
+  id                  Int       @id @default(autoincrement())
+  date                DateTime  @db.Date
+  start_time          String
+  end_time            String
+  capacity            Int
+  recurring_group_id  String?
+  recurring_type      String?
+  recurring_end_date  DateTime? @db.Date
+  recurring_count     Int?
+  is_cancelled        Boolean   @default(false)
+  cancellation_reason String?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  program_id     Int
+  instructor_id  Int
+  studio_id      Int
+
+  program     Program       @relation(fields: [program_id], references: [id])
+  instructor  Instructor    @relation(fields: [instructor_id], references: [id])
+  studio      Studio        @relation(fields: [studio_id], references: [id])
+  reservations Reservation[]
+  waiting_list WaitingList[]
+
+  @@unique([date, studio_id, start_time, end_time])
+  @@map("schedules")
+}
+
+model Customer {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  line_id            String?   @unique
+  phone              String?
+  email              String?
+  membership_type    String    @default("regular")
+  preferred_programs Int[]
+  cancellation_count Int       @default(0)
+  last_booking_date  DateTime? @db.Date
+  is_active          Boolean   @default(true)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  reservations     Reservation[]
+  waiting_list     WaitingList[]
+  notification_logs NotificationLog[]
+
+  @@map("customers")
+}
+
+model Reservation {
+  id                  Int       @id @default(autoincrement())
+  status              String    @default("confirmed")
+  booking_type        String    @default("advance")
+  cancellation_reason String?
+  cancelled_at        DateTime?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  schedule_id Int
+  customer_id Int
+
+  schedule    Schedule          @relation(fields: [schedule_id], references: [id])
+  customer    Customer          @relation(fields: [customer_id], references: [id])
+  notification_logs NotificationLog[]
+
+  @@unique([schedule_id, customer_id])
+  @@map("reservations")
+}
+
+model WaitingList {
+  id          Int       @id @default(autoincrement())
+  position    Int
+  notified_at DateTime?
+  expires_at  DateTime?
+  created_at  DateTime  @default(now())
+
+  schedule_id Int
+  customer_id Int
+
+  schedule Schedule @relation(fields: [schedule_id], references: [id])
+  customer Customer @relation(fields: [customer_id], references: [id])
+
+  @@unique([schedule_id, customer_id])
+  @@map("waiting_list")
+}
+
+model NotificationLog {
+  id                 Int      @id @default(autoincrement())
+  notification_type  String
+  message_content    Json
+  sent_at            DateTime?
+  lstep_response     Json?
+  success            Boolean
+  error_message      String?
+  created_at         DateTime @default(now())
+
+  customer_id    Int
+  reservation_id Int?
+
+  customer    Customer     @relation(fields: [customer_id], references: [id])
+  reservation Reservation? @relation(fields: [reservation_id], references: [id])
+
+  @@map("notification_logs")
+}
+
+model Admin {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  name       String
+  role       String   @default("admin")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("admins")
+}
