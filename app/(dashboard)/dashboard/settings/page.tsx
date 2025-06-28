@@ -107,7 +107,12 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/settings', {
+      // URLにdev=trueパラメーターを追加
+      const url = window.location.search.includes('dev=true') 
+        ? '/api/settings?dev=true' 
+        : '/api/settings'
+        
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,14 +121,23 @@ export default function SettingsPage() {
         })
       })
 
+      const result = await response.json()
+
       if (response.ok) {
-        alert('設定を保存しました')
+        if (result.isVercel) {
+          // Vercel環境の場合は詳細な手順を表示
+          const instructions = result.instructions.join('\n')
+          alert(`${result.message}\n\n【設定手順】\n${instructions}`)
+        } else {
+          // ローカル環境の場合は通常メッセージ
+          alert(result.message || '設定を保存しました')
+        }
       } else {
-        alert('設定の保存に失敗しました')
+        alert(`設定の保存に失敗しました\n\nエラー: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('設定保存エラー:', error)
-      alert('設定の保存に失敗しました')
+      alert(`設定の保存に失敗しました\n\nエラー: ${error instanceof Error ? error.message : 'Network error'}`)
     } finally {
       setLoading(false)
     }
