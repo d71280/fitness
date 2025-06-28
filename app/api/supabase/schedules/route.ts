@@ -3,9 +3,8 @@ import { schedulesService } from '@/lib/database/supabase-client'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const startDate = request.nextUrl.searchParams.get('startDate')
+    const endDate = request.nextUrl.searchParams.get('endDate')
 
     if (!startDate || !endDate) {
       return NextResponse.json(

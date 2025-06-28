@@ -9,9 +9,9 @@ const querySchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    // URL検索パラメータを直接取得
     const { start } = querySchema.parse({
-      start: searchParams.get('start'),
+      start: request.nextUrl.searchParams.get('start'),
     })
 
     // データベースが利用できない場合のフォールバック

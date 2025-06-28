@@ -7,8 +7,7 @@ export async function POST(request: NextRequest) {
     // 本番環境では適切な認証機能を実装してください
     console.log('接続テスト実行 - 認証チェックスキップ（開発モード）')
 
-    const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
+    const type = request.nextUrl.searchParams.get('type')
     const settings = await request.json()
 
     if (type === 'lstep') {
