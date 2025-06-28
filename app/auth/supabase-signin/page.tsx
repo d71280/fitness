@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 // 仮のユーザーデータベース（実際の実装では、データベースやAPIを使用）
 const USERS = [
@@ -76,17 +75,19 @@ export default function SignIn() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isSignUp ? '新規登録' : 'ログイン'}</CardTitle>
-          <CardDescription>
+      <div className="w-full max-w-md rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="flex flex-col space-y-1.5 p-6">
+          <h3 className="text-2xl font-semibold leading-none tracking-tight">
+            {isSignUp ? '新規登録' : 'ログイン'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
             {isSignUp 
               ? '管理画面アカウントを作成してください'
               : '管理画面にアクセスするにはログインが必要です'
             }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          </p>
+        </div>
+        <div className="p-6 pt-0">
           <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
             {isSignUp && (
               <div>
@@ -174,8 +175,8 @@ export default function SignIn() {
               </div>
             )}
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
