@@ -101,14 +101,22 @@ export default function SchedulePage() {
         addDebugLog(`  - LIFF Version: ${version}`)
         addDebugLog(`  - LINE Version: ${lineVersion}`)
         
-        // 利用可能なAPI確認
-        const availableApis = [
-          'getProfile',
+        // 利用可能なAPI確認（LIFF 2.x対応）
+        const checkableApis = [
+          'shareTargetPicker',
+          'sendMessages', 
           'getFriendship',
-          'getContext',
-          'sendMessages',
-          'shareTargetPicker'
-        ].filter(api => window.liff.isApiAvailable(api))
+          'scanCodeV2'
+        ]
+        
+        const availableApis = checkableApis.filter(api => {
+          try {
+            return window.liff.isApiAvailable(api)
+          } catch (e: any) {
+            addDebugLog(`⚠️ API確認エラー (${api}): ${e.message}`)
+            return false
+          }
+        })
         
         addDebugLog(`🔧 利用可能API: ${availableApis.join(', ')}`)
         
@@ -116,20 +124,15 @@ export default function SchedulePage() {
         if (window.liff.isLoggedIn()) {
           addDebugLog('✅ ログイン済み')
           
-          // プロフィール取得API可用性チェック
-          if (window.liff.isApiAvailable('getProfile')) {
-            try {
-              const profile = await window.liff.getProfile()
-              addDebugLog(`👤 ユーザープロフィール取得成功: ${profile.displayName}`)
-              setLiffUserId(profile.userId)
-              setUserProfile(profile)
-            } catch (profileError: any) {
-              addDebugLog(`❌ プロフィール取得エラー: ${profileError.message}`)
-              setLiffError('ユーザー情報の取得に失敗しました。再度お試しください。')
-            }
-          } else {
-            addDebugLog('❌ getProfile API が利用できません')
-            setLiffError('この環境では一部機能が制限されています。')
+          // プロフィール取得（基本API、可用性チェック不要）
+          try {
+            const profile = await window.liff.getProfile()
+            addDebugLog(`👤 ユーザープロフィール取得成功: ${profile.displayName}`)
+            setLiffUserId(profile.userId)
+            setUserProfile(profile)
+          } catch (profileError: any) {
+            addDebugLog(`❌ プロフィール取得エラー: ${profileError.message}`)
+            setLiffError('ユーザー情報の取得に失敗しました。再度お試しください。')
           }
         } else {
           addDebugLog('❌ ログインが必要です')

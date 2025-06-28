@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 
-// APIルートを動的にして Static Generation エラーを防ぐ
-export const dynamic = 'force-dynamic'
-
 export async function POST(request: NextRequest) {
   try {
     // 開発・デモ環境のため認証チェックをスキップ
     // 本番環境では適切な認証機能を実装してください
     console.log('接続テスト実行 - 認証チェックスキップ（開発モード）')
 
-    const type = request.nextUrl.searchParams.get('type')
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
     const settings = await request.json()
 
     if (type === 'lstep') {
