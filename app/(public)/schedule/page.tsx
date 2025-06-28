@@ -51,9 +51,19 @@ export default function SchedulePage() {
         // 環境変数チェック
         const liffId = process.env.NEXT_PUBLIC_LIFF_ID
         addDebugLog(`📋 LIFF ID: ${liffId || '未設定'}`)
+        addDebugLog(`🌍 環境: ${process.env.NODE_ENV || '未設定'}`)
+        addDebugLog(`🔧 デバッグモード: ${process.env.LINE_DEBUG_MODE || '未設定'}`)
         
-        if (!liffId || liffId === '2000000000-abcdefgh') {
-          setLiffError('LIFF IDが設定されていません。環境変数 NEXT_PUBLIC_LIFF_ID を設定してください。')
+        if (!liffId || liffId === 'your_liff_id_here' || liffId === '2000000000-abcdefgh') {
+          setLiffError(`❌ LIFF IDが設定されていません。
+          
+現在のLIFF ID: ${liffId || '未設定'}
+環境: ${process.env.NODE_ENV || '未設定'}
+
+【Vercel管理者向け】
+1. Vercelダッシュボード → Settings → Environment Variables
+2. NEXT_PUBLIC_LIFF_ID = 2007611355-VQqXANop を追加
+3. 再デプロイを実行してください`)
           addDebugLog('❌ LIFF ID未設定エラー')
           return
         }
@@ -70,18 +80,37 @@ export default function SchedulePage() {
         // LIFF初期化（タイムアウト付き）
         const initPromise = window.liff.init({ liffId })
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('LIFF初期化タイムアウト')), 10000)
+          setTimeout(() => reject(new Error('LIFF初期化タイムアウト')), 15000)
         )
 
         await Promise.race([initPromise, timeoutPromise])
         setIsLiffInitialized(true)
         addDebugLog('✅ LIFF初期化完了')
 
-        // LIFF環境の確認
+        // LIFF環境の詳細確認
         const isInClient = window.liff.isInClient()
         const os = window.liff.getOS()
         const language = window.liff.getLanguage()
-        addDebugLog(`📱 LIFF環境: InClient=${isInClient}, OS=${os}, Language=${language}`)
+        const version = window.liff.getVersion()
+        const lineVersion = window.liff.getLineVersion()
+        
+        addDebugLog(`📱 LIFF環境詳細:`)
+        addDebugLog(`  - InClient: ${isInClient}`)
+        addDebugLog(`  - OS: ${os}`)
+        addDebugLog(`  - Language: ${language}`)
+        addDebugLog(`  - LIFF Version: ${version}`)
+        addDebugLog(`  - LINE Version: ${lineVersion}`)
+        
+        // 利用可能なAPI確認
+        const availableApis = [
+          'getProfile',
+          'getFriendship',
+          'getContext',
+          'sendMessages',
+          'shareTargetPicker'
+        ].filter(api => window.liff.isApiAvailable(api))
+        
+        addDebugLog(`🔧 利用可能API: ${availableApis.join(', ')}`)
         
         // ログイン状態確認
         if (window.liff.isLoggedIn()) {
@@ -120,34 +149,143 @@ export default function SchedulePage() {
           }
         }
       } catch (error: any) {
-        addDebugLog(`❌ LIFF初期化エラー: ${error.message}`)
-        if (error?.code === 'INVALID_LIFF_ID') {
-          setLiffError('LIFF設定エラー：管理者にお問い合わせください。')
-        } else if (error?.code === 'FORBIDDEN') {
-          setLiffError('アクセス権限がありません。正しいリンクからアクセスしてください。')
-        } else if (error.message === 'LIFF初期化タイムアウト') {
-          setLiffError('LIFF初期化がタイムアウトしました。ネットワークを確認して再度お試しください。')
-        } else {
-          setLiffError(`LIFFの初期化に失敗しました: ${error.message}`)
+        // 詳細なエラー情報を収集
+        const currentLiffId = process.env.NEXT_PUBLIC_LIFF_ID
+        const errorInfo = {
+          message: error.message || 'Unknown error',
+          code: error.code || 'No code',
+          name: error.name || 'Unknown',
+          stack: error.stack || 'No stack trace',
+          toString: error.toString(),
+          ...error
         }
+        
+        addDebugLog(`❌ LIFF初期化エラー詳細:`)
+        addDebugLog(`  - Message: ${errorInfo.message}`)
+        addDebugLog(`  - Code: ${errorInfo.code}`)
+        addDebugLog(`  - Name: ${errorInfo.name}`)
+        addDebugLog(`  - Full Error: ${JSON.stringify(errorInfo, null, 2)}`)
+        
+        // エラーコード別の詳細メッセージ
+        let detailedErrorMessage = 'LIFFの初期化に失敗しました。'
+        
+        if (error?.code === 'INVALID_LIFF_ID') {
+          detailedErrorMessage = `❌ 無効なLIFF ID エラー
+
+現在のLIFF ID: ${currentLiffId}
+このLIFF IDは無効か、設定に問題があります。
+
+【確認事項】
+1. LINE Developers ConsoleでLIFF設定を確認
+2. LIFF IDが正しくコピーされているか確認
+3. LIFFアプリが有効化されているか確認
+
+【Vercel環境変数】
+NEXT_PUBLIC_LIFF_ID = ${currentLiffId}`
+        } else if (error?.code === 'FORBIDDEN') {
+          detailedErrorMessage = `❌ アクセス権限エラー
+
+【原因】
+1. 許可されていないドメインからのアクセス
+2. LIFF設定のエンドポイントURLが間違っている
+3. チャネルの権限設定に問題
+
+【確認事項】
+1. LIFF設定のエンドポイントURL: ${window.location.origin}/schedule
+2. 正しいLINEアカウントでアクセスしているか
+3. チャネルが公開されているか`
+        } else if (error.message === 'LIFF初期化タイムアウト') {
+          detailedErrorMessage = `❌ LIFF初期化タイムアウト
+
+【原因】
+1. ネットワーク接続の問題
+2. LINEサーバーの応答遅延
+3. LIFFサービスの一時的な問題
+
+【解決方法】
+1. ネットワーク接続を確認
+2. しばらく待ってから再試行
+3. LINEアプリを再起動`
+        } else {
+          detailedErrorMessage = `❌ 予期しないエラー
+
+エラーコード: ${errorInfo.code}
+エラーメッセージ: ${errorInfo.message}
+
+【詳細情報】
+${JSON.stringify(errorInfo, null, 2)}
+
+【解決方法】
+1. ページを再読み込み
+2. LINEアプリを再起動
+3. 管理者にエラー情報をお知らせください`
+        }
+        
+        setLiffError(detailedErrorMessage)
       }
     }
 
-    // LIFF SDKの読み込み待ち（タイムアウト付き）
+    // LIFF SDKの読み込み待ち（強化版デバッグ）
     const checkLiffReady = () => {
       let attempts = 0
-      const maxAttempts = 25 // 5秒でタイムアウト
+      const maxAttempts = 30 // 6秒でタイムアウト（200ms × 30）
+
+      addDebugLog('🚀 LIFF SDK読み込みチェック開始')
+      addDebugLog(`🌐 User Agent: ${navigator.userAgent}`)
+      addDebugLog(`📱 ページURL: ${window.location.href}`)
+      addDebugLog(`🔗 Referrer: ${document.referrer || 'なし'}`)
 
       const intervalId = setInterval(() => {
         attempts++
-        addDebugLog(`⏳ LIFF SDK読み込み確認 (${attempts}/${maxAttempts})`)
+        
+        // 詳細なチェック情報をログ出力
+        const windowExists = typeof window !== 'undefined'
+        const liffExists = windowExists && window.liff
+        const liffReady = liffExists && typeof window.liff.init === 'function'
+        
+        addDebugLog(`⏳ 確認 ${attempts}/${maxAttempts}: window=${windowExists}, liff=${liffExists}, ready=${liffReady}`)
+        
+        // LIFF オブジェクトの詳細チェック
+        if (windowExists && window.liff) {
+          addDebugLog(`🔧 LIFF オブジェクト詳細: ${Object.keys(window.liff).join(', ')}`)
+        }
 
-        if (typeof window !== 'undefined' && window.liff) {
+        if (liffReady) {
           clearInterval(intervalId)
+          addDebugLog('✅ LIFF SDK読み込み完了 - 初期化開始')
           initializeLiff()
         } else if (attempts >= maxAttempts) {
           clearInterval(intervalId)
-          setLiffError('LIFF SDKの読み込みに失敗しました。ページを再読み込みしてください。')
+          
+          // 詳細なエラー情報を収集
+          const errorDetails = [
+            `🌐 Window存在: ${windowExists}`,
+            `📦 LIFF存在: ${liffExists}`,
+            `⚙️ LIFF準備完了: ${liffReady}`,
+            `🕒 タイムアウト時間: ${maxAttempts * 200}ms`,
+            `🔗 アクセス元: ${document.referrer || '直接アクセス'}`,
+            `📱 User Agent: ${navigator.userAgent}`,
+            `🌍 Location: ${window.location.href}`
+          ]
+          
+          const detailedError = `LIFF SDKの読み込みがタイムアウトしました。
+
+【エラー詳細】
+${errorDetails.join('\n')}
+
+【考えられる原因】
+1. ネットワーク接続の問題
+2. LINEアプリ外からのアクセス
+3. LIFF SDKのCDN問題
+4. スクリプトブロッカーの影響
+
+【解決方法】
+1. LINEアプリから再度アクセス
+2. ネットワーク接続を確認
+3. ページを再読み込み
+4. 管理者にお問い合わせください`
+
+          setLiffError(detailedError)
           addDebugLog('❌ LIFF SDK読み込みタイムアウト')
         }
       }, 200)
