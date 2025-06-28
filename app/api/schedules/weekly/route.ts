@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { mockSchedules } from '@/lib/mock-data'
 import { z } from 'zod'
 
+// APIルートを動的にして Static Generation エラーを防ぐ
+export const dynamic = 'force-dynamic'
+
 const querySchema = z.object({
   start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 })

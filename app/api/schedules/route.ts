@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
+// APIルートを動的にして Static Generation エラーを防ぐ
+export const dynamic = 'force-dynamic'
+
 const createScheduleSchema = z.object({
   baseDate: z.string(),
   startTime: z.string(),

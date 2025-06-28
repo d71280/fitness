@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { mockStudios } from '@/lib/mock-data'
 
+// APIルートを動的にして Static Generation エラーを防ぐ
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     try {

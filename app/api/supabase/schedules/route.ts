@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { schedulesService } from '@/lib/database/supabase-client'
 
+// APIルートを動的にして Static Generation エラーを防ぐ
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const startDate = request.nextUrl.searchParams.get('startDate')

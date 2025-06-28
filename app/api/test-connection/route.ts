@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
 
+// APIルートを動的にして Static Generation エラーを防ぐ
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // 開発・デモ環境のため認証チェックをスキップ
