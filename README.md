@@ -138,3 +138,59 @@ http://localhost:3000 でアクセス
 4. **モックデータ対応** - データベースなしでも全機能が動作
 
 次のPhase 3では、Lステップ連携によるLINE自動通知機能を実装予定です。
+
+## 🔧 環境変数設定
+
+### 開発環境での設定
+
+プロジェクトルートに `.env.local` ファイルを作成し、以下の環境変数を設定してください：
+
+```bash
+# LINE Bot設定（必須）
+LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
+
+# LIFF設定（必須）  
+NEXT_PUBLIC_LIFF_ID=your_liff_id_here
+
+# アプリベースURL（開発時は自動設定されるポート番号に合わせる）
+APP_BASE_URL=http://localhost:3005
+
+# Next.js設定
+NODE_ENV=development
+NEXTAUTH_SECRET=development-secret-key
+
+# LINE デバッグモード（開発時はtrue推奨）
+LINE_DEBUG_MODE=true
+
+# その他（オプション）
+CRON_SECRET=development-cron-secret
+```
+
+### 本番環境（Vercel）での設定
+
+Vercelダッシュボードの環境変数設定で以下を設定：
+
+- `LINE_CHANNEL_ACCESS_TOKEN`: LINE Developers Consoleから取得
+- `NEXT_PUBLIC_LIFF_ID`: LIFF アプリのIDを設定
+- `APP_BASE_URL`: `https://your-app.vercel.app`
+
+### LINE Developers Console設定
+
+1. **Messaging APIチャネル**でチャネルアクセストークンを取得
+2. **LIFF**アプリを作成してLIFF IDを取得
+3. **Webhook URL**を設定: `https://your-app.vercel.app/api/webhook/lstep`
+
+### APP_BASE_URLについて
+
+`APP_BASE_URL`は、LINEから送られるボタンURLやWebhookテスト時に使用するアプリケーションのベースURLです：
+
+- **開発環境**: `http://localhost:3005` (現在のポート番号に合わせる)
+- **本番環境**: `https://your-app.vercel.app`
+
+### テスト用エンドポイント
+
+設定確認用のテストエンドポイント：
+
+- LINE通知テスト: `http://localhost:3005/api/test-line-notification`
+- Webhook接続テスト: `http://localhost:3005/api/test-webhook`
+- 管理画面: `http://localhost:3005/dashboard/settings`
