@@ -14,7 +14,7 @@ interface BookingModalProps {
   onClose: () => void
   schedule: Schedule | null
   onSubmit: (data: CreateReservationData) => Promise<void>
-  prefilledLineId?: string | null
+  liffUserId: string | null
 }
 
 export function BookingModal({ 
@@ -22,7 +22,7 @@ export function BookingModal({
   onClose, 
   schedule, 
   onSubmit,
-  prefilledLineId 
+  liffUserId 
 }: BookingModalProps) {
   const [formData, setFormData] = useState<CreateReservationData>({
     scheduleId: 0,
@@ -39,23 +39,35 @@ export function BookingModal({
     }
   }, [schedule])
 
-  // URLパラメータからのLINE IDを自動入力
+  // LIFF ユーザーIDを自動設定
   React.useEffect(() => {
-    if (prefilledLineId) {
-      setFormData(prev => ({ ...prev, lineId: prefilledLineId }))
+    if (liffUserId) {
+      setFormData(prev => ({ ...prev, lineId: liffUserId }))
     }
-  }, [prefilledLineId])
+  }, [liffUserId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.customerName || !formData.lineId) {
-      alert('名前とLINE IDは必須項目です')
+    
+    if (!liffUserId) {
+      alert('LINE認証エラーです。ページを再読み込みしてください。')
+      return
+    }
+    
+    if (!formData.customerName) {
+      alert('お名前は必須項目です')
       return
     }
 
     setLoading(true)
     try {
-      await onSubmit(formData)
+      // LIFF ユーザーIDを確実に設定
+      const reservationData = {
+        ...formData,
+        lineId: liffUserId
+      }
+      
+      await onSubmit(reservationData)
       onClose()
       // フォームをリセット
       setFormData({
@@ -64,7 +76,7 @@ export function BookingModal({
         lineId: '',
         phone: '',
       })
-      alert('予約が完了しました！')
+      alert('予約が完了しました！LINEに確認メッセージをお送りします。')
     } catch (error) {
       console.error('予約エラー:', error)
       alert('予約に失敗しました')
@@ -135,6 +147,19 @@ export function BookingModal({
           </CardContent>
         </Card>
 
+        {/* LINE 認証確認 */}
+        {liffUserId && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <div className="text-green-600">✅</div>
+              <div className="text-sm text-green-700">
+                <strong>LINE認証済み</strong><br />
+                予約完了後、LINEに確認メッセージをお送りします。
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 予約フォーム */}
         {!isFullyBooked && (
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,27 +178,6 @@ export function BookingModal({
             </div>
 
             <div>
-              <Label htmlFor="lineId">
-                LINE ID <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="lineId"
-                type="text"
-                value={formData.lineId}
-                onChange={(e) => setFormData(prev => ({ ...prev, lineId: e.target.value }))}
-                placeholder="your_line_id"
-                required
-                disabled={!!prefilledLineId}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {prefilledLineId 
-                  ? 'LINE経由でアクセスされたため、自動入力されています'
-                  : '予約確認とリマインダー通知のために使用します'
-                }
-              </p>
-            </div>
-
-            <div>
               <Label htmlFor="phone">電話番号（任意）</Label>
               <Input
                 id="phone"
@@ -186,28 +190,41 @@ export function BookingModal({
 
             <div className="bg-blue-50 p-3 rounded-md">
               <p className="text-sm text-blue-700">
-                <strong>予約確認について</strong><br />
-                予約完了後、LINE経由で確認メッセージをお送りします。
-                レッスン前日にはリマインダーも配信されます。
+                <strong>予約について</strong><br />
+                • 予約完了後、LINE経由で確認メッセージをお送りします<br />
+                • レッスン前日にはリマインダーも配信されます<br />
+                • キャンセルはLINEメッセージで承ります
               </p>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1"
+              >
                 キャンセル
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button
+                type="submit"
+                disabled={loading || !liffUserId}
+                className="flex-1"
+              >
                 {loading ? '予約中...' : '予約する'}
               </Button>
             </div>
           </form>
         )}
 
-        {isFullyBooked && (
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={onClose}>
-              閉じる
-            </Button>
+        {/* LINE認証エラーの場合 */}
+        {!liffUserId && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md text-center">
+            <p className="text-sm text-red-700">
+              LINE認証が完了していません。<br />
+              ページを再読み込みして、再度お試しください。
+            </p>
           </div>
         )}
       </div>
