@@ -168,11 +168,7 @@ export async function POST(request: NextRequest) {
         customerName: customer.name,
       }
 
-      // オプション1: 直接LINE Messaging API（現在の実装）
       const notificationResult = await lstepClient.sendBookingConfirmation(lineId, bookingData)
-      
-      // オプション2: GAS経由で統一した通知（追加実装例）
-      // const gasNotificationResult = await sendNotificationViaGAS(lineId, bookingData)
       
       // 通知ログを記録
       await lstepClient.logNotification(
