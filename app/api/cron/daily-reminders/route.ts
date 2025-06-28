@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { LStepClient } from '@/lib/lstep'
 
 export async function GET(request: NextRequest) {
@@ -14,118 +13,83 @@ export async function GET(request: NextRequest) {
     tomorrow.setDate(tomorrow.getDate() + 1)
     const tomorrowStr = tomorrow.toISOString().split('T')[0]
 
-    try {
-      // データベースから翌日の予約を取得
-      const tomorrowReservations = await prisma.reservation.findMany({
-        where: {
-          status: 'confirmed',
-          schedule: {
-            date: new Date(tomorrowStr),
-          },
+    // 現在はモックデータでリマインダー機能をテスト
+    // 将来的にデータベース接続時にPrismaを使用予定
+    console.log('リマインダー処理開始:', tomorrowStr)
+    
+    const lstepClient = new LStepClient()
+    const mockReservations = [
+      {
+        id: 1,
+        customer: { 
+          id: 1,
+          line_id: 'mock_line_id_1', 
+          name: '山田 太郎' 
         },
-        include: {
-          customer: true,
-          schedule: {
-            include: {
-              program: true,
-              instructor: true,
-              studio: true,
-            },
-          },
+        schedule: {
+          program: { name: 'ヨガ' },
+          instructor: { name: '田中 美香' },
+          studio: { name: 'スタジオ1' },
+        }
+      },
+      {
+        id: 2,
+        customer: { 
+          id: 2,
+          line_id: 'mock_line_id_2', 
+          name: '佐藤 花子' 
         },
-      })
-
-      const lstepClient = new LStepClient()
-      let successCount = 0
-
-      for (const reservation of tomorrowReservations) {
-        try {
-          const reminderData = {
-            program: reservation.schedule.program.name,
-            date: tomorrowStr,
-            time: `${reservation.schedule.start_time.slice(0, 5)} - ${reservation.schedule.end_time.slice(0, 5)}`,
-            instructor: reservation.schedule.instructor.name,
-            studio: reservation.schedule.studio.name,
-          }
-
-          const result = await lstepClient.sendReminder(
-            reservation.customer.line_id!,
-            reminderData
-          )
-
-          // 通知ログを記録
-          await lstepClient.logNotification(
-            reservation.customer.id,
-            reservation.id,
-            'reminder',
-            reminderData,
-            result
-          )
-
-          if (result.success) {
-            successCount++
-          }
-        } catch (error) {
-          console.error(`リマインダー送信失敗 (予約ID: ${reservation.id}):`, error)
+        schedule: {
+          program: { name: 'ピラティス' },
+          instructor: { name: '鈴木 健太' },
+          studio: { name: 'スタジオ2' },
         }
       }
+    ]
 
-      return NextResponse.json({
-        success: true,
-        processed: tomorrowReservations.length,
-        successful: successCount,
-        failed: tomorrowReservations.length - successCount,
-        date: tomorrowStr,
-      })
-    } catch (dbError) {
-      console.warn('データベース接続エラー、モックリマインダーを実行します:', dbError)
-      
-      // モックデータでリマインダー機能をテスト
-      const lstepClient = new LStepClient()
-      const mockReservations = [
-        {
-          customer: { line_id: 'mock_line_id_1', name: '山田 太郎' },
-          schedule: {
-            program: { name: 'ヨガ' },
-            instructor: { name: '田中 美香' },
-            studio: { name: 'スタジオ1' },
-          }
+    let successCount = 0
+
+    for (const reservation of mockReservations) {
+      try {
+        const reminderData = {
+          program: reservation.schedule.program.name,
+          date: tomorrowStr,
+          time: '10:00 - 11:00',
+          instructor: reservation.schedule.instructor.name,
+          studio: reservation.schedule.studio.name,
         }
-      ]
 
-      let successCount = 0
-      for (const reservation of mockReservations) {
-        try {
-          const reminderData = {
-            program: reservation.schedule.program.name,
-            date: tomorrowStr,
-            time: '10:00 - 11:00',
-            instructor: reservation.schedule.instructor.name,
-            studio: reservation.schedule.studio.name,
-          }
+        const result = await lstepClient.sendReminder(
+          reservation.customer.line_id,
+          reminderData
+        )
 
-          const result = await lstepClient.sendReminder(
-            reservation.customer.line_id,
-            reminderData
-          )
+        // 通知ログを記録（将来的にデータベースに保存）
+        await lstepClient.logNotification(
+          reservation.customer.id,
+          reservation.id,
+          'reminder',
+          reminderData,
+          result
+        )
 
-          if (result.success) {
-            successCount++
-          }
-        } catch (error) {
-          console.error('モックリマインダー送信失敗:', error)
+        if (result.success) {
+          successCount++
         }
+      } catch (error) {
+        console.error(`リマインダー送信失敗 (予約ID: ${reservation.id}):`, error)
       }
-
-      return NextResponse.json({
-        success: true,
-        processed: mockReservations.length,
-        successful: successCount,
-        failed: mockReservations.length - successCount,
-        date: tomorrowStr,
-        mode: 'mock',
-      })
     }
+
+    return NextResponse.json({
+      success: true,
+      processed: mockReservations.length,
+      successful: successCount,
+      failed: mockReservations.length - successCount,
+      date: tomorrowStr,
+      mode: 'mock'
+    })
+
   } catch (error) {
     console.error('リマインダー処理エラー:', error)
     return NextResponse.json(
