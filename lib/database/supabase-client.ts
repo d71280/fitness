@@ -1,8 +1,8 @@
-import { createServerComponentClient, createClientComponentClient } from '../supabase'
+import { createApiRouteClient, createClientComponentClient } from '../supabase'
 
-// サーバー用のクライアント取得
+// API Routes用のクライアント取得
 function getServerClient() {
-  return createServerComponentClient()
+  return createApiRouteClient()
 }
 
 // クライアント用のクライアント取得

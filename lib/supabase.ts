@@ -1,4 +1,5 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // クライアントサイド用（ブラウザ）
 export function createClientComponentClient() {
@@ -15,6 +16,93 @@ export function createClientComponentClient() {
   }
   
   return createBrowserClient(supabaseUrl, supabaseAnonKey)
+}
+
+// サーバーサイド用（Server Components）
+export function createServerComponentClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  // 環境変数が設定されていない場合はダミーの値を使用
+  if (!supabaseUrl || supabaseUrl === "your_supabase_project_url" || 
+      !supabaseAnonKey || supabaseAnonKey === "your_supabase_anon_key") {
+    return createServerClient(
+      "https://dummy.supabase.co",
+      "dummy-anon-key",
+      {
+        cookies: {
+          get() { return undefined },
+          set() {},
+          remove() {}
+        }
+      }
+    )
+  }
+  
+  try {
+    const cookieStore = cookies()
+    
+    return createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set(name, value, options)
+          } catch {
+            // SSR時にcookieが設定できない場合は無視
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.delete(name)
+          } catch {
+            // SSR時にcookieが削除できない場合は無視
+          }
+        }
+      }
+    })
+  } catch {
+    // API Routes など cookies() が使えない環境用
+    return createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        get() { return undefined },
+        set() {},
+        remove() {}
+      }
+    })
+  }
+}
+
+// API Routes専用（cookies()を使わない）
+export function createApiRouteClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  // 環境変数が設定されていない場合はダミーの値を使用
+  if (!supabaseUrl || supabaseUrl === "your_supabase_project_url" || 
+      !supabaseAnonKey || supabaseAnonKey === "your_supabase_anon_key") {
+    return createServerClient(
+      "https://dummy.supabase.co",
+      "dummy-anon-key",
+      {
+        cookies: {
+          get() { return undefined },
+          set() {},
+          remove() {}
+        }
+      }
+    )
+  }
+  
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get() { return undefined },
+      set() {},
+      remove() {}
+    }
+  })
 }
 
 // データベース型定義

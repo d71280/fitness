@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -86,23 +86,23 @@ export default function SettingsPage() {
   const [showSecrets, setShowSecrets] = useState(false)
   const [previewMessage, setPreviewMessage] = useState('')
 
-  // 設定を読み込み
-  useEffect(() => {
-    loadSettings()
-  }, [])
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       const response = await fetch('/api/settings')
       if (response.ok) {
         const data = await response.json()
-        setSettings(data.connection || settings)
-        setMessageSettings(data.messages || messageSettings)
+        setSettings(prevSettings => data.connection || prevSettings)
+        setMessageSettings(prevMessageSettings => data.messages || prevMessageSettings)
       }
     } catch (error) {
       console.error('設定読み込みエラー:', error)
     }
-  }
+  }, [])
+
+  // 設定を読み込み
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   const handleSave = async () => {
     setLoading(true)

@@ -1,8 +1,8 @@
-import { createServerComponentClient } from '@/lib/supabase'
+import { createApiRouteClient } from '@/lib/supabase'
 
 // サーバーサイドでユーザー情報を取得
 export async function getUser() {
-  const supabase = createServerComponentClient()
+  const supabase = createApiRouteClient()
   
   try {
     const { data: { user }, error } = await supabase.auth.getUser()
