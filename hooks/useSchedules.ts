@@ -123,8 +123,12 @@ export function useSchedules(weekStart: string) {
       // APIが期待するフォーマットに変換
       const apiData = {
         baseDate: scheduleData.date,
-        startTime: scheduleData.startTime,
-        endTime: scheduleData.endTime,
+        startTime: scheduleData.startTime.includes(':') && scheduleData.startTime.split(':').length === 2 
+          ? scheduleData.startTime + ':00' 
+          : scheduleData.startTime,
+        endTime: scheduleData.endTime.includes(':') && scheduleData.endTime.split(':').length === 2 
+          ? scheduleData.endTime + ':00' 
+          : scheduleData.endTime,
         programId: scheduleData.programId,
         instructorId: scheduleData.instructorId,
         studioId: scheduleData.studioId,
