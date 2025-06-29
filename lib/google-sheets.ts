@@ -56,8 +56,8 @@ export class GoogleSheetsClient {
         await sheet.setHeaderRow(Object.keys(bookingData))
       }
 
-      // 新しい行を追加
-      const newRow = await sheet.addRow(bookingData)
+      // 新しい行を追加（型を明示的にキャスト）
+      const newRow = await sheet.addRow(bookingData as any)
       
       console.log('✅ スプレッドシートに予約を記録しました:', {
         rowNumber: newRow.rowNumber,

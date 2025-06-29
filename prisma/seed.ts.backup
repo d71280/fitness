@@ -25,7 +25,7 @@ async function main() {
     create: {
       name: 'スタジオ1',
       capacity: 30,
-      equipment: 'ヨガマット,ダンベル,音響設備',
+      equipment: ['ヨガマット', 'ダンベル', '音響設備'],
       description: 'メインスタジオ',
       operating_hours: JSON.stringify({ start: '06:00', end: '23:00' }),
     },

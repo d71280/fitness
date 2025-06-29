@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createClient } from '@/utils/supabase/server'
 import { LStepClient } from '@/lib/lstep'
 import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'
 import { z } from 'zod'
@@ -14,60 +14,56 @@ const createReservationSchema = z.object({
 // 予約一覧取得
 export async function GET(request: NextRequest) {
   try {
-    try {
-      const reservations = await prisma.reservation.findMany({
-        include: {
-          schedule: {
-            include: {
-              program: true,
-              instructor: true,
-              studio: true,
-            },
-          },
-          customer: true,
-        },
-        orderBy: [
-          { created_at: 'desc' },
-        ],
-      })
+    const supabase = await createClient()
+    
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select(`
+        *,
+        schedule:schedules(
+          *,
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*)
+        ),
+        customer:customers(*)
+      `)
+      .order('created_at', { ascending: false })
 
-      return NextResponse.json(reservations)
-    } catch (dbError) {
-      console.warn('データベース接続エラー、モックデータを使用します:', dbError)
-      
-      // モック予約データ
-      const mockReservations = [
-        {
-          id: 1,
-          status: 'confirmed',
-          booking_type: 'advance',
-          created_at: new Date().toISOString(),
-          schedule: {
-            id: 1,
-            date: '2025-06-16',
-            start_time: '10:00',
-            end_time: '11:00',
-            program: { name: 'ヨガ' },
-            instructor: { name: '田中 美香' },
-            studio: { name: 'スタジオ1' },
-          },
-          customer: {
-            id: 1,
-            name: '山田 太郎',
-            line_id: 'LINE12345',
-            phone: '090-1234-5678',
-          },
-        },
-      ]
-      
-      return NextResponse.json(mockReservations)
+    if (error) {
+      throw error
     }
+
+    return NextResponse.json(reservations || [])
   } catch (error) {
-    console.error('予約取得エラー:', error)
-    return NextResponse.json(
-      { error: '予約取得に失敗しました' },
-      { status: 500 }
-    )
+    console.warn('Supabase接続エラー、モックデータを使用します:', error)
+    
+    // モック予約データ
+    const mockReservations = [
+      {
+        id: 1,
+        status: 'confirmed',
+        booking_type: 'advance',
+        created_at: new Date().toISOString(),
+        schedule: {
+          id: 1,
+          date: '2025-06-29',
+          start_time: '10:00',
+          end_time: '11:00',
+          program: { name: 'ヨガ' },
+          instructor: { name: '田中 美香' },
+          studio: { name: 'スタジオA' },
+        },
+        customer: {
+          id: 1,
+          name: '山田 太郎',
+          line_id: 'LINE12345',
+          phone: '090-1234-5678',
+        },
+      },
+    ]
+    
+    return NextResponse.json(mockReservations)
   }
 }
 
@@ -77,44 +73,80 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { scheduleId, customerName, lineId, phone } = createReservationSchema.parse(body)
 
+    const supabase = await createClient()
+
     try {
       // 顧客を取得または作成
-      const customer = await prisma.customer.upsert({
-        where: { line_id: lineId },
-        update: {
-          name: customerName,
-          phone: phone,
-          last_booking_date: new Date(),
-        },
-        create: {
-          name: customerName,
-          line_id: lineId,
-          phone: phone,
-          last_booking_date: new Date(),
-        },
-      })
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('line_id', lineId)
+        .single()
+
+      let customer
+      if (existingCustomer) {
+        // 既存顧客の更新
+        const { data: updatedCustomer, error: updateError } = await supabase
+          .from('customers')
+          .update({
+            name: customerName,
+            phone: phone,
+            last_booking_date: new Date().toISOString(),
+          })
+          .eq('line_id', lineId)
+          .select()
+          .single()
+
+        if (updateError) throw updateError
+        customer = updatedCustomer
+      } else {
+        // 新規顧客作成
+        const { data: newCustomer, error: createError } = await supabase
+          .from('customers')
+          .insert({
+            name: customerName,
+            line_id: lineId,
+            phone: phone,
+            preferred_programs: [],
+            last_booking_date: new Date().toISOString(),
+          })
+          .select()
+          .single()
+
+        if (createError) throw createError
+        customer = newCustomer
+      }
 
       // スケジュール情報と空き状況を確認
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: scheduleId },
-        include: {
-          program: true,
-          instructor: true,
-          studio: true,
-          reservations: {
-            where: { status: 'confirmed' },
-          },
-        },
-      })
+      const { data: schedule, error: scheduleError } = await supabase
+        .from('schedules')
+        .select(`
+          *,
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*),
+          reservations!inner(count)
+        `)
+        .eq('id', scheduleId)
+        .eq('reservations.status', 'confirmed')
+        .single()
 
-      if (!schedule) {
+      if (scheduleError) {
+        console.error('スケジュール取得エラー:', scheduleError)
         return NextResponse.json(
           { error: 'スケジュールが見つかりません' },
           { status: 404 }
         )
       }
 
-      if (schedule.reservations.length >= schedule.capacity) {
+      // 空き状況確認（より簡易的な方法）
+      const { count: confirmedReservations } = await supabase
+        .from('reservations')
+        .select('*', { count: 'exact', head: true })
+        .eq('schedule_id', scheduleId)
+        .eq('status', 'confirmed')
+
+      if (confirmedReservations && confirmedReservations >= schedule.capacity) {
         return NextResponse.json(
           { error: 'このクラスは満席です' },
           { status: 400 }
@@ -122,13 +154,13 @@ export async function POST(request: NextRequest) {
       }
 
       // 重複予約チェック
-      const existingReservation = await prisma.reservation.findFirst({
-        where: {
-          schedule_id: scheduleId,
-          customer_id: customer.id,
-          status: { in: ['confirmed', 'waiting'] },
-        },
-      })
+      const { data: existingReservation } = await supabase
+        .from('reservations')
+        .select('*')
+        .eq('schedule_id', scheduleId)
+        .eq('customer_id', customer.id)
+        .in('status', ['confirmed', 'waiting'])
+        .single()
 
       if (existingReservation) {
         return NextResponse.json(
@@ -138,30 +170,33 @@ export async function POST(request: NextRequest) {
       }
 
       // 予約作成
-      const reservation = await prisma.reservation.create({
-        data: {
+      const { data: reservation, error: reservationError } = await supabase
+        .from('reservations')
+        .insert({
           schedule_id: scheduleId,
           customer_id: customer.id,
           status: 'confirmed',
           booking_type: 'advance',
-        },
-        include: {
-          schedule: {
-            include: {
-              program: true,
-              instructor: true,
-              studio: true,
-            },
-          },
-          customer: true,
-        },
-      })
+        })
+        .select(`
+          *,
+          schedule:schedules(
+            *,
+            program:programs(*),
+            instructor:instructors(*),
+            studio:studios(*)
+          ),
+          customer:customers(*)
+        `)
+        .single()
+
+      if (reservationError) throw reservationError
 
       // Lステップ経由で予約確認通知
       const lstepClient = new LStepClient()
       const bookingData = {
         id: reservation.id,
-        date: schedule.date.toISOString().split('T')[0],
+        date: schedule.date,
         time: `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`,
         program: schedule.program.name,
         instructor: schedule.instructor.name,
@@ -184,7 +219,7 @@ export async function POST(request: NextRequest) {
       const sheetsClient = new GoogleSheetsClient()
       const spreadsheetData: SpreadsheetBookingData = {
         予約ID: reservation.id,
-        予約日時: schedule.date.toISOString(),
+        予約日時: schedule.date,
         顧客名: customer.name,
         電話番号: customer.phone || '',
         プログラム: schedule.program.name,
@@ -193,7 +228,7 @@ export async function POST(request: NextRequest) {
         開始時間: schedule.start_time,
         終了時間: schedule.end_time,
         ステータス: 'confirmed',
-        LINE_ID: customer.line_id
+        LINE_ID: customer.line_id || ''
       }
 
       const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)
@@ -205,8 +240,9 @@ export async function POST(request: NextRequest) {
         message: '予約が完了しました',
         notification: notificationResult.success ? 'LINE通知を送信しました' : 'LINE通知の送信に失敗しました',
       }, { status: 201 })
+
     } catch (dbError) {
-      console.warn('データベース接続エラー、モック応答を返します:', dbError)
+      console.warn('Supabase操作エラー、フォールバック処理を実行:', dbError)
       
       // スケジュール情報を取得してLINE通知に使用
       let notificationResult
@@ -274,10 +310,10 @@ export async function POST(request: NextRequest) {
             phone: phone,
           },
         },
-        message: '予約が完了しました（データベース接続エラー時のフォールバック）',
+        message: '予約が完了しました（Supabase接続エラー時のフォールバック）',
         notification: notificationResult.success ? 'LINE通知を送信しました' : 'LINE通知の送信に失敗しました',
         debug: {
-          dbError: 'Database connection failed, using fallback data',
+          dbError: 'Supabase connection failed, using fallback data',
           scheduleId: scheduleId,
           timestamp: new Date().toISOString()
         }

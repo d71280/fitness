@@ -57,7 +57,7 @@ export async function GET(
           id: schedule.program.id,
           name: schedule.program.name,
           description: schedule.program.description,
-          duration: schedule.program.duration,
+          duration: schedule.program.default_duration,
         },
         instructorDetails: {
           id: schedule.instructor.id,
@@ -67,7 +67,7 @@ export async function GET(
         studioDetails: {
           id: schedule.studio.id,
           name: schedule.studio.name,
-          location: schedule.studio.location,
+          description: schedule.studio.description,
           capacity: schedule.studio.capacity,
         },
       }
