@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Program {
@@ -28,7 +28,7 @@ model Instructor {
   name             String
   email            String?
   phone            String?
-  specialties      String   // SQLite doesn't support arrays, store as comma-separated string
+  specialties      String[]
   bio              String?
   profile_image_url String?
   is_active        Boolean  @default(true)
@@ -44,9 +44,9 @@ model Studio {
   id              Int      @id @default(autoincrement())
   name            String
   capacity        Int
-  equipment       String   // SQLite doesn't support arrays, store as comma-separated string
+  equipment       String[]
   description     String?
-  operating_hours String?  // SQLite doesn't support JSON, store as string
+  operating_hours Json?
   is_active       Boolean  @default(true)
   created_at      DateTime @default(now())
 
@@ -57,13 +57,13 @@ model Studio {
 
 model Schedule {
   id                  Int       @id @default(autoincrement())
-  date                DateTime  // SQLite doesn't have Date type
+  date                DateTime  @db.Date
   start_time          String
   end_time            String
   capacity            Int
   recurring_group_id  String?
   recurring_type      String?
-  recurring_end_date  DateTime? // SQLite doesn't have Date type
+  recurring_end_date  DateTime? @db.Date
   recurring_count     Int?
   is_cancelled        Boolean   @default(false)
   cancellation_reason String?
@@ -91,9 +91,9 @@ model Customer {
   phone              String?
   email              String?
   membership_type    String    @default("regular")
-  preferred_programs String    // SQLite doesn't support arrays, store as comma-separated string
+  preferred_programs Int[]
   cancellation_count Int       @default(0)
-  last_booking_date  DateTime? // SQLite doesn't have Date type
+  last_booking_date  DateTime? @db.Date
   is_active          Boolean   @default(true)
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
@@ -145,9 +145,9 @@ model WaitingList {
 model NotificationLog {
   id                 Int      @id @default(autoincrement())
   notification_type  String
-  message_content    String   // SQLite doesn't support JSON, store as string
+  message_content    Json
   sent_at            DateTime?
-  lstep_response     String?  // SQLite doesn't support JSON, store as string
+  lstep_response     Json?
   success            Boolean
   error_message      String?
   created_at         DateTime @default(now())

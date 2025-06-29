@@ -25,9 +25,9 @@ async function main() {
     create: {
       name: 'スタジオ1',
       capacity: 30,
-      equipment: ['ヨガマット', 'ダンベル', '音響設備'],
+      equipment: 'ヨガマット,ダンベル,音響設備',
       description: 'メインスタジオ',
-      operating_hours: { start: '06:00', end: '23:00' },
+      operating_hours: JSON.stringify({ start: '06:00', end: '23:00' }),
     },
   })
 
@@ -37,9 +37,9 @@ async function main() {
     create: {
       name: 'スタジオ2',
       capacity: 20,
-      equipment: ['ヨガマット', 'ピラティスボール', '音響設備'],
+      equipment: 'ヨガマット,ピラティスボール,音響設備',
       description: 'サブスタジオ',
-      operating_hours: { start: '07:00', end: '22:00' },
+      operating_hours: JSON.stringify({ start: '07:00', end: '22:00' }),
     },
   })
 
@@ -100,7 +100,7 @@ async function main() {
       name: '田中 美香',
       email: 'mika.tanaka@studio.com',
       phone: '090-1234-5678',
-      specialties: ['ヨガ', 'ピラティス'],
+      specialties: 'ヨガ,ピラティス',
       bio: 'ヨガインストラクター歴10年のベテラン講師',
     },
   })
@@ -112,7 +112,7 @@ async function main() {
       name: '佐藤 健太',
       email: 'kenta.sato@studio.com',
       phone: '090-2345-6789',
-      specialties: ['HIIT', 'ズンバ'],
+      specialties: 'HIIT,ズンバ',
       bio: 'エネルギッシュなレッスンが人気の講師',
     },
   })
@@ -124,7 +124,7 @@ async function main() {
       name: '山田 さくら',
       email: 'sakura.yamada@studio.com',
       phone: '090-3456-7890',
-      specialties: ['ピラティス', 'ヨガ'],
+      specialties: 'ピラティス,ヨガ',
       bio: '丁寧な指導で初心者にも人気',
     },
   })

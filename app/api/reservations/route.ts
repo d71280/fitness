@@ -208,44 +208,53 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.warn('データベース接続エラー、モック応答を返します:', dbError)
       
-      // モックスケジュールデータを取得（開発用）
+      // スケジュール情報を取得してLINE通知に使用
       let notificationResult
       try {
+        console.log(`スケジュール情報を取得中: ${scheduleId}`)
         const response = await fetch(`${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/schedules/${scheduleId}`)
-        const scheduleData = await response.json()
         
-        // 実際のスケジュール情報でLINE通知をテスト
+        if (!response.ok) {
+          throw new Error(`スケジュール取得API エラー: ${response.status}`)
+        }
+        
+        const scheduleData = await response.json()
+        console.log('取得したスケジュールデータ:', scheduleData)
+        
+        // 取得したスケジュール情報でLINE通知を送信
         const lstepClient = new LStepClient()
-        const mockBookingData = {
+        const accurateBookingData = {
           id: Date.now(),
-          date: scheduleData.date || new Date().toISOString().split('T')[0],
-          time: scheduleData.time || `${scheduleData.start_time?.slice(0, 5) || '10:00'} - ${scheduleData.end_time?.slice(0, 5) || '11:00'}`,
-          program: scheduleData.program || 'プログラム名未取得',
-          instructor: scheduleData.instructor || 'インストラクター名未取得',
-          studio: scheduleData.studio || 'スタジオ名未取得',
+          date: scheduleData.date,
+          time: scheduleData.time,
+          program: scheduleData.program,
+          instructor: scheduleData.instructor,
+          studio: scheduleData.studio,
           customerName: customerName,
         }
 
-        notificationResult = await lstepClient.sendBookingConfirmation(lineId, mockBookingData)
+        console.log('LINE通知用データ:', accurateBookingData)
+        notificationResult = await lstepClient.sendBookingConfirmation(lineId, accurateBookingData)
       } catch (fetchError) {
-        console.warn('スケジュールデータ取得失敗、固定モックデータを使用:', fetchError)
+        console.error('スケジュールデータ取得失敗:', fetchError)
         
-        // フォールバック：固定モックデータでLINE通知
+        // 最終フォールバック：デフォルトスケジュール情報でLINE通知
         const lstepClient = new LStepClient()
         const fallbackBookingData = {
           id: Date.now(),
           date: new Date().toISOString().split('T')[0],
           time: '10:00 - 11:00',
-          program: 'フィットネスクラス',
-          instructor: 'インストラクター',
-          studio: 'スタジオ',
+          program: `スケジュール${scheduleId}のクラス`,
+          instructor: '担当インストラクター',
+          studio: '第1スタジオ',
           customerName: customerName,
         }
 
+        console.log('フォールバック用データ:', fallbackBookingData)
         notificationResult = await lstepClient.sendBookingConfirmation(lineId, fallbackBookingData)
       }
       
-      // モック応答を返す
+      // フォールバック応答を返す
       return NextResponse.json({
         success: true,
         reservation: {
@@ -255,9 +264,9 @@ export async function POST(request: NextRequest) {
           created_at: new Date().toISOString(),
           schedule: {
             id: scheduleId,
-            program: { name: 'モックプログラム' },
-            instructor: { name: 'モックインストラクター' },
-            studio: { name: 'モックスタジオ' },
+            program: { name: `スケジュール${scheduleId}のクラス` },
+            instructor: { name: '担当インストラクター' },
+            studio: { name: '第1スタジオ' },
           },
           customer: {
             name: customerName,
@@ -265,8 +274,13 @@ export async function POST(request: NextRequest) {
             phone: phone,
           },
         },
-        message: '予約が完了しました（モック）',
-        notification: notificationResult.success ? 'LINE通知を送信しました（開発モード）' : 'LINE通知の送信に失敗しました',
+        message: '予約が完了しました（データベース接続エラー時のフォールバック）',
+        notification: notificationResult.success ? 'LINE通知を送信しました' : 'LINE通知の送信に失敗しました',
+        debug: {
+          dbError: 'Database connection failed, using fallback data',
+          scheduleId: scheduleId,
+          timestamp: new Date().toISOString()
+        }
       }, { status: 201 })
     }
   } catch (error) {
