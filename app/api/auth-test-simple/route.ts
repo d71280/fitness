@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     console.log('Environment:', process.env.NODE_ENV)
     console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
     
-    const supabase = createClient()
+    const supabase = await createClient()
     
     // 通常のユーザー登録（admin.createUserではなく）
     const { data, error } = await supabase.auth.signUp({
