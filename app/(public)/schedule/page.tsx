@@ -426,7 +426,7 @@ ${errorDetails.join('\n')}
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-4 md:p-6">
       {/* LIFFユーザー情報表示（開発時のみ） */}
       {process.env.NODE_ENV === 'development' && (
         <div className="mb-4 p-3 bg-green-100 rounded-md text-sm">

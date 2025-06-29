@@ -112,7 +112,7 @@ export function BookingModal({
               <div className="text-lg font-bold mb-2">
                 {schedule.program}
               </div>
-              <div className="flex items-center gap-4 text-sm opacity-90">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-sm opacity-90">
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
                   {schedule.instructor}
@@ -191,26 +191,28 @@ export function BookingModal({
             <div className="bg-blue-50 p-3 rounded-md">
               <p className="text-sm text-blue-700">
                 <strong>予約について</strong><br />
-                • 予約完了後、LINE経由で確認メッセージをお送りします<br />
-                • レッスン前日にはリマインダーも配信されます<br />
-                • キャンセルはLINEメッセージで承ります
+                <span className="block space-y-1">
+                  <span className="block">• 予約完了後、LINE経由で確認メッセージをお送りします</span>
+                  <span className="block">• レッスン前日にはリマインダーも配信されます</span>
+                  <span className="block">• キャンセルはLINEメッセージで承ります</span>
+                </span>
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 キャンセル
               </Button>
               <Button
                 type="submit"
                 disabled={loading || !liffUserId}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 {loading ? '予約中...' : '予約する'}
               </Button>

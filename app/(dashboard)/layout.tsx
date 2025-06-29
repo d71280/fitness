@@ -17,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -66,10 +67,24 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <AdminSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+      {/* モバイル用サイドバーオーバーレイ */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* サイドバー */}
+      <AdminSidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+      />
+      
+      {/* メインコンテンツ */}
+      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
+        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-6">
           {children}
         </main>
       </div>

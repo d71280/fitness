@@ -5,15 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Settings, MessageSquare, Smartphone, TestTube, Save, Eye, EyeOff, Mail, Clock, AlertCircle, Bot } from 'lucide-react'
+import { Settings, MessageSquare, Smartphone, TestTube, Save, Eye, EyeOff, Mail, Clock, AlertCircle } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface ConnectionSettings {
-  difyApiKey: string
-  difyApiUrl: string
-  difyWebhookUrl: string
   appBaseUrl: string
   lineChannelSecret: string
   lineChannelAccessToken: string
@@ -47,9 +44,6 @@ interface MessageSettings {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ConnectionSettings>({
-    difyApiKey: '',
-    difyApiUrl: '',
-    difyWebhookUrl: '',
     appBaseUrl: '',
     lineChannelSecret: '',
     lineChannelAccessToken: ''
@@ -143,7 +137,7 @@ export default function SettingsPage() {
     }
   }
 
-  const testConnection = async (type: 'dify' | 'line') => {
+  const testConnection = async (type: 'line') => {
     setLoading(true)
     try {
       const response = await fetch(`/api/test-connection?type=${type}`, {
@@ -156,9 +150,9 @@ export default function SettingsPage() {
       setTestResults(prev => ({ ...prev, [type]: result.success }))
       
       if (result.success) {
-        alert(`${type === 'dify' ? 'Dify' : 'LINE'}接続テストが成功しました`)
+        alert('LINE接続テストが成功しました')
       } else {
-        alert(`${type === 'dify' ? 'Dify' : 'LINE'}接続テストが失敗しました: ${result.error}`)
+        alert(`LINE接続テストが失敗しました: ${result.error}`)
       }
     } catch (error) {
       console.error('接続テストエラー:', error)
@@ -237,76 +231,27 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-4 md:p-6 lg:p-8 space-y-6 max-w-4xl">
       {/* ヘッダー */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">システム設定</h1>
         <p className="text-gray-600">
-          DifyとLINE公式アカウントとの連携設定を管理します
+          LINE公式アカウントとメッセージの設定を管理します
         </p>
       </div>
 
-      {/* Dify連携設定 */}
+      {/* アプリケーション設定 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-purple-500" />
-            Dify連携設定
+            <Settings className="h-5 w-5 text-blue-500" />
+            アプリケーション設定
           </CardTitle>
           <CardDescription>
-            Difyとの連携に必要な設定情報を入力してください
+            基本的なアプリケーション設定
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="difyApiKey">Dify API キー</Label>
-            <div className="flex gap-2">
-              <Input
-                id="difyApiKey"
-                type={showSecrets ? 'text' : 'password'}
-                value={showSecrets ? settings.difyApiKey : maskString(settings.difyApiKey)}
-                onChange={(e) => updateSetting('difyApiKey', e.target.value)}
-                placeholder="app-xxxxxxxxxxxxxxxxx"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSecrets(!showSecrets)}
-              >
-                {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Dify → Settings → API Access → API Keys から取得
-            </p>
-          </div>
-          
-          <div>
-            <Label htmlFor="difyApiUrl">Dify API エンドポイント</Label>
-            <Input
-              id="difyApiUrl"
-              value={settings.difyApiUrl}
-              onChange={(e) => updateSetting('difyApiUrl', e.target.value)}
-              placeholder="https://api.dify.ai/v1"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              通常は https://api.dify.ai/v1 を使用します
-            </p>
-          </div>
-          
-          <div>
-            <Label htmlFor="difyWebhookUrl">Webhook URL（このアプリ側）</Label>
-            <Input
-              id="difyWebhookUrl"
-              value={settings.difyWebhookUrl}
-              onChange={(e) => updateSetting('difyWebhookUrl', e.target.value)}
-              placeholder={`${settings.appBaseUrl || 'https://yourdomain.com'}/api/webhook/dify`}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Dify側からのWebhookを受信するURL
-            </p>
-          </div>
-
           <div>
             <Label htmlFor="appBaseUrl">アプリベースURL</Label>
             <Input
@@ -317,41 +262,6 @@ export default function SettingsPage() {
             />
             <p className="text-xs text-gray-500 mt-1">
               このアプリケーションのベースURL
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={() => testConnection('dify')}
-              disabled={loading || !settings.difyApiKey || !settings.difyApiUrl}
-              variant="outline"
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              接続テスト
-            </Button>
-            {testResults.dify !== undefined && (
-              <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${
-                testResults.dify ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
-                {testResults.dify ? '✓ 成功' : '✗ 失敗'}
-              </div>
-            )}
-          </div>
-          
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h4 className="font-medium text-purple-900 mb-2">📝 Dify設定方法</h4>
-            <ol className="text-sm text-purple-700 space-y-1">
-              <li>1. Difyでアプリケーションを作成</li>
-              <li>2. API Access設定でAPIキーを生成</li>
-              <li>3. 必要に応じてWebhook設定を行う</li>
-              <li>4. 上記の情報をこちらに入力</li>
-            </ol>
-          </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-medium text-blue-900 mb-2">🔄 連携の流れ</h4>
-            <p className="text-sm text-blue-700">
-              1. ユーザーが予約 → 2. Dify APIに予約情報送信 → 3. AIが応答生成 → 4. LINEメッセージ送信
             </p>
           </div>
         </CardContent>
@@ -371,14 +281,23 @@ export default function SettingsPage() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="lineChannelSecret">チャンネルシークレット</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 id="lineChannelSecret"
                 type={showSecrets ? 'text' : 'password'}
                 value={showSecrets ? settings.lineChannelSecret : maskString(settings.lineChannelSecret)}
                 onChange={(e) => updateSetting('lineChannelSecret', e.target.value)}
                 placeholder="LINE Developers から取得"
+                className="flex-1"
               />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSecrets(!showSecrets)}
+                className="shrink-0"
+              >
+                {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
             </div>
             <p className="text-xs text-gray-500 mt-1">
               LINE Developers → 作成したチャンネル → Basic settings → Channel secret
@@ -387,13 +306,14 @@ export default function SettingsPage() {
 
           <div>
             <Label htmlFor="lineChannelAccessToken">チャンネルアクセストークン</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 id="lineChannelAccessToken"
                 type={showSecrets ? 'text' : 'password'}
                 value={showSecrets ? settings.lineChannelAccessToken : maskString(settings.lineChannelAccessToken)}
                 onChange={(e) => updateSetting('lineChannelAccessToken', e.target.value)}
                 placeholder="LINE Developers から取得"
+                className="flex-1"
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
@@ -401,11 +321,12 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Button
               onClick={() => testConnection('line')}
               disabled={loading || !settings.lineChannelSecret || !settings.lineChannelAccessToken}
               variant="outline"
+              className="w-full sm:w-auto"
             >
               <TestTube className="h-4 w-4 mr-2" />
               接続テスト

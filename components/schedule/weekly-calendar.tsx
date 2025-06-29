@@ -49,20 +49,20 @@ export function WeeklyCalendar({
   return (
     <div className="w-full">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold">週間スケジュール</h1>
-          <Button variant="outline" onClick={goToToday}>
+      <div className="flex flex-col space-y-4 mb-6 md:flex-row md:items-center md:justify-between md:space-y-0">
+        <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-4">
+          <h1 className="text-xl md:text-2xl font-bold">週間スケジュール</h1>
+          <Button variant="outline" onClick={goToToday} size="sm" className="w-fit">
             <Calendar className="h-4 w-4 mr-2" />
             今日
           </Button>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center space-x-2">
           <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-lg font-medium px-4">
+          <span className="text-base md:text-lg font-medium px-2 md:px-4 text-center">
             {currentWeek.getFullYear()}年 {currentWeek.getMonth() + 1}月
           </span>
           <Button variant="outline" size="icon" onClick={goToNextWeek}>
@@ -71,8 +71,70 @@ export function WeeklyCalendar({
         </div>
       </div>
 
-      {/* カレンダーグリッド */}
-      <div className="grid grid-cols-7 gap-4">
+      {/* カレンダーグリッド - レスポンシブ対応 */}
+      <div className="flex flex-col space-y-4 md:hidden">
+        {/* モバイル表示：縦スタック */}
+        {weekDates.map((date, index) => {
+          const dateStr = formatDate(date)
+          const daySchedules = schedules[dateStr] || []
+          const todayClass = isToday(date) ? 'ring-2 ring-blue-500' : ''
+          const weekendClass = isWeekend(date) ? 'bg-gray-50' : 'bg-white'
+
+          return (
+            <Card key={dateStr} className={`${todayClass} ${weekendClass}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">{dayNames[index]}</span>
+                    <span className={`text-lg ${isToday(date) ? 'text-blue-600 font-bold' : ''}`}>
+                      {formatDateHeader(date)}
+                    </span>
+                  </div>
+                  {isToday(date) && (
+                    <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">今日</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              
+              <CardContent className="space-y-2">
+                {/* 新規追加ボタン（管理画面でのみ表示） */}
+                {showAddButton && onAddSchedule && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-8 text-xs"
+                    onClick={() => onAddSchedule(dateStr)}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    追加
+                  </Button>
+                )}
+
+                {/* スケジュールブロック */}
+                <div className="space-y-2">
+                  {daySchedules.map((schedule) => (
+                    <ScheduleBlock
+                      key={schedule.id}
+                      schedule={schedule}
+                      onClick={onScheduleClick}
+                    />
+                  ))}
+                </div>
+
+                {/* 空の日の表示 */}
+                {daySchedules.length === 0 && (
+                  <div className="text-center text-gray-400 text-xs py-4">
+                    予定なし
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* タブレット・デスクトップ表示：グリッド */}
+      <div className="hidden md:grid md:grid-cols-7 gap-4">
         {weekDates.map((date, index) => {
           const dateStr = formatDate(date)
           const daySchedules = schedules[dateStr] || []

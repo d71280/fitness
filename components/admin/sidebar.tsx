@@ -53,11 +53,18 @@ const navigation = [
   }
 ]
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function AdminSidebar({ isOpen = true, onClose }: AdminSidebarProps) {
   const pathname = usePathname()
 
   return (
-    <div className="flex flex-col w-64 bg-white shadow-lg">
+    <div className={`flex flex-col w-64 bg-white shadow-lg fixed h-full z-50 transform transition-transform lg:relative lg:translate-x-0 ${
+      isOpen ? 'translate-x-0' : '-translate-x-full'
+    } lg:block`}>
       {/* ロゴ */}
       <div className="flex items-center justify-center h-16 px-4 bg-blue-600">
         <Link href="/dashboard" className="text-white font-bold text-lg">
