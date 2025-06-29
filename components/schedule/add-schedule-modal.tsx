@@ -52,18 +52,8 @@ export function AddScheduleModal({
     if (formData.programId && programs.length > 0) {
       const program = programs.find(p => p.id === formData.programId)
       setSelectedProgram(program)
-      if (program) {
-        // プログラムのデフォルト時間を適用
-        const duration = program.default_duration
-        const startTime = formData.startTime
-        const [hours, minutes] = startTime.split(':').map(Number)
-        const endDate = new Date()
-        endDate.setHours(hours, minutes + duration, 0, 0)
-        const endTime = endDate.toTimeString().slice(0, 5)
-        setFormData(prev => ({ ...prev, endTime }))
-      }
     }
-  }, [formData.programId, programs, formData.startTime])
+  }, [formData.programId, programs])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -152,7 +142,7 @@ export function AddScheduleModal({
             <option value="">プログラムを選択</option>
             {programs.map((program) => (
               <option key={program.id} value={program.id.toString()}>
-                {program.name} ({program.default_duration}分)
+                {program.name}
               </option>
             ))}
           </select>
