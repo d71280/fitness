@@ -6,14 +6,11 @@
     }
   ],
   "functions": {
-    "app/api/webhook/lstep/route.ts": {
-      "maxDuration": 300
-    },
     "app/api/reservations/route.ts": {
       "maxDuration": 60
     },
-    "app/api/test-line-notification/route.ts": {
-      "maxDuration": 30
+    "app/api/cron/daily-reminders/route.ts": {
+      "maxDuration": 300
     }
   },
   "headers": [

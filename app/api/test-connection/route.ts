@@ -16,6 +16,8 @@ export async function POST(request: NextRequest) {
         return await testSheetsConnection(body)
       case 'line-group':
         return await testLineGroupConnection(body)
+      case 'reminder':
+        return await testReminderFunction(body)
       default:
         return NextResponse.json(
           { success: false, error: '無効なテストタイプです' },
@@ -164,6 +166,41 @@ async function testLineGroupConnection(body: any) {
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'グループLINE通知設定に問題があります'
+    })
+  }
+}
+
+async function testReminderFunction(body: any) {
+  try {
+    // リマインド機能のテスト実行
+    const response = await fetch(`${process.env.VERCEL_URL || 'http://localhost:3000'}/api/cron/daily-reminders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      return NextResponse.json({
+        success: true,
+        message: 'リマインド機能テストが完了しました',
+        details: data
+      })
+    } else {
+      const errorData = await response.json()
+      return NextResponse.json({
+        success: false,
+        error: 'リマインド機能テストに失敗しました',
+        details: errorData
+      })
+    }
+
+  } catch (error) {
+    console.error('リマインド機能テストエラー:', error)
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'リマインド機能テストに失敗しました'
     })
   }
 }

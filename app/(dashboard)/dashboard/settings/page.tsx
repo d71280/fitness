@@ -31,7 +31,17 @@ export default function SettingsPage() {
   })
 
   const [loading, setLoading] = useState(false)
-  const [testResults, setTestResults] = useState<{[key: string]: boolean | null}>({})
+  const [testResults, setTestResults] = useState<{
+    sheets?: boolean
+    lineGroup?: boolean
+    lineOfficial?: boolean | null
+    reminder?: boolean | null
+  }>({
+    sheets: undefined,
+    lineGroup: undefined,
+    lineOfficial: null,
+    reminder: null
+  })
   const [showSecrets, setShowSecrets] = useState(false)
 
   // 設定読み込み
@@ -141,25 +151,53 @@ export default function SettingsPage() {
 
   const testLineOfficial = async () => {
     setLoading(true)
+    setTestResults(prev => ({ ...prev, lineOfficial: null }))
+    
     try {
       const response = await fetch('/api/test-connection?type=line-official', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       })
-
-      const result = await response.json()
-      setTestResults(prev => ({ ...prev, lineOfficial: result.success }))
       
-      if (result.success) {
-        alert('LINE公式アカウント接続テストが成功しました')
+      const data = await response.json()
+      setTestResults(prev => ({ ...prev, lineOfficial: data.success }))
+      
+      if (data.success) {
+        alert(`LINE接続テスト成功！\nBot名: ${data.data?.displayName || '不明'}`)
       } else {
-        alert(`LINE公式アカウント接続テストが失敗しました: ${result.error}`)
+        alert(`LINE接続テスト失敗: ${data.error}`)
       }
     } catch (error) {
-      console.error('LINE公式アカウント接続テストエラー:', error)
       setTestResults(prev => ({ ...prev, lineOfficial: false }))
-      alert('LINE公式アカウント接続テストに失敗しました')
+      alert('接続テストでエラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const testReminder = async () => {
+    setLoading(true)
+    setTestResults(prev => ({ ...prev, reminder: null }))
+    
+    try {
+      const response = await fetch('/api/test-connection?type=reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+      
+      const data = await response.json()
+      setTestResults(prev => ({ ...prev, reminder: data.success }))
+      
+      if (data.success) {
+        alert(`リマインド機能テスト完了！\n送信数: ${data.details?.sent || 0}/${data.details?.total || 0}`)
+      } else {
+        alert(`リマインド機能テスト失敗: ${data.error}`)
+      }
+    } catch (error) {
+      setTestResults(prev => ({ ...prev, reminder: false }))
+      alert('リマインド機能テストでエラーが発生しました')
     } finally {
       setLoading(false)
     }
@@ -419,6 +457,42 @@ export default function SettingsPage() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* リマインド機能テスト */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-green-500" />
+            リマインド機能テスト
+          </CardTitle>
+          <CardDescription>
+            リマインド機能のテストを行います
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex space-x-2">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={testReminder}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <TestTube className="h-4 w-4" />
+              {loading ? 'テスト中...' : 'リマインド機能テスト'}
+            </Button>
+            {testResults.reminder !== null && (
+              <div className={`px-3 py-2 rounded-md text-sm ${
+                testResults.reminder 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {testResults.reminder ? '✓ 成功' : '✗ 失敗'}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

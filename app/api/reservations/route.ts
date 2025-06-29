@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'
+import { LineMessagingClient } from '@/lib/line-messaging'
+import { getMessageSettings, processMessageTemplate } from '@/lib/message-templates'
 import { z } from 'zod'
 
 const createReservationSchema = z.object({
@@ -190,6 +192,42 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (reservationError) throw reservationError
+
+      // LINE通知送信
+      try {
+        const messageSettings = getMessageSettings()
+        
+        if (messageSettings.bookingConfirmation.enabled && customer.line_id) {
+          const lineClient = new LineMessagingClient()
+          
+          // メッセージデータの準備
+          const messageData = {
+            date: schedule.date,
+            time: `${schedule.start_time} - ${schedule.end_time}`,
+            program: schedule.program.name,
+            instructor: schedule.instructor.name,
+            studio: schedule.studio.name,
+            capacity: schedule.capacity
+          }
+          
+          // テンプレートメッセージの生成
+          const messageText = processMessageTemplate(
+            messageSettings.bookingConfirmation.textMessage,
+            messageData
+          )
+          
+          // LINE通知送信
+          const lineResult = await lineClient.pushMessage(customer.line_id, {
+            type: 'text',
+            text: messageText
+          })
+          
+          console.log('予約完了LINE通知結果:', lineResult)
+        }
+      } catch (lineError) {
+        console.warn('LINE通知送信エラー:', lineError)
+        // エラーでも予約は継続（LINE通知は補助機能）
+      }
 
       // スプレッドシートに予約を記録
       try {
