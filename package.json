@@ -28,6 +28,8 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
+    "google-auth-library": "^9.15.1",
+    "google-spreadsheet": "^4.1.4",
     "lucide-react": "^0.290.0",
     "next": "14.0.0",
     "next-auth": "^4.24.0",

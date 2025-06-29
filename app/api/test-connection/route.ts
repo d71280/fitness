@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import axios from 'axios'
+import { GoogleSheetsClient } from '@/lib/google-sheets'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
       return await testLStepConnection(settings)
     } else if (type === 'line') {
       return await testLineConnection(settings)
+    } else if (type === 'googlesheets') {
+      return await testGoogleSheetsConnection(settings)
+    } else if (type === 'groupline') {
+      return await testGroupLineConnection(settings)
     } else {
       return NextResponse.json({ error: 'テストタイプが不正です' }, { status: 400 })
     }
@@ -133,6 +138,88 @@ async function testLineConnection(settings: any) {
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'LINE接続テストに失敗しました' 
+    })
+  }
+}
+
+// Google Sheets接続テスト
+async function testGoogleSheetsConnection(settings: any) {
+  try {
+    // 環境変数を一時的に設定
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = settings.serviceAccountEmail
+    process.env.GOOGLE_PRIVATE_KEY = settings.privateKey
+    process.env.GOOGLE_SPREADSHEET_ID = settings.spreadsheetId
+
+    const sheetsClient = new GoogleSheetsClient()
+    const result = await sheetsClient.testConnection()
+    
+    if (result.success) {
+      return NextResponse.json({
+        success: true,
+        spreadsheetTitle: result.spreadsheetTitle,
+        sheetCount: result.sheetCount,
+        spreadsheetId: result.spreadsheetId,
+        message: 'Google Sheets接続成功'
+      })
+    } else {
+      return NextResponse.json({
+        success: false,
+        error: result.error
+      })
+    }
+  } catch (error) {
+    console.error('Google Sheets接続テストエラー:', error)
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Google Sheets接続テスト失敗'
+    })
+  }
+}
+
+// グループLINE通知テスト
+async function testGroupLineConnection(settings: any) {
+  try {
+    const testMessage = {
+      type: 'text',
+      text: '🧪 テスト通知\n\nグループLINE通知のテストメッセージです。\n\n送信時刻: ' + new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    }
+
+    const response = await axios.post('https://api.line.me/v2/bot/message/push', {
+      to: process.env.LINE_GROUP_ID || settings.lineGroupId, // グループIDが必要
+      messages: [testMessage]
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${settings.lineGroupToken}`
+      }
+    })
+
+    if (response.status === 200) {
+      return NextResponse.json({
+        success: true,
+        message: 'グループLINE通知テスト送信成功'
+      })
+    } else {
+      return NextResponse.json({
+        success: false,
+        error: `HTTP ${response.status}: ${response.statusText}`
+      })
+    }
+  } catch (error) {
+    console.error('グループLINE通知テストエラー:', error)
+    
+    let errorMessage = 'グループLINE通知テスト失敗'
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        errorMessage = `LINE API エラー: ${error.response.status} - ${error.response.data?.message || error.response.statusText}`
+      } else if (error.request) {
+        errorMessage = 'LINE APIへの接続エラー'
+      }
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: errorMessage
     })
   }
 }

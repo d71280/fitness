@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { LStepClient } from '@/lib/lstep'
+import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'
 import { z } from 'zod'
 
 const createReservationSchema = z.object({
@@ -178,6 +179,25 @@ export async function POST(request: NextRequest) {
         bookingData,
         notificationResult
       )
+
+      // スプレッドシートに予約を記録
+      const sheetsClient = new GoogleSheetsClient()
+      const spreadsheetData: SpreadsheetBookingData = {
+        予約ID: reservation.id,
+        予約日時: schedule.date.toISOString(),
+        顧客名: customer.name,
+        電話番号: customer.phone || '',
+        プログラム: schedule.program.name,
+        インストラクター: schedule.instructor.name,
+        スタジオ: schedule.studio.name,
+        開始時間: schedule.start_time,
+        終了時間: schedule.end_time,
+        ステータス: 'confirmed',
+        LINE_ID: customer.line_id
+      }
+
+      const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)
+      console.log('スプレッドシート連携結果:', sheetsResult)
 
       return NextResponse.json({
         success: true,

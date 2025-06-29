@@ -49,6 +49,14 @@ export default function SettingsPage() {
     lineChannelAccessToken: ''
   })
 
+  const [googleSheetsSettings, setGoogleSheetsSettings] = useState({
+    serviceAccountEmail: '',
+    privateKey: '',
+    spreadsheetId: '',
+    lineGroupToken: '',
+    enabled: false
+  })
+
   const [messageSettings, setMessageSettings] = useState<MessageSettings>({
     bookingConfirmation: {
       enabled: true,
@@ -87,6 +95,7 @@ export default function SettingsPage() {
         const data = await response.json()
         setSettings(prevSettings => data.connection || prevSettings)
         setMessageSettings(prevMessageSettings => data.messages || prevMessageSettings)
+        setGoogleSheetsSettings(prevGoogleSettings => data.googleSheets || prevGoogleSettings)
       }
     } catch (error) {
       console.error('設定読み込みエラー:', error)
@@ -111,7 +120,8 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connection: settings,
-          messages: messageSettings
+          messages: messageSettings,
+          googleSheets: googleSheetsSettings
         })
       })
 
@@ -510,6 +520,139 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* スプレッドシート連携設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            📊 スプレッドシート & グループLINE連携
+          </CardTitle>
+          <CardDescription>
+            予約データをスプレッドシートに自動記録し、事業者向けグループLINEに通知を送信
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <Switch
+              checked={googleSheetsSettings.enabled}
+              onCheckedChange={(checked) => 
+                setGoogleSheetsSettings(prev => ({ ...prev, enabled: checked }))
+              }
+            />
+            <Label className="text-sm font-medium">
+              スプレッドシート連携を有効にする
+            </Label>
+          </div>
+
+          {googleSheetsSettings.enabled && (
+            <div className="space-y-4 pl-4 border-l-2 border-green-200">
+              <div>
+                <Label htmlFor="spreadsheetId">スプレッドシートID</Label>
+                <Input
+                  id="spreadsheetId"
+                  type="text"
+                  value={googleSheetsSettings.spreadsheetId}
+                  onChange={(e) => setGoogleSheetsSettings(prev => ({ 
+                    ...prev, 
+                    spreadsheetId: e.target.value 
+                  }))}
+                  placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  スプレッドシートのURLから取得できます
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="serviceAccountEmail">Google サービスアカウントEmail</Label>
+                <Input
+                  id="serviceAccountEmail"
+                  type="email"
+                  value={googleSheetsSettings.serviceAccountEmail}
+                  onChange={(e) => setGoogleSheetsSettings(prev => ({ 
+                    ...prev, 
+                    serviceAccountEmail: e.target.value 
+                  }))}
+                  placeholder="service-account@project.iam.gserviceaccount.com"
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="privateKey">Google サービスアカウント秘密鍵</Label>
+                <Textarea
+                  id="privateKey"
+                  value={showSecrets ? googleSheetsSettings.privateKey : '••••••••'}
+                  onChange={(e) => setGoogleSheetsSettings(prev => ({ 
+                    ...prev, 
+                    privateKey: e.target.value 
+                  }))}
+                  placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+                  className="font-mono text-xs h-20"
+                  readOnly={!showSecrets}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="lineGroupToken">グループLINE Botアクセストークン</Label>
+                <Input
+                  id="lineGroupToken"
+                  type={showSecrets ? 'text' : 'password'}
+                  value={googleSheetsSettings.lineGroupToken}
+                  onChange={(e) => setGoogleSheetsSettings(prev => ({ 
+                    ...prev, 
+                    lineGroupToken: e.target.value 
+                  }))}
+                  placeholder="グループ通知用のLINE Botアクセストークン"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  事業者通知用のグループLINE Botトークン
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={testGoogleSheetsConnection}
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  📊 スプレッドシート接続テスト
+                </Button>
+                
+                <Button
+                  onClick={testGroupLineNotification}
+                  disabled={loading}
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  💬 グループLINE通知テスト
+                </Button>
+              </div>
+
+              {(testResults.googleSheets !== undefined || testResults.groupLine !== undefined) && (
+                <div className="mt-4 p-3 rounded-lg border bg-gray-50">
+                  <h4 className="font-medium mb-2">テスト結果</h4>
+                  {testResults.googleSheets !== undefined && (
+                    <p className={`text-sm ${testResults.googleSheets ? 'text-green-600' : 'text-red-600'}`}>
+                      📊 スプレッドシート接続: {testResults.googleSheets ? '✅ 成功' : '❌ 失敗'}
+                    </p>
+                  )}
+                  {testResults.groupLine !== undefined && (
+                    <p className={`text-sm ${testResults.groupLine ? 'text-green-600' : 'text-red-600'}`}>
+                      💬 グループLINE通知: {testResults.groupLine ? '✅ 成功' : '❌ 失敗'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* 保存ボタン */}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={loading} className="flex items-center gap-2">
@@ -519,4 +662,55 @@ export default function SettingsPage() {
       </div>
     </div>
   )
+
+  // テスト関数
+  async function testGoogleSheetsConnection() {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/test-connection?type=googlesheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(googleSheetsSettings)
+      })
+      
+      const result = await response.json()
+      setTestResults(prev => ({ ...prev, googleSheets: result.success }))
+      
+      if (result.success) {
+        alert(`✅ スプレッドシート接続成功!\nタイトル: ${result.spreadsheetTitle}`)
+      } else {
+        alert(`❌ スプレッドシート接続失敗: ${result.error}`)
+      }
+    } catch (error) {
+      setTestResults(prev => ({ ...prev, googleSheets: false }))
+      alert('❌ スプレッドシート接続テストでエラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function testGroupLineNotification() {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/test-connection?type=groupline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(googleSheetsSettings)
+      })
+      
+      const result = await response.json()
+      setTestResults(prev => ({ ...prev, groupLine: result.success }))
+      
+      if (result.success) {
+        alert('✅ グループLINE通知テスト送信成功!')
+      } else {
+        alert(`❌ グループLINE通知テスト失敗: ${result.error}`)
+      }
+    } catch (error) {
+      setTestResults(prev => ({ ...prev, groupLine: false }))
+      alert('❌ グループLINE通知テストでエラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }
 }

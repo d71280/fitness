@@ -32,6 +32,14 @@ export async function GET(request: NextRequest) {
       appBaseUrl: process.env.APP_BASE_URL || ''
     }
 
+    const googleSheetsSettings = {
+      serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
+      privateKey: process.env.GOOGLE_PRIVATE_KEY || '',
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '',
+      lineGroupToken: process.env.LINE_GROUP_TOKEN || '',
+      enabled: process.env.GOOGLE_SHEETS_ENABLED === 'true'
+    }
+
     // メッセージ設定をファイルから読み込み（実装簡略化のため固定値）
     const messageSettings = {
       bookingConfirmation: {
@@ -61,7 +69,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       connection: connectionSettings,
-      messages: messageSettings
+      messages: messageSettings,
+      googleSheets: googleSheetsSettings
     })
   } catch (error) {
     console.error('設定取得エラー:', error)
@@ -88,7 +97,7 @@ export async function POST(request: NextRequest) {
     //   }
     // }
 
-    const { connection, messages } = await request.json()
+    const { connection, messages, googleSheets } = await request.json()
     
     // 環境チェック - Vercel環境の判定
     const isVercel = process.env.VERCEL === '1'
@@ -159,6 +168,22 @@ export async function POST(request: NextRequest) {
         process.env.LINE_CHANNEL_ACCESS_TOKEN = connection.lineChannelAccessToken || ''
         process.env.LINE_USER_ID = connection.lineUserId || ''
         process.env.APP_BASE_URL = connection.appBaseUrl || ''
+      }
+
+      // Google Sheets設定を更新
+      if (googleSheets) {
+        envContent = updateEnvVar(envContent, 'GOOGLE_SERVICE_ACCOUNT_EMAIL', googleSheets.serviceAccountEmail || '')
+        envContent = updateEnvVar(envContent, 'GOOGLE_PRIVATE_KEY', googleSheets.privateKey || '')
+        envContent = updateEnvVar(envContent, 'GOOGLE_SPREADSHEET_ID', googleSheets.spreadsheetId || '')
+        envContent = updateEnvVar(envContent, 'LINE_GROUP_TOKEN', googleSheets.lineGroupToken || '')
+        envContent = updateEnvVar(envContent, 'GOOGLE_SHEETS_ENABLED', googleSheets.enabled ? 'true' : 'false')
+
+        // プロセス環境変数も更新
+        process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = googleSheets.serviceAccountEmail || ''
+        process.env.GOOGLE_PRIVATE_KEY = googleSheets.privateKey || ''
+        process.env.GOOGLE_SPREADSHEET_ID = googleSheets.spreadsheetId || ''
+        process.env.LINE_GROUP_TOKEN = googleSheets.lineGroupToken || ''
+        process.env.GOOGLE_SHEETS_ENABLED = googleSheets.enabled ? 'true' : 'false'
       }
 
       // メッセージ設定をJSONファイルに保存
