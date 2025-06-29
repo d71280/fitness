@@ -1,13 +1,16 @@
 export interface Schedule {
   id: number;
-  time: string;
-  program: string;
-  instructor: string;
-  studio: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  programId: number;
+  instructorId: number;
+  studioId: number;
   capacity: number;
-  booked: number;
-  color: string;
-  textColor: string;
+  bookedCount: number;
+  program?: Program;
+  instructor?: Instructor;
+  studio?: Studio;
 }
 
 export interface CreateScheduleData {

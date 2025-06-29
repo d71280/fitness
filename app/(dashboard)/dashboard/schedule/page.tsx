@@ -12,7 +12,7 @@ export default function AdminSchedulePage() {
     formatDate(getWeekStart(new Date()))
   )
 
-  const { schedules, loading, error, addSchedule, addRecurringSchedule, refetch } = useSchedules(currentWeekStart)
+  const { schedules, loading, error, usingMockData, addSchedule, addRecurringSchedule, refetch } = useSchedules(currentWeekStart)
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState('')
@@ -42,16 +42,8 @@ export default function AdminSchedulePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-lg">スケジュールを読み込み中...</div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">エラー: {error}</div>
       </div>
     )
   }
@@ -65,11 +57,21 @@ export default function AdminSchedulePage() {
         </p>
       </div>
 
+      {/* エラー・警告メッセージ */}
+      {error && (
+        <div className={`p-4 rounded-md ${usingMockData ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className={`text-sm ${usingMockData ? 'text-yellow-800' : 'text-red-800'}`}>
+            {usingMockData ? '⚠️ ' : '❌ '}
+            {error}
+          </div>
+        </div>
+      )}
+
       <WeeklyCalendar
         schedules={schedules}
         onAddSchedule={handleAddSchedule}
         onScheduleClick={handleScheduleClick}
-        showAddButton={true}
+        showAddButton={!usingMockData} // デモモード時は追加ボタンを非表示
       />
 
       <AddScheduleModal

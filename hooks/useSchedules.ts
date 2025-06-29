@@ -3,10 +3,95 @@
 import { useState, useEffect } from 'react'
 import { Schedule, CreateScheduleData } from '@/types/api'
 
+// フォールバック用のモックデータ
+const generateMockSchedules = (weekStart: string): Record<string, Schedule[]> => {
+  const mockSchedules: Record<string, Schedule[]> = {}
+  const startDate = new Date(weekStart)
+  
+  // 平日（月〜金）にサンプルスケジュールを生成
+  for (let i = 0; i < 5; i++) {
+    const date = new Date(startDate)
+    date.setDate(startDate.getDate() + i)
+    const dateStr = date.toISOString().split('T')[0]
+    
+    mockSchedules[dateStr] = [
+      {
+        id: i * 2 + 1,
+        date: dateStr,
+        startTime: '10:00',
+        endTime: '11:00',
+        programId: 1,
+        instructorId: 1,
+        studioId: 1,
+        capacity: 20,
+        bookedCount: 5,
+        program: { 
+          id: 1, 
+          name: 'ヨガベーシック', 
+          description: '初心者向けヨガ', 
+          color_class: 'bg-green-500',
+          text_color_class: 'text-white',
+          default_instructor_id: 1 
+        },
+        instructor: { 
+          id: 1, 
+          name: '田中先生', 
+          email: 'tanaka@example.com', 
+          bio: 'ヨガインストラクター',
+          specialties: ['ヨガ', 'ピラティス']
+        },
+        studio: { 
+          id: 1, 
+          name: 'スタジオA', 
+          capacity: 20,
+          equipment: ['ヨガマット', 'ブロック'],
+          description: 'メインスタジオ'
+        }
+      },
+      {
+        id: i * 2 + 2,
+        date: dateStr,
+        startTime: '19:00',
+        endTime: '20:00',
+        programId: 2,
+        instructorId: 2,
+        studioId: 1,
+        capacity: 15,
+        bookedCount: 8,
+        program: { 
+          id: 2, 
+          name: 'HIIT', 
+          description: '高強度インターバルトレーニング', 
+          color_class: 'bg-red-500',
+          text_color_class: 'text-white',
+          default_instructor_id: 2 
+        },
+        instructor: { 
+          id: 2, 
+          name: '佐藤先生', 
+          email: 'sato@example.com', 
+          bio: 'フィットネストレーナー',
+          specialties: ['HIIT', '筋トレ']
+        },
+        studio: { 
+          id: 1, 
+          name: 'スタジオA', 
+          capacity: 20,
+          equipment: ['ダンベル', 'マット'],
+          description: 'メインスタジオ'
+        }
+      }
+    ]
+  }
+  
+  return mockSchedules
+}
+
 export function useSchedules(weekStart: string) {
   const [schedules, setSchedules] = useState<Record<string, Schedule[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [usingMockData, setUsingMockData] = useState(false)
 
   const fetchSchedules = async () => {
     try {
@@ -17,14 +102,24 @@ export function useSchedules(weekStart: string) {
       const data = await response.json()
       setSchedules(data.schedules || {})
       setError(null)
+      setUsingMockData(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました')
+      console.warn('API接続に失敗しました、モックデータを使用します:', err)
+      // APIエラー時はモックデータを使用
+      const mockData = generateMockSchedules(weekStart)
+      setSchedules(mockData)
+      setError('接続エラーのため、サンプルデータを表示しています')
+      setUsingMockData(true)
     } finally {
       setLoading(false)
     }
   }
 
   const addSchedule = async (scheduleData: CreateScheduleData) => {
+    if (usingMockData) {
+      throw new Error('現在はデモモードです。実際のスケジュール追加はできません。')
+    }
+
     try {
       const response = await fetch('/api/schedules', {
         method: 'POST',
@@ -43,6 +138,10 @@ export function useSchedules(weekStart: string) {
   }
 
   const addRecurringSchedule = async (scheduleData: CreateScheduleData) => {
+    if (usingMockData) {
+      throw new Error('現在はデモモードです。実際のスケジュール追加はできません。')
+    }
+
     try {
       const response = await fetch('/api/schedules/recurring', {
         method: 'POST',
@@ -68,6 +167,7 @@ export function useSchedules(weekStart: string) {
     schedules,
     loading,
     error,
+    usingMockData,
     addSchedule,
     addRecurringSchedule,
     refetch: fetchSchedules,

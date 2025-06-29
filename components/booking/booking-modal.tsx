@@ -87,8 +87,8 @@ export function BookingModal({
 
   if (!schedule) return null
 
-  const isFullyBooked = schedule.booked >= schedule.capacity
-  const availableSpots = schedule.capacity - schedule.booked
+  const isFullyBooked = schedule.bookedCount >= schedule.capacity
+  const availableSpots = schedule.capacity - schedule.bookedCount
 
   return (
     <Modal
@@ -104,22 +104,22 @@ export function BookingModal({
             <CardTitle className="text-base">予約内容</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`p-4 rounded-lg ${schedule.color} ${schedule.textColor}`}>
+            <div className={`p-4 rounded-lg ${schedule.program?.color_class || 'bg-blue-500'} ${schedule.program?.text_color_class || 'text-white'}`}>
               <div className="flex items-center gap-2 text-sm font-medium mb-2">
                 <Clock className="h-4 w-4" />
-                {schedule.time}
+                {schedule.startTime} - {schedule.endTime}
               </div>
               <div className="text-lg font-bold mb-2">
-                {schedule.program}
+                {schedule.program?.name || 'プログラム名未設定'}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-sm opacity-90">
                 <div className="flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  {schedule.instructor}
+                  {schedule.instructor?.name || 'インストラクター未設定'}
                 </div>
                 <div className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
-                  {schedule.studio}
+                  {schedule.studio?.name || 'スタジオ未設定'}
                 </div>
               </div>
             </div>
@@ -133,7 +133,7 @@ export function BookingModal({
                 </span>
               </div>
               <span className="text-sm text-gray-500">
-                {schedule.booked}/{schedule.capacity}名
+                {schedule.bookedCount}/{schedule.capacity}名
               </span>
             </div>
 
