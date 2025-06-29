@@ -385,20 +385,23 @@ export class LStepClient {
     try {
       // データベースが利用可能な場合のみログを記録
       try {
-        const { prisma } = await import('@/lib/prisma')
+        const { createServiceRoleClient } = await import('@/lib/supabase/server')
+        const supabase = createServiceRoleClient()
         
-        await prisma.notificationLog.create({
-          data: {
+        const { error } = await supabase
+          .from('notification_logs')
+          .insert({
             customer_id: customerId,
             reservation_id: reservationId,
             notification_type: type,
             message_content: content,
-            sent_at: new Date(),
+            sent_at: new Date().toISOString(),
             lstep_response: result.data || null,
             success: result.success,
             error_message: result.error || null,
-          },
-        })
+          })
+
+        if (error) throw error
       } catch (dbError) {
         console.warn('通知ログの記録をスキップします:', dbError)
       }

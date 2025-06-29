@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function GET(
   request: NextRequest,
@@ -16,33 +16,40 @@ export async function GET(
     }
 
     try {
+      const supabase = createServiceRoleClient()
+      
       // データベースから実際のスケジュール情報を取得
-      const schedule = await prisma.schedule.findUnique({
-        where: { id: scheduleId },
-        include: {
-          program: true,
-          instructor: true,
-          studio: true,
-          reservations: {
-            where: { status: 'confirmed' },
-            include: {
-              customer: true,
-            },
-          },
-        },
-      })
+      const { data: schedule, error } = await supabase
+        .from('schedules')
+        .select(`
+          *,
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*),
+          reservations!inner(
+            *,
+            customer:customers(*)
+          )
+        `)
+        .eq('id', scheduleId)
+        .eq('reservations.status', 'confirmed')
+        .single()
 
-      if (!schedule) {
+      if (error || !schedule) {
         return NextResponse.json(
           { error: 'スケジュールが見つかりません' },
           { status: 404 }
         )
       }
 
+      // 予約数を計算
+      const currentBookings = schedule.reservations ? schedule.reservations.length : 0
+      const availableSlots = schedule.capacity - currentBookings
+
       // レスポンス用のデータを整形
       const responseData = {
         id: schedule.id,
-        date: schedule.date.toISOString().split('T')[0],
+        date: schedule.date,
         start_time: schedule.start_time,
         end_time: schedule.end_time,
         time: `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`,
@@ -50,9 +57,9 @@ export async function GET(
         program: schedule.program.name,
         instructor: schedule.instructor.name,
         studio: schedule.studio.name,
-        currentBookings: schedule.reservations.length,
-        availableSlots: schedule.capacity - schedule.reservations.length,
-        status: schedule.capacity - schedule.reservations.length > 0 ? 'available' : 'full',
+        currentBookings: currentBookings,
+        availableSlots: availableSlots,
+        status: availableSlots > 0 ? 'available' : 'full',
         programDetails: {
           id: schedule.program.id,
           name: schedule.program.name,

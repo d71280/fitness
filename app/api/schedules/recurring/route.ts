@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -26,31 +26,35 @@ export async function POST(request: NextRequest) {
 
     // データベースが利用可能かチェック
     try {
-      // トランザクションで一括作成
-      const createdSchedules = await prisma.$transaction(
-        schedules.map(schedule =>
-          prisma.schedule.create({
-            data: {
-              date: new Date(schedule.date),
-              start_time: data.startTime,
-              end_time: data.endTime,
-              program_id: data.programId,
-              instructor_id: data.instructorId,
-              studio_id: data.studioId,
-              capacity: data.capacity,
-              recurring_group_id: recurringGroupId,
-              recurring_type: data.repeat,
-              recurring_end_date: data.repeatEndDate ? new Date(data.repeatEndDate) : null,
-              recurring_count: data.repeatCount,
-            },
-            include: {
-              program: true,
-              instructor: true,
-              studio: true,
-            },
-          })
-        )
-      )
+      const supabase = createServiceRoleClient()
+      
+      // 一括挿入用のデータを準備
+      const scheduleData = schedules.map(schedule => ({
+        date: schedule.date,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        program_id: data.programId,
+        instructor_id: data.instructorId,
+        studio_id: data.studioId,
+        capacity: data.capacity,
+        recurring_group_id: recurringGroupId,
+        recurring_type: data.repeat,
+        recurring_end_date: data.repeatEndDate || null,
+        recurring_count: data.repeatCount || null,
+      }))
+
+      // 一括挿入
+      const { data: createdSchedules, error } = await supabase
+        .from('schedules')
+        .insert(scheduleData)
+        .select(`
+          *,
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*)
+        `)
+
+      if (error) throw error
 
       return NextResponse.json({
         success: true,

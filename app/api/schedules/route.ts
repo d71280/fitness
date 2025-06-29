@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
 // APIルートを動的にして Static Generation エラーを防ぐ
@@ -18,20 +18,22 @@ const createScheduleSchema = z.object({
 // スケジュール一覧取得
 export async function GET(request: NextRequest) {
   try {
-    const schedules = await prisma.schedule.findMany({
-      include: {
-        program: true,
-        instructor: true,
-        studio: true,
-        reservations: {
-          where: { status: 'confirmed' },
-        },
-      },
-      orderBy: [
-        { date: 'asc' },
-        { start_time: 'asc' },
-      ],
-    })
+    const supabase = createServiceRoleClient()
+    
+    const { data: schedules, error } = await supabase
+      .from('schedules')
+      .select(`
+        *,
+        program:programs(*),
+        instructor:instructors(*),
+        studio:studios(*),
+        reservations!inner(*)
+      `)
+      .eq('reservations.status', 'confirmed')
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true })
+
+    if (error) throw error
 
     return NextResponse.json(schedules)
   } catch (error) {
@@ -50,15 +52,17 @@ export async function POST(request: NextRequest) {
     const data = createScheduleSchema.parse(body)
 
     try {
+      const supabase = createServiceRoleClient()
+      
       // 重複チェック
-      const existingSchedule = await prisma.schedule.findFirst({
-        where: {
-          date: new Date(data.baseDate),
-          studio_id: data.studioId,
-          start_time: data.startTime,
-          end_time: data.endTime,
-        },
-      })
+      const { data: existingSchedule } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('date', data.baseDate)
+        .eq('studio_id', data.studioId)
+        .eq('start_time', data.startTime)
+        .eq('end_time', data.endTime)
+        .single()
 
       if (existingSchedule) {
         return NextResponse.json(
@@ -67,22 +71,26 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const schedule = await prisma.schedule.create({
-        data: {
-          date: new Date(data.baseDate),
+      const { data: schedule, error } = await supabase
+        .from('schedules')
+        .insert({
+          date: data.baseDate,
           start_time: data.startTime,
           end_time: data.endTime,
           program_id: data.programId,
           instructor_id: data.instructorId,
           studio_id: data.studioId,
           capacity: data.capacity,
-        },
-        include: {
-          program: true,
-          instructor: true,
-          studio: true,
-        },
-      })
+        })
+        .select(`
+          *,
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*)
+        `)
+        .single()
+
+      if (error) throw error
 
       return NextResponse.json({
         success: true,
