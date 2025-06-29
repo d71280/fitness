@@ -44,10 +44,10 @@ export default function DashboardLayout({
       } catch (error) {
         console.error('ユーザー情報の読み込みエラー:', error)
         localStorage.removeItem('user')
-        router.push('/auth/supabase-signin')
+        router.push('/auth/signin')
       }
     } else {
-      router.push('/auth/supabase-signin')
+              router.push('/auth/signin')
     }
     
     setLoading(false)

@@ -34,5 +34,5 @@ export async function GET(request: NextRequest) {
   }
 
   // エラーまたはコードがない場合はサインインページへリダイレクト
-  return NextResponse.redirect(`${origin}/auth/supabase-signin`)
+      return NextResponse.redirect(`${origin}/auth/signin`)
 }

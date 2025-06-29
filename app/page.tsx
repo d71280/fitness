@@ -47,7 +47,7 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/auth/supabase-signin">
+              <Link href="/auth/signin">
                 <Button className="w-full">
                   管理画面へログイン
                 </Button>

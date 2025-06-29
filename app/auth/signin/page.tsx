@@ -1,122 +1,185 @@
 'use client'
 
-import React, { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogIn, Eye, EyeOff } from 'lucide-react'
-import { login, signup } from './actions'
+import { AlertCircle, Eye, EyeOff } from 'lucide-react'
 
-export default function LoginPage() {
+export default function SignIn() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
     try {
-      const result = await signIn('credentials', {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirect: false,
       })
 
-      if (result?.error) {
-        setError('メールアドレスまたはパスワードが正しくありません')
-      } else {
-        // ログイン成功時にセッションを確認
-        const session = await getSession()
-        if (session?.user?.role === 'admin') {
-          router.push('/dashboard')
-        } else {
-          router.push('/')
-        }
+      if (error) {
+        throw error
       }
-    } catch (error) {
-      setError('ログインに失敗しました')
+
+      if (data.user) {
+        router.push('/dashboard')
+        router.refresh()
+      }
+    } catch (error: any) {
+      setError(error.message || 'ログインに失敗しました')
     } finally {
       setLoading(false)
     }
   }
 
-  const fillDemoCredentials = () => {
-    setEmail('admin@demo.com')
-    setPassword('demo123')
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) {
+        throw error
+      }
+
+      if (data.user) {
+        setError('')
+        alert('確認メールを送信しました。メールをご確認ください。')
+        setIsSignUp(false)
+      }
+    } catch (error: any) {
+      setError(error.message || '登録に失敗しました')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            フィットネス予約システム
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            管理者アカウントでサインインしてください
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl text-center">
+            {isSignUp ? '新規登録' : 'ログイン'}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground text-center">
+            {isSignUp 
+              ? '管理画面にアクセスするためのアカウントを作成してください'
+              : '管理画面にアクセスするにはログインが必要です'
+            }
           </p>
-        </div>
-        <form className="mt-8 space-y-6">
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                メールアドレス
-              </label>
-              <input
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">メールアドレス</Label>
+              <Input
                 id="email"
-                name="email"
                 type="email"
-                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                className="relative block w-full appearance-none rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 placeholder="admin@example.com"
+                disabled={loading}
               />
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                パスワード
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="relative block w-full appearance-none rounded border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                placeholder="パスワード"
-              />
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="パスワードを入力"
+                  minLength={6}
+                  disabled={loading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
 
-          <div className="flex space-x-4">
-            <button
-              formAction={login}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            >
-              サインイン
-            </button>
-            <button
-              formAction={signup}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-green-600 py-2 px-4 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-            >
-              アカウント作成
-            </button>
-          </div>
+            {error && (
+              <div className="flex items-center space-x-2 p-3 rounded-md bg-red-50 border border-red-200">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
-          <div className="text-center text-xs text-gray-500">
-            <p>※ 管理者のみがアカウントを作成できます</p>
-            <p>初回の場合は「アカウント作成」をクリックしてください</p>
-          </div>
-        </form>
-      </div>
+            <div className="space-y-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading 
+                  ? (isSignUp ? '登録中...' : 'ログイン中...') 
+                  : (isSignUp ? '登録' : 'ログイン')
+                }
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={loading}
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setError('')
+                  setPassword('')
+                  setEmail('')
+                }}
+              >
+                {isSignUp ? 'ログインに戻る' : '新規登録'}
+              </Button>
+            </div>
+
+            {!isSignUp && (
+              <div className="text-sm text-gray-600 space-y-1 p-3 bg-blue-50 rounded-md">
+                <p className="font-medium">テスト用アカウント:</p>
+                <p>admin@studio.com / admin123</p>
+                <p>staff@studio.com / staff123</p>
+              </div>
+            )}
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
-}
+} 
