@@ -11,11 +11,11 @@ export function useSchedules(weekStart: string) {
   const fetchSchedules = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/schedules/weekly?start=${weekStart}`)
+      const response = await fetch(`/api/schedules/weekly?date=${weekStart}`)
       if (!response.ok) throw new Error('スケジュール取得に失敗しました')
       
       const data = await response.json()
-      setSchedules(data)
+      setSchedules(data.schedules || {})
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'エラーが発生しました')

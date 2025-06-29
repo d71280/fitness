@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServiceRoleClient()
     
+    // 予約がないスケジュールも表示するため、外部結合に変更
     const { data: schedules, error } = await supabase
       .from('schedules')
       .select(`
@@ -35,15 +36,20 @@ export async function GET(request: NextRequest) {
         program:programs(*),
         instructor:instructors(*),
         studio:studios(*),
-        reservations!inner(*)
+        reservations(
+          *,
+          customer:customers(*)
+        )
       `)
       .gte('date', mondayStr)
       .lte('date', sundayStr)
-      .eq('reservations.status', 'confirmed')
+      .eq('is_cancelled', false)
       .order('date', { ascending: true })
       .order('start_time', { ascending: true })
 
     if (error) throw error
+
+    console.log('取得されたスケジュール数:', schedules?.length)
 
     // 日付別にグループ化
     const schedulesByDate = schedules.reduce((acc, schedule) => {
@@ -51,7 +57,21 @@ export async function GET(request: NextRequest) {
       if (!acc[dateKey]) {
         acc[dateKey] = []
       }
-      acc[dateKey].push(schedule)
+      
+      // 確定済み予約のみカウント
+      const confirmedReservations = schedule.reservations?.filter(
+        (reservation: any) => reservation.status === 'confirmed'
+      ) || []
+      
+      // スケジュール情報を整形
+      const formattedSchedule = {
+        ...schedule,
+        currentBookings: confirmedReservations.length,
+        availableSlots: schedule.capacity - confirmedReservations.length,
+        reservations: confirmedReservations
+      }
+      
+      acc[dateKey].push(formattedSchedule)
       return acc
     }, {} as Record<string, any[]>)
 

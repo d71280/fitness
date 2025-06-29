@@ -27,15 +27,32 @@ export async function GET(request: NextRequest) {
         program:programs(*),
         instructor:instructors(*),
         studio:studios(*),
-        reservations!inner(*)
+        reservations(
+          *,
+          customer:customers(*)
+        )
       `)
-      .eq('reservations.status', 'confirmed')
+      .eq('is_cancelled', false)
       .order('date', { ascending: true })
       .order('start_time', { ascending: true })
 
     if (error) throw error
 
-    return NextResponse.json(schedules)
+    // 確定済み予約のみをカウントして整形
+    const formattedSchedules = schedules.map(schedule => {
+      const confirmedReservations = schedule.reservations?.filter(
+        (reservation: any) => reservation.status === 'confirmed'
+      ) || []
+      
+      return {
+        ...schedule,
+        currentBookings: confirmedReservations.length,
+        availableSlots: schedule.capacity - confirmedReservations.length,
+        reservations: confirmedReservations
+      }
+    })
+
+    return NextResponse.json(formattedSchedules)
   } catch (error) {
     console.error('スケジュール取得エラー:', error)
     return NextResponse.json(
