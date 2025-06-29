@@ -24,7 +24,6 @@ import {
 interface ProgramForm {
   name: string
   description: string
-  default_duration: number
   color_class: string
   text_color_class: string
   default_instructor_id?: number
@@ -51,7 +50,6 @@ export default function ProgramsInstructorsPage() {
   const [programForm, setProgramForm] = useState<ProgramForm>({
     name: '',
     description: '',
-    default_duration: 60,
     color_class: 'bg-blue-500',
     text_color_class: 'text-white',
     default_instructor_id: undefined
@@ -71,7 +69,6 @@ export default function ProgramsInstructorsPage() {
     setProgramForm({
       name: '',
       description: '',
-      default_duration: 60,
       color_class: 'bg-blue-500',
       text_color_class: 'text-white',
       default_instructor_id: undefined
@@ -228,7 +225,6 @@ export default function ProgramsInstructorsPage() {
                               setProgramForm({
                                 name: program.name,
                                 description: program.description || '',
-                                default_duration: program.default_duration,
                                 color_class: program.color_class,
                                 text_color_class: program.text_color_class,
                                 default_instructor_id: program.default_instructor_id
@@ -247,10 +243,6 @@ export default function ProgramsInstructorsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
-                        <div className="flex items-center text-sm text-gray-600">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {program.default_duration}分
-                        </div>
                         {defaultInstructor && (
                           <div className="flex items-center text-sm text-gray-600">
                             <User className="w-4 h-4 mr-1" />
@@ -381,19 +373,6 @@ export default function ProgramsInstructorsPage() {
                 />
               </div>
               
-              <div>
-                <Label htmlFor="program-duration">デフォルト時間（分）</Label>
-                <Input
-                  id="program-duration"
-                  type="number"
-                  min="15"
-                  max="180"
-                  value={programForm.default_duration}
-                  onChange={(e) => setProgramForm(prev => ({ ...prev, default_duration: parseInt(e.target.value) }))}
-                  required
-                />
-              </div>
-
               <div>
                 <Label htmlFor="default-instructor">デフォルトインストラクター（任意）</Label>
                 <select

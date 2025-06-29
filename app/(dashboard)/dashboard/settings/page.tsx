@@ -11,11 +11,19 @@ import { Switch } from '@/components/ui/switch'
 
 interface ConnectionSettings {
   appBaseUrl: string
+  lineChannelAccessToken: string
+  lineChannelSecret: string
+  liffId: string
+  richMenuId: string
 }
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ConnectionSettings>({
-    appBaseUrl: ''
+    appBaseUrl: '',
+    lineChannelAccessToken: '',
+    lineChannelSecret: '',
+    liffId: '',
+    richMenuId: ''
   })
 
   const [googleSheetsSettings, setGoogleSheetsSettings] = useState({
@@ -42,7 +50,11 @@ export default function SettingsPage() {
       
       if (data.success && data.connection) {
         setSettings({
-          appBaseUrl: data.connection.appBaseUrl || ''
+          appBaseUrl: data.connection.appBaseUrl || '',
+          lineChannelAccessToken: data.connection.lineChannelAccessToken || '',
+          lineChannelSecret: data.connection.lineChannelSecret || '',
+          liffId: data.connection.liffId || '',
+          richMenuId: data.connection.richMenuId || ''
         })
       }
       
@@ -133,6 +145,32 @@ export default function SettingsPage() {
     }
   }
 
+  const testLineOfficial = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/test-connection?type=line-official', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+
+      const result = await response.json()
+      setTestResults(prev => ({ ...prev, lineOfficial: result.success }))
+      
+      if (result.success) {
+        alert('LINE公式アカウント接続テストが成功しました')
+      } else {
+        alert(`LINE公式アカウント接続テストが失敗しました: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('LINE公式アカウント接続テストエラー:', error)
+      setTestResults(prev => ({ ...prev, lineOfficial: false }))
+      alert('LINE公式アカウント接続テストに失敗しました')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const updateSetting = (key: keyof ConnectionSettings, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
@@ -184,6 +222,95 @@ export default function SettingsPage() {
             <p className="text-xs text-gray-500 mt-1">
               このアプリケーションのベースURL
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* LINE公式アカウント設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5 text-green-500" />
+            LINE公式アカウント連携
+          </CardTitle>
+          <CardDescription>
+            LINE Messaging API設定とLIFF設定を管理します
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="lineChannelAccessToken">チャンネルアクセストークン</Label>
+            <div className="relative">
+              <Input
+                id="lineChannelAccessToken"
+                type={showSecrets ? 'text' : 'password'}
+                value={settings.lineChannelAccessToken}
+                onChange={(e) => updateSetting('lineChannelAccessToken', e.target.value)}
+                placeholder="LINE Developers > Messaging API > チャンネルアクセストークン"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSecrets(!showSecrets)}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+              >
+                {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="lineChannelSecret">チャンネルシークレット</Label>
+            <Input
+              id="lineChannelSecret"
+              type={showSecrets ? 'text' : 'password'}
+              value={settings.lineChannelSecret}
+              onChange={(e) => updateSetting('lineChannelSecret', e.target.value)}
+              placeholder="LINE Developers > Basic settings > チャンネルシークレット"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="liffId">LIFF ID</Label>
+            <Input
+              id="liffId"
+              value={settings.liffId}
+              onChange={(e) => updateSetting('liffId', e.target.value)}
+              placeholder="LINE Developers > LIFF > LIFF ID"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="richMenuId">リッチメニューID（任意）</Label>
+            <Input
+              id="richMenuId"
+              value={settings.richMenuId}
+              onChange={(e) => updateSetting('richMenuId', e.target.value)}
+              placeholder="richMenuId-xxxxx..."
+            />
+          </div>
+          
+          <div className="flex space-x-2">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={testLineOfficial}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <TestTube className="h-4 w-4" />
+              {loading ? '接続テスト中...' : 'LINE接続テスト'}
+            </Button>
+            {testResults.lineOfficial !== null && (
+              <div className={`px-3 py-2 rounded-md text-sm ${
+                testResults.lineOfficial 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {testResults.lineOfficial ? '✓ 接続成功' : '✗ 接続失敗'}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

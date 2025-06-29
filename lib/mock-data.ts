@@ -1,3 +1,5 @@
+import { Program, Instructor, Studio, Schedule, Reservation } from '@/types/api'
+
 // 開発用のモックデータ（データベースが使用できない場合の代替）
 
 export const mockSchedules = {
@@ -77,43 +79,39 @@ export const mockSchedules = {
   ],
 }
 
-export const mockPrograms = [
+export const mockPrograms: Program[] = [
   {
     id: 1,
-    name: 'ヨガ',
+    name: 'ヨガベーシック',
+    description: '初心者向けの基本的なヨガレッスンです',
     color_class: 'bg-green-500',
     text_color_class: 'text-white',
-    default_duration: 60,
-    description: 'リラックス効果のあるヨガクラス',
-    default_instructor_id: 1,
+    default_instructor_id: 1
   },
   {
     id: 2,
-    name: 'ピラティス',
-    color_class: 'bg-purple-500',
+    name: 'HIIT',
+    description: '高強度インターバルトレーニングで効率的に脂肪燃焼',
+    color_class: 'bg-red-500',
     text_color_class: 'text-white',
-    default_duration: 45,
-    description: 'コア強化に特化したピラティス',
-    default_instructor_id: 3,
+    default_instructor_id: 2
   },
   {
     id: 3,
-    name: 'ズンバ',
-    color_class: 'bg-red-500',
+    name: 'ピラティス',
+    description: '体幹を鍛えて姿勢改善を目指します',
+    color_class: 'bg-purple-500',
     text_color_class: 'text-white',
-    default_duration: 60,
-    description: 'ダンスフィットネス',
-    default_instructor_id: 2,
+    default_instructor_id: 3
   },
   {
     id: 4,
-    name: 'HIIT',
+    name: 'エアロビクス',
+    description: '音楽に合わせて楽しく有酸素運動',
     color_class: 'bg-orange-500',
     text_color_class: 'text-white',
-    default_duration: 30,
-    description: '高強度インターバルトレーニング',
-    default_instructor_id: 2,
-  },
+    default_instructor_id: 1
+  }
 ]
 
 export const mockInstructors = [

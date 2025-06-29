@@ -33,11 +33,12 @@ export interface CreateReservationData {
 export interface Program {
   id: number;
   name: string;
+  description?: string;
   color_class: string;
   text_color_class: string;
-  default_duration: number;
-  description?: string;
   default_instructor_id?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Instructor {

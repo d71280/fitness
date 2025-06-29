@@ -9,9 +9,8 @@ export const dynamic = 'force-dynamic'
 const createProgramSchema = z.object({
   name: z.string().min(1, 'プログラム名は必須です'),
   description: z.string().optional(),
-  default_duration: z.number().min(15).max(180),
-  color_class: z.string(),
-  text_color_class: z.string(),
+  color_class: z.string().default('bg-blue-500'),
+  text_color_class: z.string().default('text-white'),
   default_instructor_id: z.number().optional()
 })
 
