@@ -37,6 +37,7 @@ export interface Program {
   text_color_class: string;
   default_duration: number;
   description?: string;
+  default_instructor_id?: number;
 }
 
 export interface Instructor {

@@ -32,7 +32,7 @@ const navigation = [
     icon: UserCheck
   },
   {
-    name: 'プログラム・講師管理',
+    name: 'プログラム・インストラクター管理',
     href: '/dashboard/programs',
     icon: Activity
   },

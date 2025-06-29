@@ -10,6 +10,7 @@ export interface Database {
           text_color_class: string
           default_duration: number
           description: string | null
+          default_instructor_id: number | null
           is_active: boolean
           created_at: string
           updated_at: string
@@ -21,6 +22,7 @@ export interface Database {
           text_color_class?: string
           default_duration?: number
           description?: string | null
+          default_instructor_id?: number | null
           is_active?: boolean
           created_at?: string
           updated_at?: string
@@ -32,6 +34,7 @@ export interface Database {
           text_color_class?: string
           default_duration?: number
           description?: string | null
+          default_instructor_id?: number | null
           is_active?: boolean
           created_at?: string
           updated_at?: string

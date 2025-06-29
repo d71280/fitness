@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { LStepClient } from '@/lib/lstep'
 import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'
 import { z } from 'zod'
 
@@ -192,105 +191,40 @@ export async function POST(request: NextRequest) {
 
       if (reservationError) throw reservationError
 
-      // Lステップ経由で予約確認通知
-      const lstepClient = new LStepClient()
-      const bookingData = {
-        id: reservation.id,
-        date: schedule.date,
-        time: `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`,
-        program: schedule.program.name,
-        instructor: schedule.instructor.name,
-        studio: schedule.studio.name,
-        customerName: customer.name,
-      }
-
-      const notificationResult = await lstepClient.sendBookingConfirmation(lineId, bookingData)
-      
-      // 通知ログを記録
-      await lstepClient.logNotification(
-        customer.id,
-        reservation.id,
-        'booking_confirmation',
-        bookingData,
-        notificationResult
-      )
-
       // スプレッドシートに予約を記録
-      const sheetsClient = new GoogleSheetsClient()
-      const spreadsheetData: SpreadsheetBookingData = {
-        予約ID: reservation.id,
-        予約日時: schedule.date,
-        顧客名: customer.name,
-        電話番号: customer.phone || '',
-        プログラム: schedule.program.name,
-        インストラクター: schedule.instructor.name,
-        スタジオ: schedule.studio.name,
-        開始時間: schedule.start_time,
-        終了時間: schedule.end_time,
-        ステータス: 'confirmed',
-        LINE_ID: customer.line_id || ''
-      }
+      try {
+        const sheetsClient = new GoogleSheetsClient()
+        const spreadsheetData: SpreadsheetBookingData = {
+          予約ID: reservation.id,
+          予約日時: schedule.date,
+          顧客名: customer.name,
+          電話番号: customer.phone || '',
+          プログラム: schedule.program.name,
+          インストラクター: schedule.instructor.name,
+          スタジオ: schedule.studio.name,
+          開始時間: schedule.start_time,
+          終了時間: schedule.end_time,
+          ステータス: 'confirmed',
+          LINE_ID: customer.line_id || ''
+        }
 
-      const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)
-      console.log('スプレッドシート連携結果:', sheetsResult)
+        const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)
+        console.log('スプレッドシート連携結果:', sheetsResult)
+      } catch (sheetsError) {
+        console.warn('スプレッドシート連携エラー:', sheetsError)
+        // エラーでも予約は継続（スプレッドシート連携は補助機能）
+      }
 
       return NextResponse.json({
         success: true,
         reservation,
-        message: '予約が完了しました',
-        notification: notificationResult.success ? 'LINE通知を送信しました' : 'LINE通知の送信に失敗しました',
+        message: '予約が完了しました'
       }, { status: 201 })
 
     } catch (dbError) {
       console.warn('Supabase操作エラー、フォールバック処理を実行:', dbError)
       
-      // スケジュール情報を取得してLINE通知に使用
-      let notificationResult
-      try {
-        console.log(`スケジュール情報を取得中: ${scheduleId}`)
-        const response = await fetch(`${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/schedules/${scheduleId}`)
-        
-        if (!response.ok) {
-          throw new Error(`スケジュール取得API エラー: ${response.status}`)
-        }
-        
-        const scheduleData = await response.json()
-        console.log('取得したスケジュールデータ:', scheduleData)
-        
-        // 取得したスケジュール情報でLINE通知を送信
-        const lstepClient = new LStepClient()
-        const accurateBookingData = {
-          id: Date.now(),
-          date: scheduleData.date,
-          time: scheduleData.time,
-          program: scheduleData.program,
-          instructor: scheduleData.instructor,
-          studio: scheduleData.studio,
-          customerName: customerName,
-        }
-
-        console.log('LINE通知用データ:', accurateBookingData)
-        notificationResult = await lstepClient.sendBookingConfirmation(lineId, accurateBookingData)
-      } catch (fetchError) {
-        console.error('スケジュールデータ取得失敗:', fetchError)
-        
-        // 最終フォールバック：デフォルトスケジュール情報でLINE通知
-        const lstepClient = new LStepClient()
-        const fallbackBookingData = {
-          id: Date.now(),
-          date: new Date().toISOString().split('T')[0],
-          time: '10:00 - 11:00',
-          program: `スケジュール${scheduleId}のクラス`,
-          instructor: '担当インストラクター',
-          studio: '第1スタジオ',
-          customerName: customerName,
-        }
-
-        console.log('フォールバック用データ:', fallbackBookingData)
-        notificationResult = await lstepClient.sendBookingConfirmation(lineId, fallbackBookingData)
-      }
-      
-      // フォールバック応答を返す
+      // フォールバック応答を返す（スプレッドシート連携は省略）
       return NextResponse.json({
         success: true,
         reservation: {
@@ -311,7 +245,6 @@ export async function POST(request: NextRequest) {
           },
         },
         message: '予約が完了しました（Supabase接続エラー時のフォールバック）',
-        notification: notificationResult.success ? 'LINE通知を送信しました' : 'LINE通知の送信に失敗しました',
         debug: {
           dbError: 'Supabase connection failed, using fallback data',
           scheduleId: scheduleId,

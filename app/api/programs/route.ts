@@ -11,7 +11,8 @@ const createProgramSchema = z.object({
   description: z.string().optional(),
   default_duration: z.number().min(15).max(180),
   color_class: z.string(),
-  text_color_class: z.string()
+  text_color_class: z.string(),
+  default_instructor_id: z.number().optional()
 })
 
 const updateProgramSchema = createProgramSchema.extend({

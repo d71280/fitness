@@ -27,6 +27,7 @@ interface ProgramForm {
   default_duration: number
   color_class: string
   text_color_class: string
+  default_instructor_id?: number
 }
 
 interface InstructorForm {
@@ -52,7 +53,8 @@ export default function ProgramsInstructorsPage() {
     description: '',
     default_duration: 60,
     color_class: 'bg-blue-500',
-    text_color_class: 'text-white'
+    text_color_class: 'text-white',
+    default_instructor_id: undefined
   })
   
   const [instructorForm, setInstructorForm] = useState<InstructorForm>({
@@ -71,7 +73,8 @@ export default function ProgramsInstructorsPage() {
       description: '',
       default_duration: 60,
       color_class: 'bg-blue-500',
-      text_color_class: 'text-white'
+      text_color_class: 'text-white',
+      default_instructor_id: undefined
     })
     setIsModalOpen(true)
   }
@@ -149,6 +152,11 @@ export default function ProgramsInstructorsPage() {
     { value: 'bg-indigo-500', label: 'インディゴ' }
   ]
 
+  // インストラクター情報を取得する関数
+  const getInstructorById = (id: number) => {
+    return instructors.find(instructor => instructor.id === id)
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -201,49 +209,60 @@ export default function ProgramsInstructorsPage() {
             <div className="text-center py-8 text-red-500">エラー: {programsError}</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {programs.map((program) => (
-                <Card key={program.id} className="relative">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className={`px-3 py-1 rounded-full text-sm font-medium ${program.color_class} ${program.text_color_class}`}>
-                        {program.name}
+              {programs.map((program) => {
+                const defaultInstructor = program.default_instructor_id ? getInstructorById(program.default_instructor_id) : null
+                
+                return (
+                  <Card key={program.id} className="relative">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div className={`px-3 py-1 rounded-full text-sm font-medium ${program.color_class} ${program.text_color_class}`}>
+                          {program.name}
+                        </div>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingItem(program)
+                              setProgramForm({
+                                name: program.name,
+                                description: program.description || '',
+                                default_duration: program.default_duration,
+                                color_class: program.color_class,
+                                text_color_class: program.text_color_class,
+                                default_instructor_id: program.default_instructor_id
+                              })
+                              setModalType('program')
+                              setIsModalOpen(true)
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-red-500">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setEditingItem(program)
-                            setProgramForm({
-                              name: program.name,
-                              description: program.description || '',
-                              default_duration: program.default_duration,
-                              color_class: program.color_class,
-                              text_color_class: program.text_color_class
-                            })
-                            setModalType('program')
-                            setIsModalOpen(true)
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-500">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {program.default_duration}分
+                        </div>
+                        {defaultInstructor && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <User className="w-4 h-4 mr-1" />
+                            {defaultInstructor.name}
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-700">{program.description}</p>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {program.default_duration}分
-                      </div>
-                      <p className="text-sm text-gray-700">{program.description}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>
@@ -267,16 +286,11 @@ export default function ProgramsInstructorsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {instructors.map((instructor) => (
-                <Card key={instructor.id}>
+                <Card key={instructor.id} className="relative">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-500" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">{instructor.name}</h3>
-                        </div>
+                      <div className="text-lg font-medium">
+                        {instructor.name}
                       </div>
                       <div className="flex space-x-1">
                         <Button
@@ -378,6 +392,29 @@ export default function ProgramsInstructorsPage() {
                   onChange={(e) => setProgramForm(prev => ({ ...prev, default_duration: parseInt(e.target.value) }))}
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="default-instructor">デフォルトインストラクター（任意）</Label>
+                <select
+                  id="default-instructor"
+                  value={programForm.default_instructor_id?.toString() || ''}
+                  onChange={(e) => setProgramForm(prev => ({ 
+                    ...prev, 
+                    default_instructor_id: e.target.value ? parseInt(e.target.value) : undefined 
+                  }))}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">インストラクターを選択（任意）</option>
+                  {instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.id.toString()}>
+                      {instructor.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  このプログラムでよく担当するインストラクターを設定できます
+                </p>
               </div>
               
               <div>

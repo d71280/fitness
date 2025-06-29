@@ -85,6 +85,7 @@ export const mockPrograms = [
     text_color_class: 'text-white',
     default_duration: 60,
     description: 'リラックス効果のあるヨガクラス',
+    default_instructor_id: 1,
   },
   {
     id: 2,
@@ -93,6 +94,7 @@ export const mockPrograms = [
     text_color_class: 'text-white',
     default_duration: 45,
     description: 'コア強化に特化したピラティス',
+    default_instructor_id: 3,
   },
   {
     id: 3,
@@ -101,6 +103,7 @@ export const mockPrograms = [
     text_color_class: 'text-white',
     default_duration: 60,
     description: 'ダンスフィットネス',
+    default_instructor_id: 2,
   },
   {
     id: 4,
@@ -109,6 +112,7 @@ export const mockPrograms = [
     text_color_class: 'text-white',
     default_duration: 30,
     description: '高強度インターバルトレーニング',
+    default_instructor_id: 2,
   },
 ]
 
