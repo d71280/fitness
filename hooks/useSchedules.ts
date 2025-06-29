@@ -116,10 +116,6 @@ export function useSchedules(weekStart: string) {
   }
 
   const addSchedule = async (scheduleData: CreateScheduleData) => {
-    if (usingMockData) {
-      throw new Error('現在はデモモードです。実際のスケジュール追加はできません。')
-    }
-
     try {
       const response = await fetch('/api/schedules', {
         method: 'POST',
@@ -127,21 +123,24 @@ export function useSchedules(weekStart: string) {
         body: JSON.stringify(scheduleData),
       })
 
-      if (!response.ok) throw new Error('スケジュール追加に失敗しました')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'スケジュール追加に失敗しました')
+      }
       
       const result = await response.json()
-      await fetchSchedules() // 再取得
+      
+      // 成功時はローカルデータを再取得
+      await fetchSchedules()
+      
       return result
     } catch (error) {
+      console.error('スケジュール追加エラー:', error)
       throw error
     }
   }
 
   const addRecurringSchedule = async (scheduleData: CreateScheduleData) => {
-    if (usingMockData) {
-      throw new Error('現在はデモモードです。実際のスケジュール追加はできません。')
-    }
-
     try {
       const response = await fetch('/api/schedules/recurring', {
         method: 'POST',
@@ -149,12 +148,19 @@ export function useSchedules(weekStart: string) {
         body: JSON.stringify(scheduleData),
       })
 
-      if (!response.ok) throw new Error('繰り返しスケジュール追加に失敗しました')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '繰り返しスケジュール追加に失敗しました')
+      }
       
       const result = await response.json()
-      await fetchSchedules() // 再取得
+      
+      // 成功時はローカルデータを再取得
+      await fetchSchedules()
+      
       return result
     } catch (error) {
+      console.error('繰り返しスケジュール追加エラー:', error)
       throw error
     }
   }

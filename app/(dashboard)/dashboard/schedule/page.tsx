@@ -62,7 +62,10 @@ export default function AdminSchedulePage() {
         <div className={`p-4 rounded-md ${usingMockData ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
           <div className={`text-sm ${usingMockData ? 'text-yellow-800' : 'text-red-800'}`}>
             {usingMockData ? '⚠️ ' : '❌ '}
-            {error}
+            {usingMockData 
+              ? 'デモモードで動作中です。追加したスケジュールはサンプルデータとして表示されますが、実際のデータベースには保存されません。' 
+              : error
+            }
           </div>
         </div>
       )}
@@ -71,7 +74,7 @@ export default function AdminSchedulePage() {
         schedules={schedules}
         onAddSchedule={handleAddSchedule}
         onScheduleClick={handleScheduleClick}
-        showAddButton={!usingMockData} // デモモード時は追加ボタンを非表示
+        showAddButton={true}
       />
 
       <AddScheduleModal

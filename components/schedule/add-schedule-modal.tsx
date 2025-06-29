@@ -79,7 +79,8 @@ export function AddScheduleModal({
       })
     } catch (error) {
       console.error('スケジュール作成エラー:', error)
-      alert('スケジュール作成に失敗しました')
+      const errorMessage = error instanceof Error ? error.message : 'スケジュール作成に失敗しました'
+      alert(`エラー: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
