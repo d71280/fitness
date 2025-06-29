@@ -21,6 +21,21 @@ export function ScheduleBlock({ schedule, onClick }: ScheduleBlockProps) {
     return 'text-white'
   }
 
+  // APIレスポンスの形式に対応（start_time/end_time と startTime/endTime両方をサポート）
+  const getStartTime = () => {
+    return schedule.startTime || (schedule as any).start_time || '時間未設定'
+  }
+
+  const getEndTime = () => {
+    return schedule.endTime || (schedule as any).end_time || '時間未設定'
+  }
+
+  // 時間フォーマット関数（秒を除去）
+  const formatTime = (timeStr: string) => {
+    if (!timeStr || timeStr === '時間未設定') return timeStr
+    return timeStr.substring(0, 5) // HH:MM:SS → HH:MM
+  }
+
   return (
     <div
       className={cn(
@@ -32,7 +47,7 @@ export function ScheduleBlock({ schedule, onClick }: ScheduleBlockProps) {
     >
       {/* 時間 */}
       <div className="text-sm font-bold mb-2">
-        {schedule.startTime} - {schedule.endTime}
+        {formatTime(getStartTime())} - {formatTime(getEndTime())}
       </div>
       
       {/* プログラム名 */}

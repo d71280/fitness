@@ -14,16 +14,15 @@ export interface Schedule {
 }
 
 export interface CreateScheduleData {
-  baseDate: string;
+  date: string;
   startTime: string;
   endTime: string;
   programId: number;
   instructorId: number;
   studioId: number;
   capacity: number;
-  repeat: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-  repeatEndDate?: string;
-  repeatCount?: number;
+  repeat?: 'none' | 'daily' | 'weekly';
+  endDate?: string;
 }
 
 export interface CreateReservationData {
@@ -87,4 +86,15 @@ export interface Reservation {
     instructor?: Instructor;
     studio?: Studio;
   };
+}
+
+export interface UpdateScheduleData {
+  id: number;
+  date: string;
+  startTime: string;
+  endTime: string;
+  programId: number;
+  instructorId: number;
+  studioId: number;
+  capacity: number;
 }

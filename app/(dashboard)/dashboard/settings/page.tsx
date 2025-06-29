@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone } from 'lucide-react'
+import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone, MessageSquare } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Select } from '@/components/ui/select'
 
 interface ConnectionSettings {
   appBaseUrl: string
@@ -43,6 +44,17 @@ export default function SettingsPage() {
     reminder: null
   })
   const [showSecrets, setShowSecrets] = useState(false)
+  const [messageSettings, setMessageSettings] = useState({
+    bookingConfirmation: {
+      enabled: true,
+      messageText: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n🏢 スタジオ: {studio}\n\nお忘れなくお越しください！'
+    },
+    reminder: {
+      enabled: true,
+      hoursBefore: 24,
+      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
+    }
+  })
 
   // 設定読み込み
   useEffect(() => {
@@ -65,6 +77,10 @@ export default function SettingsPage() {
       if (data.success && data.googleSheets) {
         setGoogleSheetsSettings(data.googleSheets)
       }
+
+      if (data.success && data.messages) {
+        setMessageSettings(data.messages)
+      }
     } catch (error) {
       console.error('設定読み込みエラー:', error)
     }
@@ -78,7 +94,8 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connection: settings,
-          googleSheets: googleSheetsSettings
+          googleSheets: googleSheetsSettings,
+          messages: messageSettings
         })
       })
 
@@ -457,6 +474,111 @@ export default function SettingsPage() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* メッセージ設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-blue-500" />
+            メッセージ設定
+          </CardTitle>
+          <CardDescription>
+            予約完了時とリマインド通知のメッセージ内容を設定できます
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* 予約完了メッセージ */}
+          <div>
+            <div className="flex items-center space-x-2 mb-3">
+              <Switch
+                checked={messageSettings.bookingConfirmation.enabled}
+                onCheckedChange={(checked) => 
+                  setMessageSettings(prev => ({
+                    ...prev,
+                    bookingConfirmation: { ...prev.bookingConfirmation, enabled: checked }
+                  }))
+                }
+              />
+              <Label className="font-medium">予約完了メッセージを送信</Label>
+            </div>
+            
+            <Label htmlFor="bookingMessage" className="text-sm text-gray-600">
+              メッセージ内容 ({'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}が使用可能)
+            </Label>
+            <Textarea
+              id="bookingMessage"
+              value={messageSettings.bookingConfirmation.messageText}
+              onChange={(e) =>
+                setMessageSettings(prev => ({
+                  ...prev,
+                  bookingConfirmation: { ...prev.bookingConfirmation, messageText: e.target.value }
+                }))
+              }
+              placeholder="予約完了メッセージを入力してください"
+              rows={6}
+              className="mt-2"
+              disabled={!messageSettings.bookingConfirmation.enabled}
+            />
+          </div>
+
+          {/* リマインドメッセージ */}
+          <div>
+            <div className="flex items-center space-x-2 mb-3">
+              <Switch
+                checked={messageSettings.reminder.enabled}
+                onCheckedChange={(checked) => 
+                  setMessageSettings(prev => ({
+                    ...prev,
+                    reminder: { ...prev.reminder, enabled: checked }
+                  }))
+                }
+              />
+              <Label className="font-medium">リマインドメッセージを送信</Label>
+            </div>
+
+            <div className="mb-4">
+              <Label htmlFor="reminderHours" className="text-sm text-gray-600">
+                レッスンの何時間前に送信するか
+              </Label>
+              <Select
+                value={messageSettings.reminder.hoursBefore.toString()}
+                onValueChange={(value: string) =>
+                  setMessageSettings(prev => ({
+                    ...prev,
+                    reminder: { ...prev.reminder, hoursBefore: parseInt(value) }
+                  }))
+                }
+                disabled={!messageSettings.reminder.enabled}
+              >
+                <option value="1">1時間前</option>
+                <option value="3">3時間前</option>
+                <option value="6">6時間前</option>
+                <option value="12">12時間前</option>
+                <option value="24">24時間前（1日前）</option>
+                <option value="48">48時間前（2日前）</option>
+              </Select>
+            </div>
+            
+            <Label htmlFor="reminderMessage" className="text-sm text-gray-600">
+              メッセージ内容 ({'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}が使用可能)
+            </Label>
+            <Textarea
+              id="reminderMessage"
+              value={messageSettings.reminder.messageText}
+              onChange={(e) =>
+                setMessageSettings(prev => ({
+                  ...prev,
+                  reminder: { ...prev.reminder, messageText: e.target.value }
+                }))
+              }
+              placeholder="リマインドメッセージを入力してください"
+              rows={6}
+              className="mt-2"
+              disabled={!messageSettings.reminder.enabled}
+            />
+          </div>
         </CardContent>
       </Card>
 
