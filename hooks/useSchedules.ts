@@ -117,25 +117,48 @@ export function useSchedules(weekStart: string) {
 
   const addSchedule = async (scheduleData: CreateScheduleData) => {
     try {
+      console.log('=== useSchedules.addSchedule開始 ===')
+      console.log('受信データ:', scheduleData)
+      
+      // APIが期待するフォーマットに変換
+      const apiData = {
+        baseDate: scheduleData.date,
+        startTime: scheduleData.startTime,
+        endTime: scheduleData.endTime,
+        programId: scheduleData.programId,
+        instructorId: scheduleData.instructorId,
+        studioId: scheduleData.studioId,
+        capacity: scheduleData.capacity,
+      }
+
+      console.log('API送信データ:', apiData)
+
       const response = await fetch('/api/schedules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scheduleData),
+        body: JSON.stringify(apiData),
       })
+
+      console.log('API応答ステータス:', response.status)
+      console.log('API応答OK:', response.ok)
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('API応答エラーデータ:', errorData)
         throw new Error(errorData.error || 'スケジュール追加に失敗しました')
       }
       
       const result = await response.json()
+      console.log('API応答成功データ:', result)
       
       // 成功時はローカルデータを再取得
       await fetchSchedules()
       
       return result
     } catch (error) {
-      console.error('スケジュール追加エラー:', error)
+      console.error('=== addSchedule エラー詳細 ===')
+      console.error('エラーオブジェクト:', error)
+      console.error('エラーメッセージ:', error instanceof Error ? error.message : 'Unknown error')
       throw error
     }
   }

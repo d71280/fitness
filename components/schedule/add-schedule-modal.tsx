@@ -34,9 +34,9 @@ export function AddScheduleModal({
     date: selectedDate,
     startTime: '10:00',
     endTime: '11:00',
-    programId: 0,
-    instructorId: 0,
-    studioId: 0,
+    programId: programs.length > 0 ? programs[0].id : 0,
+    instructorId: instructors.length > 0 ? instructors[0].id : 0,
+    studioId: studios.length > 0 ? studios[0].id : 0,
     capacity: 20,
     repeat: 'none',
   })
@@ -48,6 +48,18 @@ export function AddScheduleModal({
     setFormData(prev => ({ ...prev, date: selectedDate }))
   }, [selectedDate])
 
+  // データが読み込まれた後に初期値を設定
+  useEffect(() => {
+    if (programs.length > 0 && instructors.length > 0 && studios.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        programId: prev.programId === 0 ? programs[0].id : prev.programId,
+        instructorId: prev.instructorId === 0 ? instructors[0].id : prev.instructorId,
+        studioId: prev.studioId === 0 ? studios[0].id : prev.studioId,
+      }))
+    }
+  }, [programs, instructors, studios])
+
   useEffect(() => {
     if (formData.programId && programs.length > 0) {
       const program = programs.find(p => p.id === formData.programId)
@@ -57,28 +69,55 @@ export function AddScheduleModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.programId || !formData.instructorId || !formData.studioId) {
-      alert('全ての必須項目を入力してください')
+    
+    console.log('=== スケジュール作成開始 ===')
+    console.log('フォームデータ:', formData)
+    
+    // バリデーション
+    if (!formData.programId || formData.programId === 0) {
+      alert('プログラムを選択してください')
+      return
+    }
+    if (!formData.instructorId || formData.instructorId === 0) {
+      alert('インストラクターを選択してください')
+      return
+    }
+    if (!formData.studioId || formData.studioId === 0) {
+      alert('スタジオを選択してください')
+      return
+    }
+    if (!formData.startTime || !formData.endTime) {
+      alert('開始時間と終了時間を入力してください')
+      return
+    }
+    if (formData.startTime >= formData.endTime) {
+      alert('終了時間は開始時間より後に設定してください')
       return
     }
 
     setLoading(true)
     try {
+      console.log('onSubmit関数を呼び出し中...')
       await onSubmit(formData)
+      console.log('スケジュール作成成功！')
       onClose()
       // フォームをリセット
       setFormData({
         date: selectedDate,
         startTime: '10:00',
         endTime: '11:00',
-        programId: 0,
-        instructorId: 0,
-        studioId: 0,
+        programId: programs.length > 0 ? programs[0].id : 0,
+        instructorId: instructors.length > 0 ? instructors[0].id : 0,
+        studioId: studios.length > 0 ? studios[0].id : 0,
         capacity: 20,
         repeat: 'none',
       })
     } catch (error) {
-      console.error('スケジュール作成エラー:', error)
+      console.error('=== スケジュール作成エラー詳細 ===')
+      console.error('エラーオブジェクト:', error)
+      console.error('エラーメッセージ:', error instanceof Error ? error.message : 'Unknown error')
+      console.error('エラースタック:', error instanceof Error ? error.stack : 'No stack')
+      
       const errorMessage = error instanceof Error ? error.message : 'スケジュール作成に失敗しました'
       alert(`エラー: ${errorMessage}`)
     } finally {
