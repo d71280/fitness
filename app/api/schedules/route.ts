@@ -72,16 +72,19 @@ export async function POST(request: NextRequest) {
       const supabase = createServiceRoleClient()
       
       // 重複チェック
-      const { data: existingSchedule } = await supabase
+      const { data: existingSchedule, error: checkError } = await supabase
         .from('schedules')
         .select('*')
         .eq('date', data.baseDate)
         .eq('studio_id', data.studioId)
         .eq('start_time', data.startTime)
         .eq('end_time', data.endTime)
-        .single()
+        .maybeSingle()
 
-      if (existingSchedule) {
+      // データベース接続エラーの場合はスキップ
+      if (checkError && !checkError.message.includes('No rows')) {
+        console.warn('重複チェックでエラー、スキップします:', checkError)
+      } else if (existingSchedule) {
         return NextResponse.json(
           { error: '同じ時間帯にスケジュールが既に存在します' },
           { status: 400 }
