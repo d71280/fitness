@@ -31,21 +31,61 @@ export function useReservations() {
   const createReservation = async (data: CreateReservationData) => {
     try {
       setLoading(true)
-      const response = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
+      console.log('🎯 予約作成開始:', data)
+      
+      // タイムアウト設定付きのAbortController
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.log('⏰ 予約APIタイムアウト（10秒）')
+      }, 10000) // 10秒タイムアウト
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '予約に失敗しました')
+      try {
+        const response = await fetch('/api/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId) // タイムアウトをクリア
+        console.log('✅ 予約APIレスポンス受信:', { 
+          status: response.status, 
+          ok: response.ok,
+          statusText: response.statusText 
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'レスポンス解析エラー' }))
+          console.error('❌ 予約API失敗:', errorData)
+          throw new Error(errorData.error || `予約に失敗しました (HTTP ${response.status})`)
+        }
+
+        const result = await response.json()
+        console.log('🎉 予約作成成功:', result)
+        
+        // リスト更新は失敗しても続行
+        try {
+          await fetchReservations()
+          console.log('✅ 予約リスト更新成功')
+        } catch (fetchError) {
+          console.warn('⚠️ 予約リスト更新失敗（予約は成功済み）:', fetchError)
+        }
+        
+        return result
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId)
+        
+        if (fetchError.name === 'AbortError') {
+          console.error('⏰ 予約リクエストタイムアウト')
+          throw new Error('予約処理がタイムアウトしました。時間をおいて再度お試しください。')
+        }
+        
+        console.error('🌐 ネットワークエラー:', fetchError)
+        throw new Error('ネットワーク接続エラーです。インターネット接続を確認してください。')
       }
-
-      const result = await response.json()
-      await fetchReservations() // 作成後にリスト更新
-      return result
     } catch (error) {
+      console.error('❌ 予約作成エラー:', error)
       throw error
     } finally {
       setLoading(false)

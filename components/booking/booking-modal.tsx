@@ -77,9 +77,64 @@ export function BookingModal({
         phone: '',
       })
       alert('予約が完了しました！LINEに確認メッセージをお送りします。')
-    } catch (error) {
-      console.error('予約エラー:', error)
-      alert('予約に失敗しました')
+    } catch (error: any) {
+      console.error('📱 予約処理エラー:', error)
+      
+      // エラーメッセージを詳細に表示
+      let errorMessage = '予約処理でエラーが発生しました'
+      let additionalInfo = ''
+      
+      if (error?.message) {
+        if (error.message.includes('タイムアウト')) {
+          errorMessage = '⏰ 予約処理がタイムアウトしました'
+          additionalInfo = `
+          
+【重要】予約が完了している可能性があります！
+サーバーの処理に時間がかかっているだけで、実際には予約が成功している場合があります。
+
+【確認方法】
+1. 数分後にスケジュール画面を再読み込み
+2. 予約確認LINEメッセージをチェック
+3. 重複予約を避けるため、再予約前に必ずご確認ください`
+        } else if (error.message.includes('ネットワーク')) {
+          errorMessage = '🌐 ネットワーク接続エラー'
+          additionalInfo = `
+          
+インターネット接続を確認してください。
+LINEアプリの設定で「外部リンクをブラウザで開く」がオンになっている場合は、オフにしてお試しください。`
+        } else if (error.message.includes('400')) {
+          errorMessage = '📝 入力データエラー'
+          additionalInfo = '\n\n入力内容をご確認ください。'
+        } else if (error.message.includes('404')) {
+          errorMessage = '🔍 スケジュールが見つかりません'
+          additionalInfo = '\n\nページを再読み込みしてお試しください。'
+        } else {
+          errorMessage = `予約エラー: ${error.message}`
+          additionalInfo = `
+          
+【重要】このエラーでも予約が完了している可能性があります！
+1. LINEで確認メッセージが届いていないかチェック
+2. 数分後にスケジュール画面を確認
+3. 不明な場合はスタジオまでお問い合わせください`
+        }
+      }
+      
+             // 詳細ログ出力
+       console.group('🔍 予約エラー詳細分析')
+       console.log('エラーオブジェクト:', error)
+       console.log('エラーメッセージ:', error?.message)
+       console.log('エラータイプ:', error?.name)
+       console.log('予約データ:', {
+         scheduleId: formData.scheduleId,
+         customerName: formData.customerName,
+         lineId: liffUserId,
+         phone: formData.phone
+       })
+       console.log('LIFF ユーザーID:', liffUserId)
+       console.log('スケジュール:', schedule)
+       console.groupEnd()
+      
+      alert(errorMessage + additionalInfo)
     } finally {
       setLoading(false)
     }

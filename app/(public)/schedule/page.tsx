@@ -325,10 +325,25 @@ ${errorDetails.join('\n')}
   }
 
   const handleSubmitReservation = async (data: CreateReservationData) => {
+    console.log('🎯 予約処理開始:', data)
+    
     try {
-      await createReservation(data)
-      await refetch() // スケジュールを再取得して空き状況を更新
+      // 予約作成を実行
+      const result = await createReservation(data)
+      console.log('✅ 予約作成成功:', result)
+      
+      // スケジュール更新を試行（失敗しても予約成功は維持）
+      try {
+        await refetch()
+        console.log('✅ スケジュール更新成功')
+      } catch (refetchError) {
+        console.warn('⚠️ スケジュール更新失敗（予約は成功済み）:', refetchError)
+        // refetchの失敗は無視（予約自体は成功している）
+      }
+      
+      return result
     } catch (error) {
+      console.error('❌ 予約作成失敗:', error)
       throw error
     }
   }
