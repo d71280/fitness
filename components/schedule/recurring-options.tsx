@@ -41,7 +41,7 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
     if (formData.repeatCount) return formData.repeatCount
     if (!formData.repeatEndDate) return '無制限'
 
-    const start = new Date(formData.baseDate)
+    const start = new Date(formData.date)
     const end = new Date(formData.repeatEndDate)
     const diffTime = end.getTime() - start.getTime()
     
@@ -110,7 +110,7 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                     repeatEndDate: e.target.value || undefined,
                     repeatCount: undefined,
                   }))}
-                  min={formData.baseDate}
+                  min={formData.date}
                 />
               </div>
 

@@ -31,7 +31,7 @@ export function AddScheduleModal({
   const { studios } = useStudios()
 
   const [formData, setFormData] = useState<CreateScheduleData>({
-    baseDate: selectedDate,
+    date: selectedDate,
     startTime: '10:00',
     endTime: '11:00',
     programId: 0,
@@ -45,7 +45,7 @@ export function AddScheduleModal({
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, baseDate: selectedDate }))
+    setFormData(prev => ({ ...prev, date: selectedDate }))
   }, [selectedDate])
 
   useEffect(() => {
@@ -68,7 +68,7 @@ export function AddScheduleModal({
       onClose()
       // フォームをリセット
       setFormData({
-        baseDate: selectedDate,
+        date: selectedDate,
         startTime: '10:00',
         endTime: '11:00',
         programId: 0,
@@ -100,8 +100,8 @@ export function AddScheduleModal({
           <Input
             id="date"
             type="date"
-            value={formData.baseDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, baseDate: e.target.value }))}
+            value={formData.date}
+            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
             required
           />
         </div>

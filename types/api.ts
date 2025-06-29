@@ -21,8 +21,9 @@ export interface CreateScheduleData {
   instructorId: number;
   studioId: number;
   capacity: number;
-  repeat?: 'none' | 'daily' | 'weekly';
-  endDate?: string;
+  repeat?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+  repeatEndDate?: string;
+  repeatCount?: number;
 }
 
 export interface CreateReservationData {
