@@ -1,10 +1,32 @@
 'use client'
 
-import { useState } from 'react'
-import { CreateReservationData } from '@/types/api'
+import { useState, useEffect, useCallback } from 'react'
+import { CreateReservationData, Reservation } from '@/types/api'
 
 export function useReservations() {
   const [loading, setLoading] = useState(false)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchReservations = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/reservations')
+      if (!response.ok) throw new Error('予約取得に失敗しました')
+      
+      const data = await response.json()
+      setReservations(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'エラーが発生しました')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchReservations()
+  }, [fetchReservations])
 
   const createReservation = async (data: CreateReservationData) => {
     try {
@@ -21,6 +43,7 @@ export function useReservations() {
       }
 
       const result = await response.json()
+      await fetchReservations() // 作成後にリスト更新
       return result
     } catch (error) {
       throw error
@@ -40,7 +63,9 @@ export function useReservations() {
 
       if (!response.ok) throw new Error('キャンセルに失敗しました')
       
-      return await response.json()
+      const result = await response.json()
+      await fetchReservations() // キャンセル後にリスト更新
+      return result
     } catch (error) {
       throw error
     } finally {
@@ -49,8 +74,11 @@ export function useReservations() {
   }
 
   return {
+    reservations,
     loading,
+    error,
     createReservation,
     cancelReservation,
+    refetch: fetchReservations
   }
 }

@@ -64,3 +64,22 @@ export interface Studio {
   equipment: string[];
   description?: string;
 }
+
+export interface Reservation {
+  id: number;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  schedule_id: number;
+  customer_id: number;
+  customer?: Customer;
+  schedule?: {
+    id: number;
+    date: string;
+    start_time: string;
+    end_time: string;
+    program?: Program;
+    instructor?: Instructor;
+    studio?: Studio;
+  };
+}

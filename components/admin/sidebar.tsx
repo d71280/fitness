@@ -27,24 +27,14 @@ const navigation = [
     icon: Calendar
   },
   {
-    name: '予約管理',
+    name: '予約・顧客管理',
     href: '/dashboard/reservations',
     icon: UserCheck
   },
   {
-    name: '顧客管理',
-    href: '/dashboard/customers',
-    icon: Users
-  },
-  {
-    name: 'プログラム管理',
+    name: 'プログラム・講師管理',
     href: '/dashboard/programs',
     icon: Activity
-  },
-  {
-    name: 'インストラクター',
-    href: '/dashboard/instructors',
-    icon: Dumbbell
   },
   {
     name: '設定',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Program } from '@/types/api'
 
 export function usePrograms() {
@@ -8,25 +8,30 @@ export function usePrograms() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const fetchPrograms = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch('/api/programs')
-        if (!response.ok) throw new Error('プログラム取得に失敗しました')
-        
-        const data = await response.json()
-        setPrograms(data)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'エラーが発生しました')
-      } finally {
-        setLoading(false)
-      }
+  const fetchPrograms = useCallback(async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/programs')
+      if (!response.ok) throw new Error('プログラム取得に失敗しました')
+      
+      const data = await response.json()
+      setPrograms(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'エラーが発生しました')
+    } finally {
+      setLoading(false)
     }
-
-    fetchPrograms()
   }, [])
 
-  return { programs, loading, error }
+  useEffect(() => {
+    fetchPrograms()
+  }, [fetchPrograms])
+
+  return { 
+    programs, 
+    loading, 
+    error, 
+    refetch: fetchPrograms 
+  }
 }
