@@ -13,8 +13,6 @@ interface ConnectionSettings {
   appBaseUrl: string
   lineChannelAccessToken: string
   lineChannelSecret: string
-  liffId: string
-  richMenuId: string
 }
 
 export default function SettingsPage() {
@@ -22,8 +20,6 @@ export default function SettingsPage() {
     appBaseUrl: '',
     lineChannelAccessToken: '',
     lineChannelSecret: '',
-    liffId: '',
-    richMenuId: ''
   })
 
   const [googleSheetsSettings, setGoogleSheetsSettings] = useState({
@@ -53,8 +49,6 @@ export default function SettingsPage() {
           appBaseUrl: data.connection.appBaseUrl || '',
           lineChannelAccessToken: data.connection.lineChannelAccessToken || '',
           lineChannelSecret: data.connection.lineChannelSecret || '',
-          liffId: data.connection.liffId || '',
-          richMenuId: data.connection.richMenuId || ''
         })
       }
       
@@ -268,26 +262,6 @@ export default function SettingsPage() {
               value={settings.lineChannelSecret}
               onChange={(e) => updateSetting('lineChannelSecret', e.target.value)}
               placeholder="LINE Developers > Basic settings > チャンネルシークレット"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="liffId">LIFF ID</Label>
-            <Input
-              id="liffId"
-              value={settings.liffId}
-              onChange={(e) => updateSetting('liffId', e.target.value)}
-              placeholder="LINE Developers > LIFF > LIFF ID"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="richMenuId">リッチメニューID（任意）</Label>
-            <Input
-              id="richMenuId"
-              value={settings.richMenuId}
-              onChange={(e) => updateSetting('richMenuId', e.target.value)}
-              placeholder="richMenuId-xxxxx..."
             />
           </div>
           

@@ -10,14 +10,6 @@ interface ScheduleBlockProps {
 }
 
 export function ScheduleBlock({ schedule, onClick }: ScheduleBlockProps) {
-  // デバッグ用のログ（一時的）
-  console.log('ScheduleBlock render:', {
-    id: schedule.id,
-    startTime: schedule.startTime,
-    endTime: schedule.endTime,
-    program: schedule.program?.name
-  })
-
   // プログラムの色を取得（デフォルト値）
   const getColorClass = () => {
     if (schedule.program?.color_class) return schedule.program.color_class
