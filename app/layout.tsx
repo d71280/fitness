@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { LiffProvider } from '@/components/providers/liff-provider'
+import { UserProvider } from '@/components/auth/user-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,8 +22,10 @@ export default function RootLayout({
         <meta charSet="utf-8" />
       </head>
       <body className={inter.className}>
-        <LiffProvider />
-        {children}
+        <UserProvider>
+          <LiffProvider />
+          {children}
+        </UserProvider>
       </body>
     </html>
   )

@@ -1,81 +1,109 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Menu, LogOut, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { User, LogOut, Bell, Menu } from 'lucide-react'
+import { createClient } from '@/utils/supabase/client'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-interface User {
-  email: string
-  name: string
+interface HeaderProps {
+  onMenuClick: () => void
 }
 
-interface AdminHeaderProps {
-  onMenuClick?: () => void
-}
-
-export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
-  const [user, setUser] = useState<User | null>(null)
+export default function Header({ onMenuClick }: HeaderProps) {
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
-    const userStr = localStorage.getItem('user')
-    if (userStr) {
-      try {
-        setUser(JSON.parse(userStr))
-      } catch (error) {
-        console.error('ユーザー情報の読み込みエラー:', error)
-      }
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
     }
-  }, [])
+    getUser()
+  }, [supabase])
 
-  const handleSignOut = () => {
-    localStorage.removeItem('user')
-    router.push('/')
+  const handleSignOut = async () => {
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('サインアウトエラー:', error)
+      } else {
+        router.push('/auth/signin')
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('サインアウト処理エラー:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-white border-b">
-      <div className="flex items-center space-x-4">
-        {/* ハンバーガーメニュー（モバイルのみ） */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="lg:hidden"
-          onClick={onMenuClick}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        
-        <h1 className="text-lg md:text-xl font-semibold text-gray-800">
-          管理画面
-        </h1>
-      </div>
-
-      <div className="flex items-center space-x-2 md:space-x-4">
-        {/* 通知 */}
-        <Button variant="ghost" size="icon" className="hidden sm:flex">
-          <Bell className="h-5 w-5" />
-        </Button>
-
-        {/* ユーザー情報 */}
-        <div className="flex items-center space-x-1 md:space-x-3">
-          <div className="hidden sm:flex items-center space-x-2">
-            <User className="h-5 w-5 text-gray-500" />
-            <span className="text-sm text-gray-700">
-              {user?.name || 'Admin'}
-            </span>
+    <header className="bg-white shadow-sm border-b">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 justify-between items-center">
+          {/* ハンバーガーメニューボタン（モバイル用） */}
+          <div className="flex items-center lg:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onMenuClick}
+              className="text-gray-500 hover:text-gray-600"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSignOut}
-            className="flex items-center gap-1 md:gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">ログアウト</span>
-          </Button>
+          {/* タイトル */}
+          <div className="flex-1 lg:flex-none">
+            <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
+              フィットネス予約管理システム
+            </h1>
+            <h1 className="text-lg font-semibold text-gray-900 sm:hidden">
+              管理画面
+            </h1>
+          </div>
+
+          {/* ユーザー情報とサインアウトボタン */}
+          <div className="flex items-center space-x-3">
+            {/* デスクトップ用：詳細なユーザー情報 */}
+            <div className="hidden md:flex items-center space-x-3">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <User className="h-4 w-4" />
+                <span>
+                  {user?.user_metadata?.name || user?.email || 'ユーザー'}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                disabled={loading}
+                className="flex items-center space-x-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>{loading ? 'サインアウト中...' : 'サインアウト'}</span>
+              </Button>
+            </div>
+
+            {/* モバイル用：簡略化されたサインアウトボタン */}
+            <div className="md:hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                disabled={loading}
+                className="text-gray-500 hover:text-gray-600"
+                title="サインアウト"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
