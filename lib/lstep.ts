@@ -158,7 +158,7 @@ export class LStepClient {
                 type: 'button',
                 action: {
                   type: 'uri',
-                  label: 'マイページで確認',
+                  label: '予約確認',
                   uri: `${process.env.APP_BASE_URL}/mypage?booking=${bookingData.id}`
                 },
                 style: 'primary',
@@ -167,9 +167,9 @@ export class LStepClient {
               {
                 type: 'button',
                 action: {
-                  type: 'postback',
-                  label: 'キャンセル',
-                  data: `cancel_booking_${bookingData.id}`
+                  type: 'message',
+                  label: '店舗までご連絡ください',
+                  text: 'キャンセルの場合は店舗まで直接ご連絡ください。'
                 },
                 style: 'secondary'
               }

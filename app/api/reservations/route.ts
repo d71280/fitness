@@ -188,19 +188,42 @@ export async function POST(request: NextRequest) {
     } catch (dbError) {
       console.warn('データベース接続エラー、モック応答を返します:', dbError)
       
-      // モックでもLINE通知をテスト
-      const lstepClient = new LStepClient()
-      const mockBookingData = {
-        id: Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        time: '10:00 - 11:00',
-        program: 'モックプログラム',
-        instructor: 'モックインストラクター',
-        studio: 'モックスタジオ',
-        customerName: customerName,
-      }
+      // モックスケジュールデータを取得（開発用）
+      let notificationResult
+      try {
+        const response = await fetch(`${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/schedules/${scheduleId}`)
+        const scheduleData = await response.json()
+        
+        // 実際のスケジュール情報でLINE通知をテスト
+        const lstepClient = new LStepClient()
+        const mockBookingData = {
+          id: Date.now(),
+          date: scheduleData.date || new Date().toISOString().split('T')[0],
+          time: scheduleData.time || `${scheduleData.start_time?.slice(0, 5) || '10:00'} - ${scheduleData.end_time?.slice(0, 5) || '11:00'}`,
+          program: scheduleData.program || 'プログラム名未取得',
+          instructor: scheduleData.instructor || 'インストラクター名未取得',
+          studio: scheduleData.studio || 'スタジオ名未取得',
+          customerName: customerName,
+        }
 
-      const notificationResult = await lstepClient.sendBookingConfirmation(lineId, mockBookingData)
+        notificationResult = await lstepClient.sendBookingConfirmation(lineId, mockBookingData)
+      } catch (fetchError) {
+        console.warn('スケジュールデータ取得失敗、固定モックデータを使用:', fetchError)
+        
+        // フォールバック：固定モックデータでLINE通知
+        const lstepClient = new LStepClient()
+        const fallbackBookingData = {
+          id: Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          time: '10:00 - 11:00',
+          program: 'フィットネスクラス',
+          instructor: 'インストラクター',
+          studio: 'スタジオ',
+          customerName: customerName,
+        }
+
+        notificationResult = await lstepClient.sendBookingConfirmation(lineId, fallbackBookingData)
+      }
       
       // モック応答を返す
       return NextResponse.json({
