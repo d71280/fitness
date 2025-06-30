@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone } from 'lucide-react'
+import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone, AlertCircle } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select } from '@/components/ui/select'
@@ -243,8 +243,9 @@ export default function SettingsPage() {
             <Input
               id="appBaseUrl"
               value={settings.appBaseUrl}
-              onChange={(e) => updateSetting('appBaseUrl', e.target.value)}
-              placeholder="https://yourdomain.com"
+              readOnly
+              className="bg-gray-50"
+              placeholder="環境変数で設定されます"
             />
             <p className="text-xs text-gray-500 mt-1">
               このアプリケーションのベースURL
@@ -272,8 +273,9 @@ export default function SettingsPage() {
                 id="lineChannelAccessToken"
                 type={showSecrets ? 'text' : 'password'}
                 value={settings.lineChannelAccessToken}
-                onChange={(e) => updateSetting('lineChannelAccessToken', e.target.value)}
-                placeholder="LINE Developers > Messaging API > チャンネルアクセストークン"
+                readOnly
+                className="bg-gray-50"
+                placeholder="環境変数で設定されます"
               />
               <Button
                 type="button"
@@ -293,8 +295,9 @@ export default function SettingsPage() {
               id="lineChannelSecret"
               type={showSecrets ? 'text' : 'password'}
               value={settings.lineChannelSecret}
-              onChange={(e) => updateSetting('lineChannelSecret', e.target.value)}
-              placeholder="LINE Developers > Basic settings > チャンネルシークレット"
+              readOnly
+              className="bg-gray-50"
+              placeholder="環境変数で設定されます"
             />
           </div>
           
@@ -355,8 +358,9 @@ export default function SettingsPage() {
                 <Input
                   id="serviceAccountEmail"
                   value={googleSheetsSettings.serviceAccountEmail}
-                  onChange={(e) => updateGoogleSheetsSetting('serviceAccountEmail', e.target.value)}
-                  placeholder="service-account@project.iam.gserviceaccount.com"
+                  readOnly
+                  className="bg-gray-50"
+                  placeholder="環境変数で設定されます"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Google Cloud Platform で作成したサービスアカウントのメールアドレス
@@ -368,8 +372,9 @@ export default function SettingsPage() {
                 <Textarea
                   id="privateKey"
                   value={showSecrets ? googleSheetsSettings.privateKey : maskString(googleSheetsSettings.privateKey)}
-                  onChange={(e) => updateGoogleSheetsSetting('privateKey', e.target.value)}
-                  placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+                  readOnly
+                  className="bg-gray-50"
+                  placeholder="環境変数で設定されます"
                   rows={4}
                 />
                 <div className="flex items-center justify-between mt-1">
@@ -391,8 +396,9 @@ export default function SettingsPage() {
                 <Input
                   id="spreadsheetId"
                   value={googleSheetsSettings.spreadsheetId}
-                  onChange={(e) => updateGoogleSheetsSetting('spreadsheetId', e.target.value)}
-                  placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+                  readOnly
+                  className="bg-gray-50"
+                  placeholder="環境変数で設定されます"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Google SheetsのURLから取得: https://docs.google.com/spreadsheets/d/<strong>ID</strong>/edit
@@ -405,8 +411,9 @@ export default function SettingsPage() {
                   id="lineGroupToken"
                   type={showSecrets ? 'text' : 'password'}
                   value={showSecrets ? googleSheetsSettings.lineGroupToken : maskString(googleSheetsSettings.lineGroupToken)}
-                  onChange={(e) => updateGoogleSheetsSetting('lineGroupToken', e.target.value)}
-                  placeholder="グループ通知用のLINE Botトークン"
+                  readOnly
+                  className="bg-gray-50"
+                  placeholder="環境変数で設定されます"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   事業者グループ通知用のLINE Botアクセストークン（Google Apps Scriptで使用）
