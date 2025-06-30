@@ -169,25 +169,55 @@ export function useSchedules(weekStart: string) {
 
   const addRecurringSchedule = async (scheduleData: CreateScheduleData) => {
     try {
+      console.log('=== useSchedules.addRecurringSchedule開始 ===')
+      console.log('受信データ:', scheduleData)
+
+      // 繰り返しスケジュール用のデータ変換
+      const apiData = {
+        startTime: scheduleData.startTime.includes(':') && scheduleData.startTime.split(':').length === 2 
+          ? scheduleData.startTime + ':00' 
+          : scheduleData.startTime,
+        endTime: scheduleData.endTime.includes(':') && scheduleData.endTime.split(':').length === 2 
+          ? scheduleData.endTime + ':00' 
+          : scheduleData.endTime,
+        programId: scheduleData.programId,
+        instructorId: scheduleData.instructorId,
+        studioId: scheduleData.studioId,
+        capacity: scheduleData.capacity,
+        baseDate: scheduleData.date,
+        repeat: scheduleData.repeat,
+        repeatEndDate: scheduleData.repeatEndDate,
+        repeatCount: scheduleData.repeatCount,
+      }
+
+      console.log('繰り返しスケジュールAPI送信データ:', apiData)
+
       const response = await fetch('/api/schedules/recurring', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scheduleData),
+        body: JSON.stringify(apiData),
       })
+
+      console.log('API応答ステータス:', response.status)
+      console.log('API応答OK:', response.ok)
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('API応答エラーデータ:', errorData)
         throw new Error(errorData.error || '繰り返しスケジュール追加に失敗しました')
       }
       
       const result = await response.json()
+      console.log('API応答成功データ:', result)
       
       // 成功時はローカルデータを再取得
       await fetchSchedules()
       
       return result
     } catch (error) {
-      console.error('繰り返しスケジュール追加エラー:', error)
+      console.error('=== addRecurringSchedule エラー詳細 ===')
+      console.error('エラーオブジェクト:', error)
+      console.error('エラーメッセージ:', error instanceof Error ? error.message : 'Unknown error')
       throw error
     }
   }

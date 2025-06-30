@@ -4,13 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { usePrograms } from '@/hooks/usePrograms'
 import { useInstructors } from '@/hooks/useInstructors'
 import { useStudios } from '@/hooks/useStudios'
 import { Schedule, UpdateScheduleData } from '@/types/api'
-import { X } from 'lucide-react'
 
 interface EditScheduleModalProps {
   isOpen: boolean
@@ -39,7 +37,6 @@ export function EditScheduleModal({
     programId: '',
     instructorId: '',
     studioId: '',
-    capacity: 20
   })
 
   // スケジュールデータを編集フォームに設定
@@ -55,7 +52,6 @@ export function EditScheduleModal({
         programId: schedule.programId?.toString() || '',
         instructorId: schedule.instructorId?.toString() || '',
         studioId: schedule.studioId?.toString() || '',
-        capacity: schedule.capacity || 20
       })
     }
   }, [schedule])
@@ -63,6 +59,24 @@ export function EditScheduleModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!schedule) return
+
+    // バリデーション
+    if (!formData.programId) {
+      alert('プログラムを選択してください')
+      return
+    }
+    if (!formData.instructorId) {
+      alert('インストラクターを選択してください')
+      return
+    }
+    if (!formData.startTime || !formData.endTime) {
+      alert('開始時間と終了時間を入力してください')
+      return
+    }
+    if (formData.startTime >= formData.endTime) {
+      alert('終了時間は開始時間より後に設定してください')
+      return
+    }
 
     try {
       setLoading(true)
@@ -74,7 +88,7 @@ export function EditScheduleModal({
         programId: parseInt(formData.programId),
         instructorId: parseInt(formData.instructorId),
         studioId: parseInt(formData.studioId),
-        capacity: formData.capacity
+        capacity: 20 // 固定値
       })
       onClose()
     } catch (error) {
@@ -115,30 +129,15 @@ export function EditScheduleModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* 基本情報 */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="date">日付</Label>
-            <Input
-              id="date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="capacity">定員</Label>
-            <Input
-              id="capacity"
-              type="number"
-              min="1"
-              max="100"
-              value={formData.capacity}
-              onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) }))}
-              required
-            />
-          </div>
+        <div>
+          <Label htmlFor="date">日付</Label>
+          <Input
+            id="date"
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+            required
+          />
         </div>
 
         {/* 時間設定 */}
@@ -170,10 +169,12 @@ export function EditScheduleModal({
         <div className="space-y-4">
           <div>
             <Label htmlFor="programId">プログラム</Label>
-            <Select
+            <select
+              id="programId"
               value={formData.programId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, programId: value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, programId: e.target.value }))}
               required
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">プログラムを選択</option>
               {programs.map((program) => (
@@ -181,15 +182,17 @@ export function EditScheduleModal({
                   {program.name}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
 
           <div>
             <Label htmlFor="instructorId">インストラクター</Label>
-            <Select
+            <select
+              id="instructorId"
               value={formData.instructorId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, instructorId: value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, instructorId: e.target.value }))}
               required
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">インストラクターを選択</option>
               {instructors.map((instructor) => (
@@ -197,55 +200,48 @@ export function EditScheduleModal({
                   {instructor.name}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
 
           <div>
             <Label htmlFor="studioId">スタジオ</Label>
-            <Select
+            <select
+              id="studioId"
               value={formData.studioId}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, studioId: value }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, studioId: e.target.value }))}
               required
+              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">スタジオを選択</option>
               {studios.map((studio) => (
                 <option key={studio.id} value={studio.id.toString()}>
-                  {studio.name} (定員{studio.capacity}名)
+                  {studio.name}
                 </option>
               ))}
-            </Select>
+            </select>
           </div>
         </div>
 
-        {/* ボタンエリア */}
+        {/* 操作ボタン */}
         <div className="flex justify-between pt-4">
           <div>
             {onDelete && (
-              <Button
-                type="button"
-                variant="destructive"
+              <Button 
+                type="button" 
+                variant="destructive" 
                 onClick={handleDelete}
                 disabled={loading}
               >
-                {loading ? '削除中...' : 'スケジュール削除'}
+                スケジュール削除
               </Button>
             )}
           </div>
           
-          <div className="flex space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-            >
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
-            
-            <Button
-              type="submit"
-              disabled={loading}
-            >
+            <Button type="submit" disabled={loading}>
               {loading ? '更新中...' : 'スケジュール更新'}
             </Button>
           </div>

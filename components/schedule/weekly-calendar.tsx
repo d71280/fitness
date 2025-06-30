@@ -89,8 +89,8 @@ export function WeeklyCalendar({
           const weekendClass = isWeekend(date) ? 'bg-gray-50' : 'bg-white'
 
           return (
-            <Card key={dateStr} className={`${todayClass} ${weekendClass}`}>
-              <CardHeader className="pb-2">
+            <Card key={dateStr} className={`${todayClass} ${weekendClass} min-h-[120px]`}>
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">{dayNames[index]}</span>
@@ -104,7 +104,7 @@ export function WeeklyCalendar({
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 pb-4">
                 {/* 新規追加ボタン（管理画面でのみ表示） */}
                 {showAddButton && onAddSchedule && (
                   <Button
@@ -130,8 +130,8 @@ export function WeeklyCalendar({
                 </div>
 
                 {/* 空の日の表示 */}
-                {daySchedules.length === 0 && (
-                  <div className="text-center text-gray-400 text-xs py-4">
+                {daySchedules.length === 0 && !showAddButton && (
+                  <div className="text-center text-gray-400 text-xs py-6">
                     予定なし
                   </div>
                 )}
@@ -150,23 +150,26 @@ export function WeeklyCalendar({
           const weekendClass = isWeekend(date) ? 'bg-gray-50' : 'bg-white'
 
           return (
-            <Card key={dateStr} className={`${todayClass} ${weekendClass}`}>
-              <CardHeader className="pb-2">
+            <Card key={dateStr} className={`${todayClass} ${weekendClass} min-h-[300px] flex flex-col`}>
+              <CardHeader className="pb-3 flex-shrink-0">
                 <CardTitle className="text-center">
                   <div className="text-sm text-gray-600">{dayNames[index]}</div>
                   <div className={`text-lg ${isToday(date) ? 'text-blue-600 font-bold' : ''}`}>
                     {formatDateHeader(date)}
                   </div>
+                  {isToday(date) && (
+                    <div className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded mt-1 inline-block">今日</div>
+                  )}
                 </CardTitle>
               </CardHeader>
               
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2 flex-grow flex flex-col pb-4">
                 {/* 新規追加ボタン（管理画面でのみ表示） */}
                 {showAddButton && onAddSchedule && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full h-8 text-xs"
+                    className="w-full h-8 text-xs flex-shrink-0"
                     onClick={() => onAddSchedule(dateStr)}
                   >
                     <Plus className="h-3 w-3 mr-1" />
@@ -175,7 +178,7 @@ export function WeeklyCalendar({
                 )}
 
                 {/* スケジュールブロック */}
-                <div className="space-y-1">
+                <div className="space-y-1 flex-grow">
                   {daySchedules.map((schedule) => (
                     <ScheduleBlock
                       key={schedule.id}
@@ -186,8 +189,8 @@ export function WeeklyCalendar({
                 </div>
 
                 {/* 空の日の表示 */}
-                {daySchedules.length === 0 && (
-                  <div className="text-center text-gray-400 text-xs py-4">
+                {daySchedules.length === 0 && !showAddButton && (
+                  <div className="text-center text-gray-400 text-xs py-6 flex-grow flex items-center justify-center">
                     予定なし
                   </div>
                 )}
