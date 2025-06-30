@@ -7,8 +7,6 @@ export interface SpreadsheetBookingData {
   顧客名: string
   電話番号: string
   プログラム: string
-  インストラクター: string
-  スタジオ: string
   開始時間: string
   終了時間: string
   ステータス: string
@@ -97,8 +95,7 @@ export class GoogleSheetsClient {
           予約ID: row.get('予約ID'),
           顧客名: row.get('顧客名'),
           プログラム: row.get('プログラム'),
-          開始時間: row.get('開始時間'),
-          スタジオ: row.get('スタジオ')
+          開始時間: row.get('開始時間')
         }))
 
       return { success: true, bookings: todayBookings }

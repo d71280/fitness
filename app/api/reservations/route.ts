@@ -25,9 +25,7 @@ export async function GET(request: NextRequest) {
         *,
         schedule:schedules(
           *,
-          program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
+          program:programs(*)
         ),
         customer:customers(*)
       `)
@@ -54,8 +52,6 @@ export async function GET(request: NextRequest) {
           start_time: '10:00',
           end_time: '11:00',
           program: { name: 'ヨガ' },
-          instructor: { name: '田中 美香' },
-          studio: { name: 'スタジオA' },
         },
         customer: {
           id: 1,
@@ -101,8 +97,6 @@ export async function POST(request: NextRequest) {
           end_time: '11:00',
           capacity: 15,
           program: { name: 'ヨガベーシック' },
-          instructor: { name: '田中 美香' },
-          studio: { name: 'スタジオA' },
         },
         customer: {
           id: Date.now() + 1000,
@@ -170,8 +164,6 @@ export async function POST(request: NextRequest) {
         .select(`
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*),
           reservations!inner(count)
         `)
         .eq('id', scheduleId)
@@ -229,9 +221,7 @@ export async function POST(request: NextRequest) {
           *,
           schedule:schedules(
             *,
-            program:programs(*),
-            instructor:instructors(*),
-            studio:studios(*)
+            program:programs(*)
           ),
           customer:customers(*)
         `)
@@ -251,8 +241,6 @@ export async function POST(request: NextRequest) {
             date: schedule.date,
             time: `${schedule.start_time} - ${schedule.end_time}`,
             program: schedule.program.name,
-            instructor: schedule.instructor.name,
-            studio: schedule.studio.name,
             capacity: schedule.capacity
           }
           
@@ -284,8 +272,6 @@ export async function POST(request: NextRequest) {
           顧客名: customer.name,
           電話番号: customer.phone || '',
           プログラム: schedule.program.name,
-          インストラクター: schedule.instructor.name,
-          スタジオ: schedule.studio.name,
           開始時間: schedule.start_time,
           終了時間: schedule.end_time,
           ステータス: 'confirmed',
@@ -319,11 +305,9 @@ export async function POST(request: NextRequest) {
           schedule: {
             id: scheduleId,
             program: { name: `スケジュール${scheduleId}のクラス` },
-            instructor: { name: '担当インストラクター' },
-            studio: { name: '第1スタジオ' },
           },
           customer: {
-            name: customerName,
+            name: `${customerNameKanji} (${customerNameKatakana})`,
             line_id: lineId,
             phone: phone,
           },
