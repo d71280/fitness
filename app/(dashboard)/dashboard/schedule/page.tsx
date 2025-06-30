@@ -9,10 +9,12 @@ import { getWeekStart, formatDate } from '@/lib/utils'
 import { Schedule, CreateScheduleData, UpdateScheduleData } from '@/types/api'
 
 export default function AdminSchedulePage() {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => 
-    formatDate(getWeekStart(new Date()))
+  const [currentWeek, setCurrentWeek] = useState(() => 
+    getWeekStart(new Date())
   )
 
+  // 週が変更されたらフォーマットして新しいデータを取得
+  const currentWeekStart = formatDate(currentWeek)
   const { schedules, loading, error, usingMockData, addSchedule, addRecurringSchedule, refetch } = useSchedules(currentWeekStart)
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -114,6 +116,8 @@ export default function AdminSchedulePage() {
         onAddSchedule={handleAddSchedule}
         onScheduleClick={handleScheduleClick}
         showAddButton={true}
+        currentWeek={currentWeek}
+        onWeekChange={setCurrentWeek}
       />
 
       <AddScheduleModal

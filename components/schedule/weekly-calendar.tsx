@@ -13,15 +13,23 @@ interface WeeklyCalendarProps {
   onAddSchedule?: (date: string) => void
   onScheduleClick: (schedule: Schedule) => void
   showAddButton?: boolean
+  currentWeek?: Date
+  onWeekChange?: (week: Date) => void
 }
 
 export function WeeklyCalendar({ 
   schedules, 
   onAddSchedule, 
   onScheduleClick,
-  showAddButton = false
+  showAddButton = false,
+  currentWeek: propCurrentWeek,
+  onWeekChange
 }: WeeklyCalendarProps) {
-  const [currentWeek, setCurrentWeek] = useState(() => getWeekStart(new Date()))
+  const [internalCurrentWeek, setInternalCurrentWeek] = useState(() => getWeekStart(new Date()))
+  
+  // 外部から渡されたcurrentWeekがあれば優先、なければ内部状態を使用
+  const currentWeek = propCurrentWeek || internalCurrentWeek
+  const setCurrentWeek = onWeekChange || setInternalCurrentWeek
 
   const weekDates = getWeekDates(currentWeek)
   const dayNames = ['月', '火', '水', '木', '金', '土', '日']
