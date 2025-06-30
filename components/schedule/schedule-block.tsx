@@ -13,16 +13,23 @@ export function ScheduleBlock({ schedule, onClick, className = '' }: ScheduleBlo
   const programClass = schedule.program?.color_class || 'bg-gray-500'
   const textClass = schedule.program?.text_color_class || 'text-white'
   
+  const currentBookings = schedule.currentBookings || 0
+  const availableSlots = schedule.availableSlots || (schedule.capacity - currentBookings)
+  const isFullyBooked = currentBookings >= schedule.capacity
+  
   return (
     <div
-      className={`p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${programClass} ${textClass} ${className}`}
+      className={`p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${programClass} ${textClass} ${className} ${isFullyBooked ? 'opacity-60' : ''}`}
       onClick={onClick}
     >
       <div className="text-xs font-medium mb-1">
         {schedule.startTime?.slice(0, 5)} - {schedule.endTime?.slice(0, 5)}
       </div>
-      <div className="text-sm font-bold">
+      <div className="text-sm font-bold mb-1">
         {schedule.program?.name || 'プログラム名'}
+      </div>
+      <div className="text-xs opacity-90">
+        {isFullyBooked ? '満席' : `残り${availableSlots}席`}
       </div>
     </div>
   )
