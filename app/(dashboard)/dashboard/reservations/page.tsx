@@ -320,7 +320,7 @@ export default function ReservationsCustomersPage() {
                                 </div>
                                 <div className="flex items-center gap-1 text-gray-600">
                                   <Clock className="w-3 h-3" />
-                                  {reservation.schedule?.startTime} - {reservation.schedule?.endTime}
+                                  {reservation.schedule?.startTime?.slice(0, 5)} - {reservation.schedule?.endTime?.slice(0, 5)}
                                 </div>
                                 <div className="text-gray-600">
                                   プログラム: {reservation.schedule?.program?.name || '不明'}
@@ -419,7 +419,7 @@ export default function ReservationsCustomersPage() {
             <div className="bg-gray-50 p-4 rounded mb-6">
               <div className="text-sm">
                 <div><strong>予約者:</strong> {selectedReservation.customer?.name}</div>
-                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {selectedReservation.schedule?.startTime}-{selectedReservation.schedule?.endTime}</div>
+                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {selectedReservation.schedule?.startTime?.slice(0, 5)}-{selectedReservation.schedule?.endTime?.slice(0, 5)}</div>
                 <div><strong>プログラム:</strong> {selectedReservation.schedule?.program?.name}</div>
               </div>
             </div>
