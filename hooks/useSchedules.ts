@@ -46,7 +46,6 @@ export function useSchedules() {
           startTime: scheduleData.startTime,
           endTime: scheduleData.endTime,
           programId: scheduleData.programId,
-          instructorId: scheduleData.instructorId,
           capacity: scheduleData.capacity,
         }),
       })
@@ -78,7 +77,6 @@ export function useSchedules() {
           startTime: scheduleData.startTime,
           endTime: scheduleData.endTime,
           programId: scheduleData.programId,
-          instructorId: scheduleData.instructorId,
           capacity: scheduleData.capacity,
           repeatWeeks: scheduleData.repeatWeeks,
           daysOfWeek: scheduleData.daysOfWeek,
@@ -108,7 +106,6 @@ export function useSchedules() {
           startTime: scheduleData.startTime,
           endTime: scheduleData.endTime,
           programId: scheduleData.programId,
-          instructorId: scheduleData.instructorId,
           capacity: scheduleData.capacity,
         }),
       })

@@ -4,10 +4,8 @@ export interface Schedule {
   startTime: string;
   endTime: string;
   programId: number;
-  instructorId: number;
   capacity: number;
   program?: Program;
-  instructor?: Instructor;
   currentBookings?: number;
   availableSlots?: number;
   bookedCount?: number;
@@ -18,7 +16,6 @@ export interface CreateScheduleData {
   startTime: string;
   endTime: string;
   programId: number;
-  instructorId: number;
   capacity: number;
   repeat: 'none' | 'weekly' | 'monthly';
 }
@@ -40,17 +37,9 @@ export interface Program {
   color: string;
   color_class: string;
   text_color_class: string;
-  default_instructor_id?: number;
 }
 
-export interface Instructor {
-  id: number;
-  name: string;
-  bio?: string;
-  specialties: string[];
-  email: string;
-  phone?: string;
-}
+
 
 export interface Customer {
   id: number;
@@ -88,7 +77,6 @@ export interface CreateRecurringScheduleData {
   startTime: string;
   endTime: string;
   programId: number;
-  instructorId: number;
   capacity: number;
   repeatWeeks: number;
   daysOfWeek: number[];
@@ -100,6 +88,5 @@ export interface UpdateScheduleData {
   startTime: string;
   endTime: string;
   programId: number;
-  instructorId: number;
   capacity: number;
 }
