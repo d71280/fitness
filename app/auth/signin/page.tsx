@@ -23,8 +23,39 @@ export default function SignIn() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const errorParam = urlParams.get('error')
-    if (errorParam === 'auth-failed') {
-      setError('認証に失敗しました。再度お試しください。')
+    
+    console.log('SignIn page - Error param:', errorParam)
+    
+    if (errorParam) {
+      let errorMessage = '認証エラーが発生しました。'
+      
+      switch (errorParam) {
+        case 'auth-failed':
+          errorMessage = '認証に失敗しました。再度お試しください。'
+          break
+        case 'exchange-failed':
+          errorMessage = 'Googleログインでセッション作成に失敗しました。再度お試しください。'
+          break
+        case 'callback-exception':
+          errorMessage = 'ログイン処理中にエラーが発生しました。再度お試しください。'
+          break
+        case 'no-code':
+          errorMessage = '認証コードが取得できませんでした。再度お試しください。'
+          break
+        case 'timeout-error':
+          errorMessage = 'ログイン処理がタイムアウトしました。インターネット接続を確認して再度お試しください。'
+          break
+        case 'network-error':
+          errorMessage = 'ネットワークエラーが発生しました。接続を確認して再度お試しください。'
+          break
+        default:
+          errorMessage = `認証エラー: ${errorParam}（再度お試しください）`
+      }
+      
+      setError(errorMessage)
+      
+      // エラーパラメータをURLから削除（リフレッシュ時のエラー表示を防ぐ）
+      window.history.replaceState({}, '', window.location.pathname)
     }
   }, [])
 
@@ -108,6 +139,10 @@ export default function SignIn() {
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       })
 
