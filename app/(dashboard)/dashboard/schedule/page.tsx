@@ -9,9 +9,16 @@ import { getWeekStart, formatDate } from '@/lib/utils'
 import { Schedule, CreateScheduleData, UpdateScheduleData } from '@/types/api'
 
 export default function AdminSchedulePage() {
-  const [currentWeek, setCurrentWeek] = useState(() => 
-    getWeekStart(new Date())
-  )
+  const [debugError, setDebugError] = useState<string | null>(null)
+
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    try {
+      return getWeekStart(new Date())
+    } catch (error) {
+      setDebugError(`getWeekStart error: ${error}`)
+      return new Date()
+    }
+  })
 
   // 週が変更されたらフォーマットして新しいデータを取得
   const currentWeekStart = formatDate(currentWeek)
@@ -19,15 +26,20 @@ export default function AdminSchedulePage() {
   
   // スケジュールを日付ごとにグループ化
   const schedulesByDate = React.useMemo(() => {
-    const grouped: Record<string, Schedule[]> = {}
-    schedules.forEach(schedule => {
-      const date = schedule.date
-      if (!grouped[date]) {
-        grouped[date] = []
-      }
-      grouped[date].push(schedule)
-    })
-    return grouped
+    try {
+      const grouped: Record<string, Schedule[]> = {}
+      schedules.forEach(schedule => {
+        const date = schedule.date
+        if (!grouped[date]) {
+          grouped[date] = []
+        }
+        grouped[date].push(schedule)
+      })
+      return grouped
+    } catch (error) {
+      setDebugError(`schedulesByDate error: ${error}`)
+      return {}
+    }
   }, [schedules])
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -36,13 +48,21 @@ export default function AdminSchedulePage() {
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null)
 
   const handleAddSchedule = (date: string) => {
-    setSelectedDate(date)
-    setIsAddModalOpen(true)
+    try {
+      setSelectedDate(date)
+      setIsAddModalOpen(true)
+    } catch (error) {
+      setDebugError(`handleAddSchedule error: ${error}`)
+    }
   }
 
   const handleScheduleClick = (schedule: Schedule) => {
-    setSelectedSchedule(schedule)
-    setIsEditModalOpen(true)
+    try {
+      setSelectedSchedule(schedule)
+      setIsEditModalOpen(true)
+    } catch (error) {
+      setDebugError(`handleScheduleClick error: ${error}`)
+    }
   }
 
   const handleSubmitSchedule = async (data: CreateScheduleData) => {
@@ -60,6 +80,7 @@ export default function AdminSchedulePage() {
       }
       await refetch()
     } catch (error) {
+      setDebugError(`handleSubmitSchedule error: ${error}`)
       throw error
     }
   }
@@ -81,6 +102,7 @@ export default function AdminSchedulePage() {
 
       await refetch()
     } catch (error) {
+      setDebugError(`handleUpdateSchedule error: ${error}`)
       throw error
     }
   }
@@ -98,8 +120,32 @@ export default function AdminSchedulePage() {
 
       await refetch()
     } catch (error) {
+      setDebugError(`handleDeleteSchedule error: ${error}`)
       throw error
     }
+  }
+
+  // デバッグエラーがある場合は表示
+  if (debugError) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 min-h-screen">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center max-w-2xl">
+            <div className="text-6xl mb-4">🐛</div>
+            <div className="text-lg text-red-600 mb-4">デバッグエラーが発生しました</div>
+            <div className="text-sm text-gray-700 bg-gray-100 p-4 rounded-lg text-left">
+              <pre>{debugError}</pre>
+            </div>
+            <button 
+              onClick={() => setDebugError(null)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              エラーをクリアして再試行
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -125,60 +171,65 @@ export default function AdminSchedulePage() {
     )
   }
 
-  return (
-    <div className="container mx-auto p-4 md:p-6 min-h-screen">
-      {/* デモモード警告 */}
-              {false && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="flex items-center">
-            <div className="text-2xl mr-3">⚠️</div>
-            <div>
-              <div className="text-lg font-semibold text-yellow-800">デモモード</div>
-              <div className="text-sm text-yellow-700">
-                データベース接続エラーのため、サンプルデータを表示しています。
-                実際のスケジュール登録は正常に動作します。
+  try {
+    return (
+      <div className="container mx-auto p-4 md:p-6 min-h-screen">
+        {/* デモモード警告 */}
+        {false && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="text-2xl mr-3">⚠️</div>
+              <div>
+                <div className="text-lg font-semibold text-yellow-800">デモモード</div>
+                <div className="text-sm text-yellow-700">
+                  データベース接続エラーのため、サンプルデータを表示しています。
+                  実際のスケジュール登録は正常に動作します。
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">スケジュール管理</h1>
-          <p className="text-gray-600 mt-2">週間スケジュールの表示・追加・編集ができます。スケジュールをクリックで編集できます。</p>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">スケジュール管理</h1>
+            <p className="text-gray-600 mt-2">週間スケジュールの表示・追加・編集ができます。スケジュールをクリックで編集できます。</p>
+          </div>
+
+          <WeeklyCalendar
+            schedules={schedulesByDate}
+            onAddSchedule={handleAddSchedule}
+            onScheduleClick={handleScheduleClick}
+            showAddButton={true}
+            currentWeek={currentWeek}
+            onWeekChange={setCurrentWeek}
+          />
         </div>
 
-        <WeeklyCalendar
-          schedules={schedulesByDate}
-          onAddSchedule={handleAddSchedule}
-          onScheduleClick={handleScheduleClick}
-          showAddButton={true}
-          currentWeek={currentWeek}
-          onWeekChange={setCurrentWeek}
+        <AddScheduleModal
+          isOpen={isAddModalOpen}
+          onClose={() => {
+            setIsAddModalOpen(false)
+            setSelectedDate('')
+          }}
+          selectedDate={selectedDate}
+          onSubmit={handleSubmitSchedule}
+        />
+
+        <EditScheduleModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false)
+            setSelectedSchedule(null)
+          }}
+          schedule={selectedSchedule}
+          onSubmit={handleUpdateSchedule}
+          onDelete={handleDeleteSchedule}
         />
       </div>
-
-      <AddScheduleModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false)
-          setSelectedDate('')
-        }}
-        selectedDate={selectedDate}
-        onSubmit={handleSubmitSchedule}
-      />
-
-      <EditScheduleModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-          setSelectedSchedule(null)
-        }}
-        schedule={selectedSchedule}
-        onSubmit={handleUpdateSchedule}
-        onDelete={handleDeleteSchedule}
-      />
-    </div>
-  )
+    )
+  } catch (error) {
+    setDebugError(`Render error: ${error}`)
+    return null
+  }
 }
