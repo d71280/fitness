@@ -15,12 +15,12 @@ export default function MessagesPage() {
   const [messageSettings, setMessageSettings] = useState({
     bookingConfirmation: {
       enabled: true,
-      messageText: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n🏢 スタジオ: {studio}\n\nお忘れなくお越しください！'
+      messageText: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n\nお忘れなくお越しください！'
     },
     reminder: {
       enabled: true,
       hoursBefore: 24,
-      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
+      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
     }
   })
 
@@ -257,7 +257,7 @@ export default function MessagesPage() {
               disabled={!messageSettings.bookingConfirmation.enabled}
             />
             <p className="text-sm text-gray-500 mt-2">
-              メッセージ内容で使用可能な変数: {`{date}, {time}, {program}, {instructor}, {studio}`}
+              メッセージ内容で使用可能な変数: {`{date}, {time}, {program}`}
             </p>
           </div>
         </CardContent>
@@ -324,7 +324,7 @@ export default function MessagesPage() {
               disabled={!messageSettings.reminder.enabled}
             />
             <p className="text-sm text-gray-500 mt-2">
-              メッセージ内容で使用可能な変数: {`{date}, {time}, {program}, {instructor}, {studio}`}
+              メッセージ内容で使用可能な変数: {`{date}, {time}, {program}`}
             </p>
           </div>
         </CardContent>
