@@ -49,6 +49,15 @@ export default function AuthGuard({
       
       if (session?.user && event === 'SIGNED_IN') {
         console.log('AuthGuard - User signed in:', session.user.id)
+        // Googleログイン後にダッシュボードにいない場合はリダイレクト
+        if (window.location.pathname === '/auth/signin') {
+          console.log('AuthGuard - Redirecting authenticated user to dashboard')
+          router.push('/dashboard')
+        }
+      }
+      
+      if (session?.user && event === 'TOKEN_REFRESHED') {
+        console.log('AuthGuard - Token refreshed for user:', session.user.id)
       }
     })
 

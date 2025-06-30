@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get('code')
-  const next = request.nextUrl.searchParams.get('next') ?? '/dashboard'
-  const origin = request.nextUrl.origin
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+  const origin = requestUrl.origin
+  const redirectTo = requestUrl.searchParams.get('next') ?? '/dashboard'
 
+  console.log('Auth callback - Full URL:', request.url)
   console.log('Auth callback - Code:', code)
-  console.log('Auth callback - Next:', next)
-  console.log('Auth callback - Origin:', origin)
+  console.log('Auth callback - Redirect to:', redirectTo)
 
   if (code) {
     const cookieStore = cookies()
@@ -31,18 +32,23 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    console.log('Auth callback - Exchange result:', { data: data?.user?.id, error })
-    
-    if (!error) {
-      console.log('Auth callback - Redirecting to:', `${origin}${next}`)
-      return NextResponse.redirect(`${origin}${next}`)
-    } else {
-      console.error('Auth callback - Exchange error:', error)
+    try {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      console.log('Auth callback - Exchange result:', { user: data?.user?.id, error: error?.message })
+      
+      if (!error && data.user) {
+        console.log('Auth callback - Success! Redirecting to:', `${origin}${redirectTo}`)
+        return NextResponse.redirect(`${origin}${redirectTo}`)
+      } else {
+        console.error('Auth callback - Exchange failed:', error?.message)
+        return NextResponse.redirect(`${origin}/auth/signin?error=exchange-failed`)
+      }
+    } catch (err) {
+      console.error('Auth callback - Exception:', err)
+      return NextResponse.redirect(`${origin}/auth/signin?error=callback-exception`)
     }
   }
 
-  // エラーまたはコードがない場合はサインインページへリダイレクト
-  console.log('Auth callback - Redirecting to signin with error')
-  return NextResponse.redirect(`${origin}/auth/signin?error=auth-failed`)
+  console.log('Auth callback - No code provided')
+  return NextResponse.redirect(`${origin}/auth/signin?error=no-code`)
 }

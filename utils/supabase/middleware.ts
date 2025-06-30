@@ -35,14 +35,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log('Middleware - Path:', request.nextUrl.pathname)
+  console.log('Middleware - User:', user?.id ? 'Authenticated' : 'Not authenticated')
+
   // 管理者ページの保護
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
       // ログインしていない場合はサインインページにリダイレクト
+      console.log('Middleware - Redirecting to signin')
       const url = request.nextUrl.clone()
       url.pathname = '/auth/signin'
       url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
       return NextResponse.redirect(url)
+    } else {
+      console.log('Middleware - User authenticated, allowing access')
     }
   }
 

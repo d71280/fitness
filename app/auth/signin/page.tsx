@@ -89,17 +89,21 @@ export default function SignIn() {
     setError('')
 
     try {
+      console.log('Signin - Starting Google OAuth')
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: `${window.location.origin}/auth/callback?next=%2Fdashboard`,
         },
       })
 
       if (error) {
+        console.error('Signin - Google OAuth error:', error)
         throw error
       }
+      console.log('Signin - Google OAuth initiated successfully')
     } catch (error: any) {
+      console.error('Signin - Google sign in failed:', error)
       setError(error.message || 'Googleログインに失敗しました')
       setLoading(false)
     }
