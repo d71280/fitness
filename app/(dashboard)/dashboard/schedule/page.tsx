@@ -109,6 +109,13 @@ export default function AdminSchedulePage() {
 
   const handleDeleteSchedule = async (scheduleId: number) => {
     try {
+      console.log('handleDeleteSchedule called with ID:', scheduleId, 'Type:', typeof scheduleId)
+      
+      if (!scheduleId || typeof scheduleId !== 'number' || scheduleId <= 0) {
+        console.error('Invalid schedule ID for deletion:', scheduleId)
+        throw new Error('無効なスケジュールIDです')
+      }
+      
       const response = await fetch(`/api/schedules/${scheduleId}`, {
         method: 'DELETE',
       })

@@ -93,6 +93,9 @@ export function EditScheduleModal({
   const handleDelete = async () => {
     if (!schedule || !onDelete) return
     
+    console.log('handleDelete called - schedule:', schedule)
+    console.log('Schedule ID:', schedule.id, 'Type:', typeof schedule.id)
+    
     if (confirm('このスケジュールを削除しますか？\n※既存の予約も削除されます。')) {
       try {
         setLoading(true)

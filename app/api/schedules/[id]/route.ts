@@ -220,11 +220,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('DELETE request - params:', params, 'ID type:', typeof params.id)
     const scheduleId = parseInt(params.id)
+    console.log('Parsed scheduleId:', scheduleId, 'isNaN:', isNaN(scheduleId))
     
-    if (isNaN(scheduleId)) {
+    if (isNaN(scheduleId) || scheduleId <= 0) {
+      console.error('Invalid schedule ID received:', params.id, 'Type:', typeof params.id)
       return NextResponse.json(
-        { error: '無効なスケジュールIDです' },
+        { error: `無効なスケジュールIDです: ${params.id}` },
         { status: 400 }
       )
     }
