@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { WeeklyCalendar } from '@/components/schedule/weekly-calendar'
 import { AddScheduleModal } from '@/components/schedule/add-schedule-modal'
@@ -26,6 +26,19 @@ export default function SchedulePage() {
 
   const { schedules, loading, error, createSchedule, createRecurringSchedule, refetch } = useSchedules()
   const { createReservation } = useReservations()
+  
+  // スケジュールを日付ごとにグループ化
+  const schedulesByDate = useMemo(() => {
+    const grouped: Record<string, Schedule[]> = {}
+    schedules.forEach(schedule => {
+      const date = schedule.date
+      if (!grouped[date]) {
+        grouped[date] = []
+      }
+      grouped[date].push(schedule)
+    })
+    return grouped
+  }, [schedules])
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
@@ -455,7 +468,7 @@ ${errorDetails.join('\n')}
       )}
 
       <WeeklyCalendar
-        schedules={schedules}
+        schedules={schedulesByDate}
         onScheduleClick={handleScheduleClick}
         showAddButton={false}
       />
