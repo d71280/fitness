@@ -38,9 +38,17 @@ export function EditScheduleModal({
 
   // スケジュールデータを編集フォームに設定
   useEffect(() => {
+    console.log('EditScheduleModal useEffect - schedule:', schedule)
     if (schedule) {
-          const startTime = schedule.startTime || ''
-    const endTime = schedule.endTime || ''
+      const startTime = schedule.startTime || ''
+      const endTime = schedule.endTime || ''
+      
+      console.log('Setting form data with:', {
+        date: schedule.date,
+        startTime: startTime.substring(0, 5),
+        endTime: endTime.substring(0, 5),
+        programId: schedule.programId?.toString() || '',
+      })
       
       setFormData({
         date: schedule.date,
@@ -48,6 +56,8 @@ export function EditScheduleModal({
         endTime: endTime.substring(0, 5), // HH:MM形式に変換
         programId: schedule.programId?.toString() || '',
       })
+    } else {
+      console.log('EditScheduleModal - no schedule provided')
     }
   }, [schedule])
 

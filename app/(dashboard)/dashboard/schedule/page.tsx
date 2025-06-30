@@ -58,6 +58,16 @@ export default function AdminSchedulePage() {
 
   const handleScheduleClick = (schedule: Schedule) => {
     try {
+      console.log('handleScheduleClick called with schedule:', schedule)
+      console.log('Schedule ID:', schedule.id, 'Type:', typeof schedule.id)
+      console.log('Schedule data:', {
+        id: schedule.id,
+        date: schedule.date,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        programId: schedule.programId,
+        program: schedule.program
+      })
       setSelectedSchedule(schedule)
       setIsEditModalOpen(true)
     } catch (error) {
