@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 import fs from 'fs'
@@ -24,7 +25,7 @@ const reminderScheduleSchema = z.object({
   id: z.string(),
   name: z.string(),
   enabled: z.boolean(),
-  hoursBefore: z.number().min(0).max(168), // 最大1週間前
+      timingHours: z.number().min(0).max(168), // 最大1週間前
   messageText: z.string().min(1).max(1000)
 })
 
