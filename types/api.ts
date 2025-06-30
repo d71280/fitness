@@ -25,9 +25,10 @@ export interface CreateScheduleData {
 
 export interface CreateReservationData {
   scheduleId: number;
-  customerName: string;
+  customerNameKanji: string;
+  customerNameKatakana: string;
   lineId: string;
-  phone?: string;
+  phone: string;
 }
 
 export interface Program {

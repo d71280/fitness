@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Schedule, CreateReservationData } from '@/types/api'
-import { Calendar, Clock, User, MapPin, Users } from 'lucide-react'
+import { Calendar, Clock, User, MapPin } from 'lucide-react'
 
 interface BookingModalProps {
   isOpen: boolean
@@ -27,7 +27,8 @@ export function BookingModal({
 }: BookingModalProps) {
   const [formData, setFormData] = useState<CreateReservationData>({
     scheduleId: 0,
-    customerName: '',
+    customerNameKanji: '',
+    customerNameKatakana: '',
     lineId: '',
     phone: '',
   })
@@ -55,8 +56,18 @@ export function BookingModal({
       return
     }
     
-    if (!formData.customerName) {
-      alert('お名前は必須項目です')
+    if (!formData.customerNameKanji) {
+      alert('お名前（漢字）は必須項目です')
+      return
+    }
+    
+    if (!formData.customerNameKatakana) {
+      alert('お名前（カタカナ）は必須項目です')
+      return
+    }
+    
+    if (!formData.phone) {
+      alert('電話番号は必須項目です')
       return
     }
 
@@ -73,7 +84,8 @@ export function BookingModal({
       // フォームをリセット
       setFormData({
         scheduleId: 0,
-        customerName: '',
+        customerNameKanji: '',
+        customerNameKatakana: '',
         lineId: '',
         phone: '',
       })
@@ -127,7 +139,8 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
        console.log('エラータイプ:', error?.name)
        console.log('予約データ:', {
          scheduleId: formData.scheduleId,
-         customerName: formData.customerName,
+         customerNameKanji: formData.customerNameKanji,
+         customerNameKatakana: formData.customerNameKatakana,
          lineId: liffUserId,
          phone: formData.phone
        })
@@ -175,18 +188,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
               </div>
             </div>
 
-            {/* 空き状況 */}
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-gray-600" />
-                <span className="text-sm text-gray-600">
-                  {isFullyBooked ? '満席' : `残り${availableSpots}席`}
-                </span>
-              </div>
-              <span className="text-sm text-gray-500">
-                {currentBookings}/{schedule.capacity}名
-              </span>
-            </div>
+
 
             {isFullyBooked && (
               <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -215,27 +217,44 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
         {!isFullyBooked && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="customerName">
-                お名前 <span className="text-red-500">*</span>
+              <Label htmlFor="customerNameKanji">
+                お名前（漢字） <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="customerName"
+                id="customerNameKanji"
                 type="text"
-                value={formData.customerName}
-                onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                value={formData.customerNameKanji}
+                onChange={(e) => setFormData(prev => ({ ...prev, customerNameKanji: e.target.value }))}
                 placeholder="山田 太郎"
                 required
               />
             </div>
 
             <div>
-              <Label htmlFor="phone">電話番号（任意）</Label>
+              <Label htmlFor="customerNameKatakana">
+                お名前（カタカナ） <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="customerNameKatakana"
+                type="text"
+                value={formData.customerNameKatakana}
+                onChange={(e) => setFormData(prev => ({ ...prev, customerNameKatakana: e.target.value }))}
+                placeholder="ヤマダ タロウ"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">
+                電話番号 <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="090-1234-5678"
+                required
               />
             </div>
 
@@ -250,7 +269,14 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row-reverse">
+              <Button
+                type="submit"
+                disabled={loading || !liffUserId}
+                className="flex-1 w-full sm:w-auto"
+              >
+                {loading ? '予約中...' : '予約する'}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -259,13 +285,6 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 className="flex-1 w-full sm:w-auto"
               >
                 キャンセル
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading || !liffUserId}
-                className="flex-1 w-full sm:w-auto"
-              >
-                {loading ? '予約中...' : '予約する'}
               </Button>
             </div>
           </form>

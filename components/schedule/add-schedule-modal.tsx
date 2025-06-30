@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/modal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RecurringOptions } from './recurring-options'
 import { usePrograms } from '@/hooks/usePrograms'
+import { useInstructors } from '@/hooks/useInstructors'
 
 import { CreateScheduleData } from '@/types/api'
 
@@ -27,7 +28,7 @@ export function AddScheduleModal({
   onSubmit 
 }: AddScheduleModalProps) {
   const { programs } = usePrograms()
-
+  const { instructors } = useInstructors()
 
   const [formData, setFormData] = useState<CreateScheduleData>({
     date: selectedDate,

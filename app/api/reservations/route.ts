@@ -8,9 +8,10 @@ import { z } from 'zod'
 
 const createReservationSchema = z.object({
   scheduleId: z.number(),
-  customerName: z.string().min(1),
+  customerNameKanji: z.string().min(1),
+  customerNameKatakana: z.string().min(1),
   lineId: z.string().min(1),
-  phone: z.string().optional(),
+  phone: z.string().min(1),
 })
 
 // 予約一覧取得
@@ -73,9 +74,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { scheduleId, customerName, lineId, phone } = createReservationSchema.parse(body)
+    const { scheduleId, customerNameKanji, customerNameKatakana, lineId, phone } = createReservationSchema.parse(body)
     
-    console.log('予約リクエスト受信:', { scheduleId, customerName, lineId, phone })
+    console.log('予約リクエスト受信:', { scheduleId, customerNameKanji, customerNameKatakana, lineId, phone })
 
     // Supabase接続を試行
     let supabase
@@ -105,9 +106,9 @@ export async function POST(request: NextRequest) {
         },
         customer: {
           id: Date.now() + 1000,
-          name: customerName,
+          name: `${customerNameKanji} (${customerNameKatakana})`,
           line_id: lineId,
-          phone: phone || '',
+          phone: phone,
         },
       }
 
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         const { data: updatedCustomer, error: updateError } = await supabase
           .from('customers')
           .update({
-            name: customerName,
+            name: `${customerNameKanji} (${customerNameKatakana})`,
             phone: phone,
             last_booking_date: new Date().toISOString(),
           })
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
         const { data: newCustomer, error: createError } = await supabase
           .from('customers')
           .insert({
-            name: customerName,
+            name: `${customerNameKanji} (${customerNameKatakana})`,
             line_id: lineId,
             phone: phone,
             preferred_programs: [],
