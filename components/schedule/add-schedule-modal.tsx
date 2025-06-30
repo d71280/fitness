@@ -36,8 +36,8 @@ export function AddScheduleModal({
     endTime: '11:00',
     programId: programs.length > 0 ? programs[0].id : 0,
     instructorId: instructors.length > 0 ? instructors[0].id : 0,
-    studioId: studios.length > 0 ? studios[0].id : 0,
-    capacity: 20,
+    studioId: 1, // 固定値として設定
+    capacity: 30, // 固定値として設定
     repeat: 'none',
   })
 
@@ -50,15 +50,14 @@ export function AddScheduleModal({
 
   // データが読み込まれた後に初期値を設定
   useEffect(() => {
-    if (programs.length > 0 && instructors.length > 0 && studios.length > 0) {
+    if (programs.length > 0 && instructors.length > 0) {
       setFormData(prev => ({
         ...prev,
         programId: prev.programId === 0 ? programs[0].id : prev.programId,
         instructorId: prev.instructorId === 0 ? instructors[0].id : prev.instructorId,
-        studioId: prev.studioId === 0 ? studios[0].id : prev.studioId,
       }))
     }
-  }, [programs, instructors, studios])
+  }, [programs, instructors])
 
   useEffect(() => {
     if (formData.programId && programs.length > 0) {
@@ -82,10 +81,7 @@ export function AddScheduleModal({
       alert('インストラクターを選択してください')
       return
     }
-    if (!formData.studioId || formData.studioId === 0) {
-      alert('スタジオを選択してください')
-      return
-    }
+
     if (!formData.startTime || !formData.endTime) {
       alert('開始時間と終了時間を入力してください')
       return
@@ -108,8 +104,8 @@ export function AddScheduleModal({
         endTime: '11:00',
         programId: programs.length > 0 ? programs[0].id : 0,
         instructorId: instructors.length > 0 ? instructors[0].id : 0,
-        studioId: studios.length > 0 ? studios[0].id : 0,
-        capacity: 20,
+        studioId: 1,
+        capacity: 30,
         repeat: 'none',
       })
     } catch (error) {
@@ -207,38 +203,7 @@ export function AddScheduleModal({
           </select>
         </div>
 
-        {/* スタジオ */}
-        <div>
-          <Label htmlFor="studio">スタジオ</Label>
-          <select
-            id="studio"
-            value={formData.studioId.toString()}
-            onChange={(e) => setFormData(prev => ({ ...prev, studioId: parseInt(e.target.value) }))}
-            required
-            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="">スタジオを選択</option>
-            {studios.map((studio) => (
-              <option key={studio.id} value={studio.id.toString()}>
-                {studio.name} (定員{studio.capacity}名)
-              </option>
-            ))}
-          </select>
-        </div>
 
-        {/* 定員 */}
-        <div>
-          <Label htmlFor="capacity">定員</Label>
-          <Input
-            id="capacity"
-            type="number"
-            min="1"
-            max="100"
-            value={formData.capacity}
-            onChange={(e) => setFormData(prev => ({ ...prev, capacity: parseInt(e.target.value) }))}
-            required
-          />
-        </div>
 
         {/* 繰り返し設定 */}
         <RecurringOptions

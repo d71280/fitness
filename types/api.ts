@@ -73,6 +73,8 @@ export interface Studio {
 export interface Reservation {
   id: number;
   status: 'pending' | 'confirmed' | 'cancelled';
+  booking_type?: 'advance' | 'walk_in';
+  cancellation_reason?: string;
   created_at: string;
   updated_at: string;
   schedule_id: number;
