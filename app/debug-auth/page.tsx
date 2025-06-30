@@ -90,6 +90,32 @@ export default function AuthDebugPage() {
     alert('クリップボードにコピーしました')
   }
 
+  const testGoogleAuth = async () => {
+    try {
+      const supabase = createClient()
+      const redirectUrl = `${window.location.origin}/auth/callback?next=%2Fdashboard`
+      
+      console.log('Testing Google auth with redirect:', redirectUrl)
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      })
+      
+      if (error) {
+        console.error('Google auth test failed:', error)
+        alert(`Google認証テスト失敗: ${error.message}`)
+      } else {
+        console.log('Google auth test initiated:', data)
+      }
+    } catch (err) {
+      console.error('Google auth test error:', err)
+      alert(`エラー: ${err}`)
+    }
+  }
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <h1 className="text-2xl font-bold mb-6">Google認証診断ページ</h1>
@@ -226,6 +252,23 @@ export default function AuthDebugPage() {
                   ))}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Google認証テスト */}
+        <Card>
+          <CardHeader>
+            <CardTitle>📝 Google認証テスト</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                現在の環境でGoogle認証をテストします。コンソールログを確認してください。
+              </p>
+              <Button onClick={testGoogleAuth} className="w-full">
+                Google認証テスト実行
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -27,7 +27,14 @@ export async function GET(request: NextRequest) {
 
     try {
       console.log('Attempting to exchange code for session...')
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      
+      // より安全なコード交換のためにタイムアウトを設定
+      const exchangePromise = supabase.auth.exchangeCodeForSession(code)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Exchange timeout')), 10000)
+      )
+      
+      const { data, error } = await Promise.race([exchangePromise, timeoutPromise]) as any
       
       console.log('Exchange result:')
       console.log('- User ID:', data?.user?.id)
