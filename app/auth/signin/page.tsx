@@ -91,9 +91,9 @@ export default function SignIn() {
     try {
       console.log('Signin - Starting Google OAuth')
       
-      // 本番環境のURLを確実に取得
-      const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+      // 本番環境のURLを確実に指定
+      const baseUrl = window.location.hostname.includes('vercel.app')
+        ? 'https://fitness2-q2y0zojae-daiki-akiyama-9051s-projects.vercel.app'
         : window.location.origin
       
       console.log('Signin - Base URL:', baseUrl)
