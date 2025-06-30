@@ -156,6 +156,12 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
 
   if (!schedule) return null
 
+  // デバッグ用ログ
+  console.log('BookingModal - schedule data:', schedule)
+  console.log('BookingModal - program data:', schedule.program)
+  console.log('BookingModal - currentBookings:', schedule.currentBookings)
+  console.log('BookingModal - availableSlots:', schedule.availableSlots)
+
   const currentBookings = schedule.currentBookings || schedule.bookedCount || 0
   const isFullyBooked = currentBookings >= schedule.capacity
   const availableSpots = schedule.availableSlots || (schedule.capacity - currentBookings)
@@ -269,7 +275,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
               </p>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row-reverse">
+            <div className="flex flex-col gap-3 sm:flex-row-reverse">
               <Button
                 type="submit"
                 disabled={loading || !liffUserId}
