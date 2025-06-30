@@ -36,31 +36,7 @@ export const programsService = {
   }
 }
 
-// インストラクター関連
-export const instructorsService = {
-  async getAll() {
-    const supabase = getServerClient()
-    const { data, error } = await supabase
-      .from('instructors')
-      .select('*')
-      .order('name')
-    
-    if (error) throw error
-    return data
-  },
 
-  async getById(id: number) {
-    const supabase = getServerClient()
-    const { data, error } = await supabase
-      .from('instructors')
-      .select('*')
-      .eq('id', id)
-      .single()
-    
-    if (error) throw error
-    return data
-  }
-}
 
 // スケジュール関連
 export const schedulesService = {
@@ -71,7 +47,6 @@ export const schedulesService = {
       .select(`
         *,
         program:programs(*),
-        instructor:instructors(*),
         reservations(*)
       `)
       .gte('date', startDate)
