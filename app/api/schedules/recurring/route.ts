@@ -40,10 +40,23 @@ export async function POST(request: NextRequest) {
 
     const createdSchedules = await schedulesService.createRecurring(schedules)
     
+    // キャメルケースに変換
+    const formattedSchedules = createdSchedules.map(schedule => ({
+      id: schedule.id,
+      date: schedule.date,
+      startTime: schedule.start_time,
+      endTime: schedule.end_time,
+      programId: schedule.program_id,
+      instructorId: schedule.instructor_id,
+      capacity: schedule.capacity,
+      program: schedule.program,
+      instructor: schedule.instructor,
+    }))
+    
     return NextResponse.json({
       success: true,
-      schedules: createdSchedules,
-      count: createdSchedules.length,
+      schedules: formattedSchedules,
+      count: formattedSchedules.length,
     }, { status: 201 })
   } catch (error) {
     console.error('Recurring schedule creation error:', error)

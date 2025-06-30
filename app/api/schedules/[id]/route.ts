@@ -180,9 +180,22 @@ export async function PUT(
         throw error
       }
 
+      // キャメルケースに変換してレスポンス
+      const formattedSchedule = {
+        id: updatedSchedule.id,
+        date: updatedSchedule.date,
+        startTime: updatedSchedule.start_time,
+        endTime: updatedSchedule.end_time,
+        programId: updatedSchedule.program_id,
+        instructorId: updatedSchedule.instructor_id,
+        capacity: updatedSchedule.capacity,
+        program: updatedSchedule.program,
+        instructor: updatedSchedule.instructor,
+      }
+
       return NextResponse.json({
         success: true,
-        schedule: updatedSchedule,
+        schedule: formattedSchedule,
       })
     } catch (dbError) {
       console.warn('データベース接続エラー、フォールバック処理:', dbError)

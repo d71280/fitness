@@ -36,14 +36,22 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    // 確定済み予約のみをカウントして整形
+    // 確定済み予約のみをカウントして整形、キャメルケースに変換
     const formattedSchedules = schedules.map(schedule => {
       const confirmedReservations = schedule.reservations?.filter(
         (reservation: any) => reservation.status === 'confirmed'
       ) || []
       
       return {
-        ...schedule,
+        id: schedule.id,
+        date: schedule.date,
+        startTime: schedule.start_time,
+        endTime: schedule.end_time,
+        programId: schedule.program_id,
+        instructorId: schedule.instructor_id,
+        capacity: schedule.capacity,
+        program: schedule.program,
+        instructor: schedule.instructor,
         currentBookings: confirmedReservations.length,
         availableSlots: schedule.capacity - confirmedReservations.length,
         reservations: confirmedReservations
@@ -90,9 +98,22 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
+      // キャメルケースに変換してレスポンス
+      const formattedSchedule = {
+        id: schedule.id,
+        date: schedule.date,
+        startTime: schedule.start_time,
+        endTime: schedule.end_time,
+        programId: schedule.program_id,
+        instructorId: schedule.instructor_id,
+        capacity: schedule.capacity,
+        program: schedule.program,
+        instructor: schedule.instructor,
+      }
+
       return NextResponse.json({
         success: true,
-        schedule,
+        schedule: formattedSchedule,
       }, { status: 201 })
     } catch (dbError) {
       console.warn('データベース接続エラー、モック応答を返します:', dbError)
