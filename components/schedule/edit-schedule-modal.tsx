@@ -39,8 +39,8 @@ export function EditScheduleModal({
   // スケジュールデータを編集フォームに設定
   useEffect(() => {
     if (schedule) {
-      const startTime = schedule.startTime || (schedule as any).start_time || ''
-      const endTime = schedule.endTime || (schedule as any).end_time || ''
+          const startTime = schedule.startTime || ''
+    const endTime = schedule.endTime || ''
       
       setFormData({
         date: schedule.date,
