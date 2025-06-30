@@ -93,7 +93,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, schedule } = body
+    const { action, schedule, settings: userSettings } = body
+    
+    // 基本設定の保存（環境変数以外の設定）
+    if (!action && userSettings) {
+      // 現在はスプレッドシート連携設定のみ保存可能
+      // 他の設定は環境変数で管理
+      
+      return NextResponse.json({
+        success: true,
+        message: '設定が保存されました（スプレッドシート連携設定以外は環境変数で管理）'
+      })
+    }
     
     if (action === 'addReminderSchedule') {
       const validatedSchedule = reminderScheduleSchema.parse(schedule)

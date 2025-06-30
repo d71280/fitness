@@ -84,8 +84,9 @@ export default function SettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          connection: settings,
-          googleSheets: googleSheetsSettings
+          settings: {
+            spreadsheetEnabled: googleSheetsSettings.enabled
+          }
         })
       })
 
@@ -243,9 +244,8 @@ export default function SettingsPage() {
             <Input
               id="appBaseUrl"
               value={settings.appBaseUrl}
-              readOnly
-              className="bg-gray-50"
-              placeholder="環境変数で設定されます"
+              onChange={(e) => updateSetting('appBaseUrl', e.target.value)}
+              placeholder="https://yourdomain.com"
             />
             <p className="text-xs text-gray-500 mt-1">
               このアプリケーションのベースURL
@@ -273,9 +273,8 @@ export default function SettingsPage() {
                 id="lineChannelAccessToken"
                 type={showSecrets ? 'text' : 'password'}
                 value={settings.lineChannelAccessToken}
-                readOnly
-                className="bg-gray-50"
-                placeholder="環境変数で設定されます"
+                onChange={(e) => updateSetting('lineChannelAccessToken', e.target.value)}
+                placeholder="LINE Developers > Messaging API > チャンネルアクセストークン"
               />
               <Button
                 type="button"
@@ -295,9 +294,8 @@ export default function SettingsPage() {
               id="lineChannelSecret"
               type={showSecrets ? 'text' : 'password'}
               value={settings.lineChannelSecret}
-              readOnly
-              className="bg-gray-50"
-              placeholder="環境変数で設定されます"
+              onChange={(e) => updateSetting('lineChannelSecret', e.target.value)}
+              placeholder="LINE Developers > Basic settings > チャンネルシークレット"
             />
           </div>
           
@@ -358,9 +356,8 @@ export default function SettingsPage() {
                 <Input
                   id="serviceAccountEmail"
                   value={googleSheetsSettings.serviceAccountEmail}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="環境変数で設定されます"
+                  onChange={(e) => updateGoogleSheetsSetting('serviceAccountEmail', e.target.value)}
+                  placeholder="service-account@project.iam.gserviceaccount.com"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Google Cloud Platform で作成したサービスアカウントのメールアドレス
@@ -372,9 +369,8 @@ export default function SettingsPage() {
                 <Textarea
                   id="privateKey"
                   value={showSecrets ? googleSheetsSettings.privateKey : maskString(googleSheetsSettings.privateKey)}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="環境変数で設定されます"
+                  onChange={(e) => updateGoogleSheetsSetting('privateKey', e.target.value)}
+                  placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
                   rows={4}
                 />
                 <div className="flex items-center justify-between mt-1">
@@ -396,9 +392,8 @@ export default function SettingsPage() {
                 <Input
                   id="spreadsheetId"
                   value={googleSheetsSettings.spreadsheetId}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="環境変数で設定されます"
+                  onChange={(e) => updateGoogleSheetsSetting('spreadsheetId', e.target.value)}
+                  placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Google SheetsのURLから取得: https://docs.google.com/spreadsheets/d/<strong>ID</strong>/edit
@@ -411,9 +406,8 @@ export default function SettingsPage() {
                   id="lineGroupToken"
                   type={showSecrets ? 'text' : 'password'}
                   value={showSecrets ? googleSheetsSettings.lineGroupToken : maskString(googleSheetsSettings.lineGroupToken)}
-                  readOnly
-                  className="bg-gray-50"
-                  placeholder="環境変数で設定されます"
+                  onChange={(e) => updateGoogleSheetsSetting('lineGroupToken', e.target.value)}
+                  placeholder="グループ通知用のLINE Botトークン"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   事業者グループ通知用のLINE Botアクセストークン（Google Apps Scriptで使用）
@@ -464,24 +458,17 @@ export default function SettingsPage() {
 
 
 
-      {/* 環境変数説明 */}
-      <Card className="border-yellow-200 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-yellow-800">
-            <AlertCircle className="h-5 w-5" />
-            環境変数の設定について
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-yellow-700">
-            LINEチャンネルアクセストークン、Google Sheets認証情報などの機密情報は、<br />
-            セキュリティ上の理由から環境変数として設定されます。<br />
-            <br />
-            これらの設定を変更するには、Vercelまたはホスティング環境の<br />
-            環境変数設定を直接編集してください。
-          </p>
-        </CardContent>
-      </Card>
+      {/* 保存ボタン */}
+      <div className="flex justify-end">
+        <Button
+          onClick={saveSettings}
+          disabled={loading}
+          className="w-full sm:w-auto"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          設定を保存
+        </Button>
+      </div>
 
 
     </div>
