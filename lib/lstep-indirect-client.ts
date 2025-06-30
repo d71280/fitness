@@ -30,10 +30,10 @@ export class LstepIndirectClient {
     
     // Flexメッセージで見た目は通常の予約確認、裏でデータ送信
     const message = {
-      type: 'flex',
+      type: 'flex' as const,
       altText: '予約完了のお知らせ',
       contents: {
-        type: 'bubble',
+        type: 'bubble' as const,
         header: {
           type: 'box',
           layout: 'vertical',
@@ -203,8 +203,8 @@ export class LstepIndirectClient {
     }
 
     const bubbles = bookings.map(booking => ({
-      type: 'bubble',
-      size: 'micro',
+      type: 'bubble' as const,
+      size: 'micro' as const,
       body: {
         type: 'box',
         layout: 'vertical',
@@ -243,10 +243,10 @@ export class LstepIndirectClient {
     }))
 
     const message = {
-      type: 'flex',
+      type: 'flex' as const,
       altText: 'キャンセル可能な予約一覧',
       contents: {
-        type: 'carousel',
+        type: 'carousel' as const,
         contents: bubbles
       }
     }
