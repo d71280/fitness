@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { usePrograms } from '@/hooks/usePrograms'
-import { useInstructors } from '@/hooks/useInstructors'
 
 import { Schedule, UpdateScheduleData } from '@/types/api'
 
@@ -28,7 +27,6 @@ export function EditScheduleModal({
   onDelete 
 }: EditScheduleModalProps) {
   const { programs } = usePrograms()
-  const { instructors } = useInstructors()
   
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -36,7 +34,6 @@ export function EditScheduleModal({
     startTime: '',
     endTime: '',
     programId: '',
-    instructorId: '',
   })
 
   // スケジュールデータを編集フォームに設定
@@ -50,7 +47,6 @@ export function EditScheduleModal({
         startTime: startTime.substring(0, 5), // HH:MM形式に変換
         endTime: endTime.substring(0, 5), // HH:MM形式に変換
         programId: schedule.programId?.toString() || '',
-        instructorId: schedule.instructorId?.toString() || '',
       })
     }
   }, [schedule])
@@ -64,10 +60,7 @@ export function EditScheduleModal({
       alert('プログラムを選択してください')
       return
     }
-    if (!formData.instructorId) {
-      alert('インストラクターを選択してください')
-      return
-    }
+
     if (!formData.startTime || !formData.endTime) {
       alert('開始時間と終了時間を入力してください')
       return
@@ -85,7 +78,7 @@ export function EditScheduleModal({
         startTime: formData.startTime,
         endTime: formData.endTime,
         programId: parseInt(formData.programId),
-        instructorId: parseInt(formData.instructorId),
+        instructorId: 1, // 固定値
         capacity: 20 // 固定値
       })
       onClose()
@@ -183,23 +176,7 @@ export function EditScheduleModal({
             </select>
           </div>
 
-          <div>
-            <Label htmlFor="instructorId">インストラクター</Label>
-            <select
-              id="instructorId"
-              value={formData.instructorId}
-              onChange={(e) => setFormData(prev => ({ ...prev, instructorId: e.target.value }))}
-              required
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">インストラクターを選択</option>
-              {instructors.map((instructor) => (
-                <option key={instructor.id} value={instructor.id.toString()}>
-                  {instructor.name}
-                </option>
-              ))}
-            </select>
-          </div>
+
 
         </div>
 

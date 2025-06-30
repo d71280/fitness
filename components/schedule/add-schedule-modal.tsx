@@ -10,7 +10,6 @@ import { Modal } from '@/components/ui/modal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RecurringOptions } from './recurring-options'
 import { usePrograms } from '@/hooks/usePrograms'
-import { useInstructors } from '@/hooks/useInstructors'
 
 import { CreateScheduleData } from '@/types/api'
 
@@ -28,14 +27,13 @@ export function AddScheduleModal({
   onSubmit 
 }: AddScheduleModalProps) {
   const { programs } = usePrograms()
-  const { instructors } = useInstructors()
 
   const [formData, setFormData] = useState<CreateScheduleData>({
     date: selectedDate,
     startTime: '10:00',
     endTime: '11:00',
     programId: programs.length > 0 ? programs[0].id : 0,
-    instructorId: instructors.length > 0 ? instructors[0].id : 0,
+    instructorId: 1, // 固定値
     capacity: 20, // 固定値として設定（非表示）
     repeat: 'none',
   })
@@ -87,6 +85,7 @@ export function AddScheduleModal({
       
       const scheduleData = {
         ...formData,
+        instructorId: 1, // 固定値
         studioId: 1,
       }
       
@@ -178,23 +177,7 @@ export function AddScheduleModal({
               </select>
             </div>
 
-            <div>
-              <Label htmlFor="instructorId">インストラクター</Label>
-              <select
-                id="instructorId"
-                value={formData.instructorId}
-                onChange={(e) => setFormData(prev => ({ ...prev, instructorId: parseInt(e.target.value) }))}
-                required
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">インストラクターを選択</option>
-                {instructors.map((instructor) => (
-                  <option key={instructor.id} value={instructor.id}>
-                    {instructor.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+
           </div>
 
           <RecurringOptions
