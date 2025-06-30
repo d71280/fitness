@@ -64,8 +64,8 @@
 
 #### 2.3 スプレッドシートID取得
 ```
-URL: https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
-ID:  1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+URL: https://docs.google.com/spreadsheets/d/1JjE2ajmUZu7yGyswe5rGqu27ohXnYB5pJ37xt3bO04/edit#gid=0
+ID:  1JjE2ajmUZu7yGyswe5rGqu27ohXnYB5pJ37xt3bO04
 ```
 
 ### 3. LINE グループ & Bot 設定
@@ -112,14 +112,32 @@ const CONFIG = {
 
 #### 5.1 環境変数設定
 ```bash
-# .env.local に追加
+# .env.local に追加（予約完了時の自動連携に必要）
 GOOGLE_SERVICE_ACCOUNT_EMAIL="fitness-sheets-service@your-project.iam.gserviceaccount.com"
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC..."
-GOOGLE_SPREADSHEET_ID="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+GOOGLE_SPREADSHEET_ID="1JjE2ajmUZu7yGyswe5rGqu27ohXnYB5pJ37xt3bO04"
+
+# 現在のOAuthクライアント情報（参考）
+# クライアントID: 673177425000-2bmtjfkr1953n1hufudchvb33181d5a.apps.googleusercontent.com
+# クライアントシークレット: G0CSPXiw8qH40hNtzn5-WvGqgyAY8i7FPh
+
+# オプション: グループLINE通知用（Google Apps Scriptで使用）
 LINE_GROUP_TOKEN="YOUR_LINE_GROUP_ACCESS_TOKEN"
 LINE_GROUP_ID="YOUR_LINE_GROUP_ID"
 GOOGLE_SHEETS_ENABLED="true"
 ```
+
+**重要**: 予約が完了すると自動的にGoogle Sheetsに以下の情報が記録されます：
+- 予約ID
+- 顧客名
+- 電話番号
+- 予約日時
+- プログラム名
+- インストラクター名
+- スタジオ名
+- 開始/終了時間
+- ステータス
+- LINE ID
 
 #### 5.2 管理画面で設定
 1. `/dashboard/settings` にアクセス

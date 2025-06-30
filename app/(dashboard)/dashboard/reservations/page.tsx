@@ -47,7 +47,7 @@ export default function ReservationsCustomersPage() {
         acc.push({
           ...reservation.customer,
           reservationsCount: 1,
-          lastReservation: reservation.schedule?.date || reservation.created_at
+          lastReservation: reservation.schedule?.date || reservation.created_at || new Date().toISOString().split('T')[0]
         })
       } else {
         existingCustomer.reservationsCount += 1
@@ -249,9 +249,9 @@ export default function ReservationsCustomersPage() {
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(reservation.status)}`}>
-                                {getStatusIcon(reservation.status)}
-                                {getStatusText(reservation.status)}
+                              <div className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(reservation.status || 'pending')}`}>
+                                {getStatusIcon(reservation.status || 'pending')}
+                                {getStatusText(reservation.status || 'pending')}
                               </div>
                               <span className="text-sm text-gray-500">ID: {reservation.id}</span>
                             </div>
@@ -260,7 +260,7 @@ export default function ReservationsCustomersPage() {
                             <div className="flex items-center gap-2">
                               {/* ステータス変更 */}
                               <select
-                                value={reservation.status}
+                                value={reservation.status || 'pending'}
                                 onChange={(e) => handleStatusChange(reservation.id, e.target.value)}
                                 className="text-xs border border-gray-300 rounded px-2 py-1"
                               >
@@ -320,7 +320,7 @@ export default function ReservationsCustomersPage() {
                                 </div>
                                 <div className="flex items-center gap-1 text-gray-600">
                                   <Clock className="w-3 h-3" />
-                                  {reservation.schedule?.start_time} - {reservation.schedule?.end_time}
+                                  {reservation.schedule?.startTime} - {reservation.schedule?.endTime}
                                 </div>
                                 <div className="text-gray-600">
                                   プログラム: {reservation.schedule?.program?.name || '不明'}
@@ -419,7 +419,7 @@ export default function ReservationsCustomersPage() {
             <div className="bg-gray-50 p-4 rounded mb-6">
               <div className="text-sm">
                 <div><strong>予約者:</strong> {selectedReservation.customer?.name}</div>
-                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {selectedReservation.schedule?.start_time}-{selectedReservation.schedule?.end_time}</div>
+                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {selectedReservation.schedule?.startTime}-{selectedReservation.schedule?.endTime}</div>
                 <div><strong>プログラム:</strong> {selectedReservation.schedule?.program?.name}</div>
               </div>
             </div>

@@ -36,6 +36,7 @@ export interface Program {
   color: string;
   color_class: string;
   text_color_class: string;
+  default_instructor_id?: number;
 }
 
 export interface Instructor {
@@ -73,6 +74,9 @@ export interface Reservation {
   userPhone?: string;
   reservedAt: string;
   schedule?: Schedule;
+  customer?: Customer;
+  status?: string;
+  created_at?: string;
 }
 
 export interface CreateRecurringScheduleData {

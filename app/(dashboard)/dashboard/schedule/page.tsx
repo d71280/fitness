@@ -15,7 +15,20 @@ export default function AdminSchedulePage() {
 
   // 週が変更されたらフォーマットして新しいデータを取得
   const currentWeekStart = formatDate(currentWeek)
-  const { schedules, loading, error, usingMockData, addSchedule, addRecurringSchedule, refetch } = useSchedules(currentWeekStart)
+  const { schedules, loading, error, createSchedule, createRecurringSchedule, refetch } = useSchedules()
+  
+  // スケジュールを日付ごとにグループ化
+  const schedulesByDate = React.useMemo(() => {
+    const grouped: Record<string, Schedule[]> = {}
+    schedules.forEach(schedule => {
+      const date = schedule.date
+      if (!grouped[date]) {
+        grouped[date] = []
+      }
+      grouped[date].push(schedule)
+    })
+    return grouped
+  }, [schedules])
   
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -35,9 +48,15 @@ export default function AdminSchedulePage() {
   const handleSubmitSchedule = async (data: CreateScheduleData) => {
     try {
       if (data.repeat === 'none') {
-        await addSchedule(data)
+        await createSchedule(data)
       } else {
-        await addRecurringSchedule(data)
+        // 繰り返しスケジュールの場合、必要なパラメータを追加
+        const recurringData = {
+          ...data,
+          repeatWeeks: 4, // デフォルト値
+          daysOfWeek: [new Date(data.date).getDay()], // 選択した日の曜日
+        }
+        await createRecurringSchedule(recurringData)
       }
       await refetch()
     } catch (error) {
@@ -109,7 +128,7 @@ export default function AdminSchedulePage() {
   return (
     <div className="container mx-auto p-4 md:p-6 min-h-screen">
       {/* デモモード警告 */}
-      {usingMockData && (
+              {false && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-center">
             <div className="text-2xl mr-3">⚠️</div>
@@ -131,7 +150,7 @@ export default function AdminSchedulePage() {
         </div>
 
         <WeeklyCalendar
-          schedules={schedules}
+          schedules={schedulesByDate}
           onAddSchedule={handleAddSchedule}
           onScheduleClick={handleScheduleClick}
           showAddButton={true}

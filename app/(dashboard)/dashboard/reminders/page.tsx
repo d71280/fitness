@@ -18,9 +18,9 @@ export default function RemindersPage() {
   const [newSchedule, setNewSchedule] = useState<Partial<ReminderSchedule>>({
     id: '',
     name: '',
-    enabled: true,
-    hoursBefore: 1,
-    messageText: ''
+    isActive: true,
+    timingHours: 1,
+    messageTemplate: ''
   })
 
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function RemindersPage() {
   }
 
   const addCustomSchedule = async () => {
-    if (!newSchedule.id || !newSchedule.name || !newSchedule.messageText || !newSchedule.hoursBefore) {
+    if (!newSchedule.id || !newSchedule.name || !newSchedule.messageTemplate || !newSchedule.timingHours) {
       alert('すべてのフィールドを入力してください')
       return
     }
@@ -99,9 +99,9 @@ export default function RemindersPage() {
         setNewSchedule({
           id: '',
           name: '',
-          enabled: true,
-          hoursBefore: 1,
-          messageText: ''
+          isActive: true,
+          timingHours: 1,
+          messageTemplate: ''
         })
         alert('リマインドスケジュールが追加されました')
       } else {
@@ -250,15 +250,15 @@ export default function RemindersPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center space-x-4">
                           <Switch
-                            checked={schedule.enabled}
-                            onCheckedChange={(enabled) => updateSchedule(schedule.id, false, { enabled })}
+                            checked={schedule.isActive}
+                            onCheckedChange={(isActive) => updateSchedule(schedule.id, false, { isActive })}
                           />
                           <div>
                             <span className="font-medium text-lg">{schedule.name}</span>
                             <div className="text-sm text-gray-500">
-                              {schedule.hoursBefore >= 24 
-                                ? `${schedule.hoursBefore / 24}日前` 
-                                : `${schedule.hoursBefore}時間前`}
+                              {schedule.timingHours >= 24 
+                                ? `${schedule.timingHours / 24}日前` 
+                                : `${schedule.timingHours}時間前`}
                             </div>
                           </div>
                         </div>
@@ -270,8 +270,8 @@ export default function RemindersPage() {
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">メッセージテンプレート</Label>
                         <Textarea
-                          value={schedule.messageText}
-                          onChange={(e) => updateSchedule(schedule.id, false, { messageText: e.target.value })}
+                          value={schedule.messageTemplate}
+                          onChange={(e) => updateSchedule(schedule.id, false, { messageTemplate: e.target.value })}
                           rows={4}
                           placeholder="リマインドメッセージを入力..."
                           className="text-sm"
@@ -296,17 +296,17 @@ export default function RemindersPage() {
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center space-x-4">
                             <Switch
-                              checked={schedule.enabled}
-                              onCheckedChange={(enabled) => updateSchedule(schedule.id, true, { enabled })}
+                                                          checked={schedule.isActive}
+                            onCheckedChange={(isActive) => updateSchedule(schedule.id, true, { isActive })}
                             />
                             <div>
                               <span className="font-medium text-lg">{schedule.name}</span>
                               <div className="text-sm text-gray-600">
-                                {schedule.hoursBefore >= 24 
-                                  ? `${schedule.hoursBefore / 24}日前` 
-                                  : schedule.hoursBefore < 1 
-                                    ? `${schedule.hoursBefore * 60}分前`
-                                    : `${schedule.hoursBefore}時間前`}
+                                {schedule.timingHours >= 24 
+                                  ? `${schedule.timingHours / 24}日前` 
+                                  : schedule.timingHours < 1 
+                                    ? `${schedule.timingHours * 60}分前`
+                                    : `${schedule.timingHours}時間前`}
                               </div>
                             </div>
                           </div>
@@ -322,8 +322,8 @@ export default function RemindersPage() {
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">メッセージテンプレート</Label>
                           <Textarea
-                            value={schedule.messageText}
-                            onChange={(e) => updateSchedule(schedule.id, true, { messageText: e.target.value })}
+                            value={schedule.messageTemplate}
+                            onChange={(e) => updateSchedule(schedule.id, true, { messageTemplate: e.target.value })}
                             rows={4}
                             placeholder="リマインドメッセージを入力..."
                             className="text-sm"
@@ -406,8 +406,8 @@ export default function RemindersPage() {
               min="0.5"
               max="168"
               step="0.5"
-              value={newSchedule.hoursBefore || 1}
-              onChange={(e) => setNewSchedule({ ...newSchedule, hoursBefore: parseFloat(e.target.value) })}
+              value={newSchedule.timingHours || 1}
+              onChange={(e) => setNewSchedule({ ...newSchedule, timingHours: parseFloat(e.target.value) })}
             />
             <p className="text-xs text-gray-500 mt-1">
               • 0.5〜168時間（1週間）の範囲で設定
@@ -419,8 +419,8 @@ export default function RemindersPage() {
             <Label htmlFor="messageText">メッセージテンプレート *</Label>
             <Textarea
               id="messageText"
-              value={newSchedule.messageText || ''}
-              onChange={(e) => setNewSchedule({ ...newSchedule, messageText: e.target.value })}
+              value={newSchedule.messageTemplate || ''}
+              onChange={(e) => setNewSchedule({ ...newSchedule, messageTemplate: e.target.value })}
               rows={4}
               placeholder="例: 【まもなくレッスン開始】&#10;&#10;{program}&#10;📅 {date}&#10;⏰ {time}&#10;👨‍🏫 {instructor}&#10;🏢 {studio}&#10;&#10;準備はOKですか？✨"
             />
