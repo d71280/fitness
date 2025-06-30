@@ -78,7 +78,6 @@ export function EditScheduleModal({
         startTime: formData.startTime,
         endTime: formData.endTime,
         programId: parseInt(formData.programId),
-        instructorId: 1, // 固定値
         capacity: 20 // 固定値
       })
       onClose()

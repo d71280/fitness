@@ -33,7 +33,6 @@ export function AddScheduleModal({
     startTime: '10:00',
     endTime: '11:00',
     programId: programs.length > 0 ? programs[0].id : 0,
-    instructorId: 1, // 固定値
     capacity: 20, // 固定値として設定（非表示）
     repeat: 'none',
   })
@@ -85,7 +84,6 @@ export function AddScheduleModal({
       
       const scheduleData = {
         ...formData,
-        instructorId: 1, // 固定値
         studioId: 1,
       }
       
@@ -98,7 +96,6 @@ export function AddScheduleModal({
         startTime: '10:00',
         endTime: '11:00',
         programId: programs.length > 0 ? programs[0].id : 0,
-        instructorId: 1, // デフォルトインストラクター
         capacity: 20,
         repeat: 'none',
       })
