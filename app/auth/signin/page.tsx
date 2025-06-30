@@ -90,10 +90,19 @@ export default function SignIn() {
 
     try {
       console.log('Signin - Starting Google OAuth')
+      
+      // 本番環境のURLを確実に取得
+      const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL 
+        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+        : window.location.origin
+      
+      console.log('Signin - Base URL:', baseUrl)
+      console.log('Signin - Current origin:', window.location.origin)
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=%2Fdashboard`,
+          redirectTo: `${baseUrl}/auth/callback?next=%2Fdashboard`,
         },
       })
 
