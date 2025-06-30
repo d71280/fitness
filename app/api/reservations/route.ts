@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
           // メッセージデータの準備
           const messageData = {
             date: schedule.date,
-            time: `${schedule.start_time} - ${schedule.end_time}`,
+            time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
             program: schedule.program.name,
             capacity: schedule.capacity
           }
