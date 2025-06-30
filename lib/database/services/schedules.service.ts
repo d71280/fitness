@@ -8,7 +8,6 @@ type ScheduleUpdate = Database['public']['Tables']['schedules']['Update']
 
 export interface ScheduleWithRelations extends Schedule {
   program: Database['public']['Tables']['programs']['Row']
-  instructor: Database['public']['Tables']['instructors']['Row']
   reservations?: Database['public']['Tables']['reservations']['Row'][]
 }
 
@@ -24,7 +23,6 @@ export class SchedulesService {
       .select(`
         *,
         program:programs(*),
-        instructor:instructors(*),
         reservations(*)
       `)
       .gte('date', weekStart)
@@ -45,7 +43,6 @@ export class SchedulesService {
       .select(`
         *,
         program:programs(*),
-        instructor:instructors(*),
         reservations(*)
       `)
       .eq('id', id)
@@ -64,8 +61,7 @@ export class SchedulesService {
       .insert(schedule)
       .select(`
         *,
-        program:programs(*),
-        instructor:instructors(*)
+        program:programs(*)
       `)
       .single()
 
@@ -96,8 +92,7 @@ export class SchedulesService {
       .eq('id', id)
       .select(`
         *,
-        program:programs(*),
-        instructor:instructors(*)
+        program:programs(*)
       `)
       .single()
 

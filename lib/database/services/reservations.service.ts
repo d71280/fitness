@@ -10,7 +10,6 @@ type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 export interface ReservationWithRelations extends Reservation {
   schedule: Database['public']['Tables']['schedules']['Row'] & {
     program: Database['public']['Tables']['programs']['Row']
-    instructor: Database['public']['Tables']['instructors']['Row']
   }
   customer: Database['public']['Tables']['customers']['Row']
 }
@@ -23,10 +22,8 @@ export class ReservationsService {
       .from('reservations')
       .select(`
         *,
-        schedule:schedules(
-          *,
-          program:programs(*),
-          instructor:instructors(*)
+        schedule:schedules(*,
+          program:programs(*)
         ),
         customer:customers(*)
       `)
@@ -39,23 +36,41 @@ export class ReservationsService {
     return data as ReservationWithRelations[]
   }
 
+  async getById(id: number) {
+    const { data, error } = await this.supabase
+      .from('reservations')
+      .select(`
+        *,
+        schedule:schedules(*,
+          program:programs(*)
+        ),
+        customer:customers(*)
+      `)
+      .eq('id', id)
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to fetch reservation: ${error.message}`)
+    }
+
+    return data as ReservationWithRelations
+  }
+
   async getByScheduleId(scheduleId: number) {
     const { data, error } = await this.supabase
       .from('reservations')
       .select(`
         *,
-        schedule:schedules(
-          *,
-          program:programs(*),
-          instructor:instructors(*)
+        schedule:schedules(*,
+          program:programs(*)
         ),
         customer:customers(*)
       `)
       .eq('schedule_id', scheduleId)
-      .eq('status', 'confirmed')
+      .order('created_at', { ascending: false })
 
     if (error) {
-      throw new Error(`Failed to fetch reservations for schedule: ${error.message}`)
+      throw new Error(`Failed to fetch reservations by schedule: ${error.message}`)
     }
 
     return data as ReservationWithRelations[]
@@ -66,10 +81,8 @@ export class ReservationsService {
       .from('reservations')
       .select(`
         *,
-        schedule:schedules(
-          *,
-          program:programs(*),
-          instructor:instructors(*)
+        schedule:schedules(*,
+          program:programs(*)
         ),
         customer:customers(*)
       `)
@@ -77,7 +90,7 @@ export class ReservationsService {
       .order('created_at', { ascending: false })
 
     if (error) {
-      throw new Error(`Failed to fetch customer reservations: ${error.message}`)
+      throw new Error(`Failed to fetch reservations by customer: ${error.message}`)
     }
 
     return data as ReservationWithRelations[]
@@ -89,10 +102,8 @@ export class ReservationsService {
       .insert(reservation)
       .select(`
         *,
-        schedule:schedules(
-          *,
-          program:programs(*),
-          instructor:instructors(*)
+        schedule:schedules(*,
+          program:programs(*)
         ),
         customer:customers(*)
       `)
@@ -112,10 +123,8 @@ export class ReservationsService {
       .eq('id', id)
       .select(`
         *,
-        schedule:schedules(
-          *,
-          program:programs(*),
-          instructor:instructors(*)
+        schedule:schedules(*,
+          program:programs(*)
         ),
         customer:customers(*)
       `)
@@ -141,12 +150,12 @@ export class ReservationsService {
     return true
   }
 
-  async cancel(id: number, reason?: string) {
-    return this.update(id, {
-      status: 'cancelled',
-      cancellation_reason: reason,
-      updated_at: new Date().toISOString(),
-    })
+  async cancel(id: number) {
+    return this.update(id, { status: 'cancelled' })
+  }
+
+  async confirm(id: number) {
+    return this.update(id, { status: 'confirmed' })
   }
 
   async checkDuplicate(scheduleId: number, customerId: number) {
