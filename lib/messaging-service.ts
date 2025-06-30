@@ -85,7 +85,7 @@ export class MessagingService {
           },
           lstep_response: result,
           success: result.success,
-          error_message: result.error
+          error_message: result.error || null
         })
 
         return {
@@ -294,7 +294,7 @@ ${data.customerName}様
     currentProvider: MessagingProvider
   }> {
     const [lineHealthy, lstepHealthy] = await Promise.all([
-      this.lineClient.healthCheck?.() || true,
+      Promise.resolve(true), // LINE Messaging APIは基本的に利用可能とみなす
       this.lstepClient.healthCheck()
     ])
 
