@@ -12,7 +12,8 @@ import {
   Settings,
   Activity,
   Dumbbell,
-  Home
+  Home,
+  Bell
 } from 'lucide-react'
 
 const navigation = [
@@ -35,6 +36,11 @@ const navigation = [
     name: 'プログラム・インストラクター管理',
     href: '/dashboard/programs',
     icon: Activity
+  },
+  {
+    name: 'リマインド設定',
+    href: '/dashboard/reminders',
+    icon: Bell
   },
   {
     name: '設定',

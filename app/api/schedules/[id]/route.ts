@@ -305,12 +305,11 @@ export async function DELETE(
       })
 
     } catch (dbError) {
-      console.warn('Supabase操作エラー、フォールバック処理を実行:', dbError)
-      
-      return NextResponse.json({
-        success: true,
-        message: 'スケジュールが削除されました（フォールバック）'
-      })
+      console.error('データベース操作エラー:', dbError)
+      return NextResponse.json(
+        { error: 'データベース操作に失敗しました' },
+        { status: 500 }
+      )
     }
 
   } catch (error) {

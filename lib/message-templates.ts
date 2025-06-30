@@ -1,6 +1,14 @@
 import fs from 'fs'
 import path from 'path'
 
+export interface ReminderSchedule {
+  id: string
+  name: string
+  enabled: boolean
+  hoursBefore: number
+  messageText: string
+}
+
 export interface MessageSettings {
   bookingConfirmation: {
     enabled: boolean
@@ -18,8 +26,8 @@ export interface MessageSettings {
   }
   reminder: {
     enabled: boolean
-    hoursBefore: number
-    messageText: string
+    schedules: ReminderSchedule[]
+    customSchedules: ReminderSchedule[]
   }
   cancellation: {
     enabled: boolean
@@ -57,14 +65,47 @@ export function getMessageSettings(): MessageSettings {
     },
     reminder: {
       enabled: true,
-      hoursBefore: 24,
-      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
+      schedules: [
+        {
+          id: "24h",
+          name: "24時間前",
+          enabled: true,
+          hoursBefore: 24,
+          messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
+        }
+      ],
+      customSchedules: []
     },
     cancellation: {
       enabled: true,
       messageText: 'ご予約をキャンセルしました。\n\nまたのご利用をお待ちしております。'
     }
   }
+}
+
+export function saveMessageSettings(settings: MessageSettings): boolean {
+  try {
+    const settingsPath = path.join(process.cwd(), 'message-settings.json')
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8')
+    return true
+  } catch (error) {
+    console.error('メッセージ設定の保存に失敗:', error)
+    return false
+  }
+}
+
+export function getEnabledReminderSchedules(): ReminderSchedule[] {
+  const settings = getMessageSettings()
+  if (!settings.reminder.enabled) {
+    return []
+  }
+  
+  const allSchedules = [
+    ...settings.reminder.schedules,
+    ...settings.reminder.customSchedules
+  ]
+  
+  return allSchedules.filter(schedule => schedule.enabled)
 }
 
 export function processMessageTemplate(template: string, data: any): string {

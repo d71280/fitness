@@ -9,6 +9,8 @@ import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone, MessageSquare 
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select } from '@/components/ui/select'
+import { Modal } from '@/components/ui/modal'
+import type { MessageSettings, ReminderSchedule } from '@/lib/message-templates'
 
 interface ConnectionSettings {
   appBaseUrl: string
@@ -54,6 +56,15 @@ export default function SettingsPage() {
       hoursBefore: 24,
       messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
     }
+  })
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [newSchedule, setNewSchedule] = useState<Partial<ReminderSchedule>>({
+    id: '',
+    name: '',
+    enabled: true,
+    hoursBefore: 1,
+    messageText: ''
   })
 
   // 設定読み込み
@@ -236,6 +247,97 @@ export default function SettingsPage() {
     const start = str.substring(0, 4)
     const end = str.substring(str.length - 4)
     return `${start}${'*'.repeat(str.length - 8)}${end}`
+  }
+
+  const addCustomSchedule = async () => {
+    if (!newSchedule.id || !newSchedule.name || !newSchedule.messageText) {
+      alert('すべてのフィールドを入力してください')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'addReminderSchedule',
+          schedule: newSchedule
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        await loadSettings()
+        setIsAddModalOpen(false)
+        setNewSchedule({
+          id: '',
+          name: '',
+          enabled: true,
+          hoursBefore: 1,
+          messageText: ''
+        })
+        alert('リマインドスケジュールが追加されました')
+      } else {
+        alert(`追加に失敗しました: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('スケジュール追加エラー:', error)
+      alert('スケジュールの追加でエラーが発生しました')
+    }
+  }
+
+  const deleteCustomSchedule = async (scheduleId: string) => {
+    if (!confirm('このリマインドスケジュールを削除しますか？')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/settings?scheduleId=${scheduleId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        await loadSettings()
+        alert('リマインドスケジュールが削除されました')
+      } else {
+        alert(`削除に失敗しました: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('スケジュール削除エラー:', error)
+      alert('スケジュールの削除でエラーが発生しました')
+    }
+  }
+
+  const updateSchedule = (scheduleId: string, isCustom: boolean, updates: Partial<ReminderSchedule>) => {
+    if (!messageSettings.reminder) return
+
+    const newSettings = { ...messageSettings.reminder }
+    const targetArray = isCustom ? newSettings.customSchedules : newSettings.schedules
+    const scheduleIndex = targetArray.findIndex(s => s.id === scheduleId)
+    
+    if (scheduleIndex !== -1) {
+      targetArray[scheduleIndex] = { ...targetArray[scheduleIndex], ...updates }
+      setMessageSettings(prev => ({
+        ...prev,
+        reminder: { ...newSettings }
+      }))
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⚙️</div>
+          <div className="text-lg">設定読み込み中...</div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -629,6 +731,68 @@ export default function SettingsPage() {
           設定を保存
         </Button>
       </div>
+
+      {/* カスタムスケジュール追加モーダル */}
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="リマインドスケジュール追加">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="scheduleId">スケジュールID</Label>
+            <Input
+              id="scheduleId"
+              value={newSchedule.id || ''}
+              onChange={(e) => setNewSchedule({ ...newSchedule, id: e.target.value })}
+              placeholder="例: 2h, custom1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="scheduleName">スケジュール名</Label>
+            <Input
+              id="scheduleName"
+              value={newSchedule.name || ''}
+              onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
+              placeholder="例: 2時間前"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="hoursBefore">何時間前</Label>
+            <Input
+              id="hoursBefore"
+              type="number"
+              min="0.5"
+              max="168"
+              step="0.5"
+              value={newSchedule.hoursBefore || 1}
+              onChange={(e) => setNewSchedule({ ...newSchedule, hoursBefore: parseFloat(e.target.value) })}
+            />
+            <p className="text-xs text-gray-500 mt-1">0.5〜168時間（1週間）の範囲で設定</p>
+          </div>
+
+          <div>
+            <Label htmlFor="messageText">メッセージテンプレート</Label>
+            <Textarea
+              id="messageText"
+              value={newSchedule.messageText || ''}
+              onChange={(e) => setNewSchedule({ ...newSchedule, messageText: e.target.value })}
+              rows={4}
+              placeholder="リマインドメッセージを入力..."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              使用可能な変数: {'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+              キャンセル
+            </Button>
+            <Button onClick={addCustomSchedule} className="bg-blue-600 hover:bg-blue-700">
+              追加
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

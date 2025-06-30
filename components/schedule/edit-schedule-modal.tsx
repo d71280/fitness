@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { usePrograms } from '@/hooks/usePrograms'
 import { useInstructors } from '@/hooks/useInstructors'
-import { useStudios } from '@/hooks/useStudios'
 import { Schedule, UpdateScheduleData } from '@/types/api'
 
 interface EditScheduleModalProps {
@@ -27,7 +26,6 @@ export function EditScheduleModal({
 }: EditScheduleModalProps) {
   const { programs } = usePrograms()
   const { instructors } = useInstructors()
-  const { studios } = useStudios()
   
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -36,7 +34,6 @@ export function EditScheduleModal({
     endTime: '',
     programId: '',
     instructorId: '',
-    studioId: '',
   })
 
   // スケジュールデータを編集フォームに設定
@@ -51,7 +48,6 @@ export function EditScheduleModal({
         endTime: endTime.substring(0, 5), // HH:MM形式に変換
         programId: schedule.programId?.toString() || '',
         instructorId: schedule.instructorId?.toString() || '',
-        studioId: schedule.studioId?.toString() || '',
       })
     }
   }, [schedule])
@@ -87,7 +83,6 @@ export function EditScheduleModal({
         endTime: formData.endTime,
         programId: parseInt(formData.programId),
         instructorId: parseInt(formData.instructorId),
-        studioId: parseInt(formData.studioId),
         capacity: 20 // 固定値
       })
       onClose()
@@ -203,23 +198,6 @@ export function EditScheduleModal({
             </select>
           </div>
 
-          <div>
-            <Label htmlFor="studioId">スタジオ</Label>
-            <select
-              id="studioId"
-              value={formData.studioId}
-              onChange={(e) => setFormData(prev => ({ ...prev, studioId: e.target.value }))}
-              required
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">スタジオを選択</option>
-              {studios.map((studio) => (
-                <option key={studio.id} value={studio.id.toString()}>
-                  {studio.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* 操作ボタン */}

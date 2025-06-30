@@ -47,8 +47,19 @@ export default function AdminSchedulePage() {
 
   const handleUpdateSchedule = async (data: UpdateScheduleData) => {
     try {
-      // 更新API呼び出し（実装必要）
-      console.log('スケジュール更新:', data)
+      const response = await fetch(`/api/schedules/${data.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'スケジュール更新に失敗しました')
+      }
+
       await refetch()
     } catch (error) {
       throw error
@@ -57,8 +68,15 @@ export default function AdminSchedulePage() {
 
   const handleDeleteSchedule = async (scheduleId: number) => {
     try {
-      // 削除API呼び出し（実装必要）
-      console.log('スケジュール削除:', scheduleId)
+      const response = await fetch(`/api/schedules/${scheduleId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'スケジュール削除に失敗しました')
+      }
+
       await refetch()
     } catch (error) {
       throw error

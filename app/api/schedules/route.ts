@@ -71,22 +71,47 @@ export async function POST(request: NextRequest) {
     try {
       const supabase = createServiceRoleClient()
       
-      // 重複チェック
+      // 重複チェック - 同じスタジオ、同じ時間帯は競合（プログラムに関係なく）
       const { data: existingSchedule, error: checkError } = await supabase
         .from('schedules')
         .select('*')
         .eq('date', data.baseDate)
         .eq('studio_id', data.studioId)
-        .eq('start_time', data.startTime)
-        .eq('end_time', data.endTime)
+        .overlaps('tsrange(start_time, end_time)', `[${data.startTime},${data.endTime})`)
         .maybeSingle()
 
       // データベース接続エラーの場合はスキップ
       if (checkError && !checkError.message.includes('No rows')) {
-        console.warn('重複チェックでエラー、スキップします:', checkError)
+        console.warn('重複チェックでエラー、代替チェックを実行:', checkError)
+        
+        // 代替の重複チェック
+        const { data: conflictSchedules } = await supabase
+          .from('schedules')
+          .select('start_time, end_time')
+          .eq('date', data.baseDate)
+          .eq('studio_id', data.studioId)
+
+        if (conflictSchedules) {
+          for (const schedule of conflictSchedules) {
+            const existingStart = schedule.start_time
+            const existingEnd = schedule.end_time
+            
+            // 時間重複チェック
+            if (
+              (data.startTime >= existingStart && data.startTime < existingEnd) ||
+              (data.endTime > existingStart && data.endTime <= existingEnd) ||
+              (data.startTime <= existingStart && data.endTime >= existingEnd)
+            ) {
+              return NextResponse.json(
+                { error: '同じ時間帯・同じスタジオに既にスケジュールが存在します' },
+                { status: 400 }
+              )
+            }
+          }
+        }
       } else if (existingSchedule) {
         return NextResponse.json(
-          { error: '同じ時間帯にスケジュールが既に存在します' },
+          { error: '同じ時間帯・同じスタジオに既にスケジュールが存在します' },
           { status: 400 }
         )
       }

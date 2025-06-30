@@ -129,7 +129,7 @@ export class SchedulesService {
   async checkConflict(date: string, studioId: number, startTime: string, endTime: string, excludeId?: number) {
     let query = this.supabase
       .from('schedules')
-      .select('id')
+      .select('id, program_id, start_time, end_time')
       .eq('date', date)
       .eq('studio_id', studioId)
       .eq('is_cancelled', false)
@@ -144,26 +144,22 @@ export class SchedulesService {
       throw new Error(`Failed to check schedule conflict: ${error.message}`)
     }
 
-    // 時間の重複チェック
+    // 時間の重複チェック（プログラムが異なる場合は競合しない）
     for (const schedule of data || []) {
-      const { data: existingSchedule } = await this.supabase
-        .from('schedules')
-        .select('start_time, end_time')
-        .eq('id', schedule.id)
-        .single()
+      const existingStart = schedule.start_time
+      const existingEnd = schedule.end_time
 
-      if (existingSchedule) {
-        const existingStart = existingSchedule.start_time
-        const existingEnd = existingSchedule.end_time
+      // 時間の重複を確認
+      const timeOverlap = (
+        (startTime >= existingStart && startTime < existingEnd) ||
+        (endTime > existingStart && endTime <= existingEnd) ||
+        (startTime <= existingStart && endTime >= existingEnd)
+      )
 
-        // 時間の重複を確認
-        if (
-          (startTime >= existingStart && startTime < existingEnd) ||
-          (endTime > existingStart && endTime <= existingEnd) ||
-          (startTime <= existingStart && endTime >= existingEnd)
-        ) {
-          return true // 重複あり
-        }
+      // 時間が重複している場合のみ競合として扱う
+      // 注意: 異なるプログラムでも同じスタジオで同じ時間は物理的に不可能なので競合とする
+      if (timeOverlap) {
+        return true // 重複あり
       }
     }
 
