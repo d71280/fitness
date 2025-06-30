@@ -11,7 +11,6 @@ const createScheduleSchema = z.object({
   endTime: z.string(),
   programId: z.number(),
   instructorId: z.number(),
-  studioId: z.number(),
   capacity: z.number().min(1).max(100),
 })
 
@@ -26,7 +25,6 @@ export async function GET(request: NextRequest) {
         *,
         program:programs(*),
         instructor:instructors(*),
-        studio:studios(*),
         reservations(
           *,
           customer:customers(*)
@@ -81,14 +79,12 @@ export async function POST(request: NextRequest) {
           end_time: data.endTime,
           program_id: data.programId,
           instructor_id: data.instructorId,
-          studio_id: data.studioId,
           capacity: data.capacity,
         })
         .select(`
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
+          instructor:instructors(*)
         `)
         .single()
 
@@ -112,7 +108,6 @@ export async function POST(request: NextRequest) {
           capacity: data.capacity,
           program: { name: 'モックプログラム' },
           instructor: { name: 'モックインストラクター' },
-          studio: { name: 'モックスタジオ' },
         },
       }, { status: 201 })
     }

@@ -172,10 +172,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                   <User className="h-3 w-3" />
                   {schedule.instructor?.name || 'インストラクター未設定'}
                 </div>
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {schedule.studio?.name || 'スタジオ未設定'}
-                </div>
+
               </div>
             </div>
 

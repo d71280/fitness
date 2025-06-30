@@ -1,17 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import { Modal } from '@/components/ui/modal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RecurringOptions } from './recurring-options'
 import { usePrograms } from '@/hooks/usePrograms'
 import { useInstructors } from '@/hooks/useInstructors'
-import { useStudios } from '@/hooks/useStudios'
 import { CreateScheduleData } from '@/types/api'
-import { RecurringOptions } from './recurring-options'
 
 interface AddScheduleModalProps {
   isOpen: boolean
@@ -28,7 +26,6 @@ export function AddScheduleModal({
 }: AddScheduleModalProps) {
   const { programs } = usePrograms()
   const { instructors } = useInstructors()
-  const { studios } = useStudios()
 
   const [formData, setFormData] = useState<CreateScheduleData>({
     date: selectedDate,
@@ -36,7 +33,6 @@ export function AddScheduleModal({
     endTime: '11:00',
     programId: programs.length > 0 ? programs[0].id : 0,
     instructorId: instructors.length > 0 ? instructors[0].id : 0,
-    studioId: 1, // 固定値として設定
     capacity: 20, // 固定値として設定（非表示）
     repeat: 'none',
   })
@@ -68,20 +64,16 @@ export function AddScheduleModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    console.log('=== スケジュール作成開始 ===')
-    console.log('フォームデータ:', formData)
-    
+
     // バリデーション
-    if (!formData.programId || formData.programId === 0) {
+    if (!formData.programId) {
       alert('プログラムを選択してください')
       return
     }
-    if (!formData.instructorId || formData.instructorId === 0) {
+    if (!formData.instructorId) {
       alert('インストラクターを選択してください')
       return
     }
-
     if (!formData.startTime || !formData.endTime) {
       alert('開始時間と終了時間を入力してください')
       return
@@ -91,37 +83,29 @@ export function AddScheduleModal({
       return
     }
 
-    // 繰り返し設定のバリデーション
-    if (formData.repeat !== 'none') {
-      if (!formData.repeatEndDate && !formData.repeatCount) {
-        alert('繰り返し設定では終了日または回数制限を設定してください')
-        return
-      }
-    }
-
-    setLoading(true)
     try {
-      console.log('onSubmit関数を呼び出し中...')
-      await onSubmit(formData)
-      console.log('スケジュール作成成功！')
+      setLoading(true)
+      
+      const scheduleData = {
+        ...formData,
+        studioId: 1,
+      }
+      
+      await onSubmit(scheduleData)
       onClose()
-      // フォームをリセット
+      
+      // フォームリセット
       setFormData({
         date: selectedDate,
         startTime: '10:00',
         endTime: '11:00',
         programId: programs.length > 0 ? programs[0].id : 0,
         instructorId: instructors.length > 0 ? instructors[0].id : 0,
-        studioId: 1,
         capacity: 20,
         repeat: 'none',
       })
     } catch (error) {
-      console.error('=== スケジュール作成エラー詳細 ===')
-      console.error('エラーオブジェクト:', error)
-      console.error('エラーメッセージ:', error instanceof Error ? error.message : 'Unknown error')
-      console.error('エラースタック:', error instanceof Error ? error.stack : 'No stack')
-      
+      console.error('スケジュール作成エラー:', error)
       const errorMessage = error instanceof Error ? error.message : 'スケジュール作成に失敗しました'
       alert(`エラー: ${errorMessage}`)
     } finally {
@@ -133,12 +117,12 @@ export function AddScheduleModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="新しいスケジュール追加"
+      title="スケジュール追加"
       size="lg"
     >
-      <div className="max-h-[80vh] overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 日付 */}
+      <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* 基本情報 */}
           <div>
             <Label htmlFor="date">日付</Label>
             <Input
@@ -150,7 +134,7 @@ export function AddScheduleModal({
             />
           </div>
 
-          {/* 時間 */}
+          {/* 時間設定 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="startTime">開始時間</Label>
@@ -162,6 +146,7 @@ export function AddScheduleModal({
                 required
               />
             </div>
+            
             <div>
               <Label htmlFor="endTime">終了時間</Label>
               <Input
@@ -174,45 +159,45 @@ export function AddScheduleModal({
             </div>
           </div>
 
-          {/* プログラム */}
-          <div>
-            <Label htmlFor="program">プログラム</Label>
-            <select
-              id="program"
-              value={formData.programId.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, programId: parseInt(e.target.value) }))}
-              required
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">プログラムを選択</option>
-              {programs.map((program) => (
-                <option key={program.id} value={program.id.toString()}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
+          {/* プログラム・インストラクター */}
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="programId">プログラム</Label>
+              <select
+                id="programId"
+                value={formData.programId}
+                onChange={(e) => setFormData(prev => ({ ...prev, programId: parseInt(e.target.value) }))}
+                required
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">プログラムを選択</option>
+                {programs.map((program) => (
+                  <option key={program.id} value={program.id}>
+                    {program.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="instructorId">インストラクター</Label>
+              <select
+                id="instructorId"
+                value={formData.instructorId}
+                onChange={(e) => setFormData(prev => ({ ...prev, instructorId: parseInt(e.target.value) }))}
+                required
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">インストラクターを選択</option>
+                {instructors.map((instructor) => (
+                  <option key={instructor.id} value={instructor.id}>
+                    {instructor.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* インストラクター */}
-          <div>
-            <Label htmlFor="instructor">インストラクター</Label>
-            <select
-              id="instructor"
-              value={formData.instructorId.toString()}
-              onChange={(e) => setFormData(prev => ({ ...prev, instructorId: parseInt(e.target.value) }))}
-              required
-              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">インストラクターを選択</option>
-              {instructors.map((instructor) => (
-                <option key={instructor.id} value={instructor.id.toString()}>
-                  {instructor.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* 繰り返し設定 */}
           <RecurringOptions
             formData={formData}
             setFormData={setFormData}
@@ -234,9 +219,6 @@ export function AddScheduleModal({
                   </div>
                   <div className="text-xs opacity-90">
                     {instructors.find(i => i.id === formData.instructorId)?.name}
-                  </div>
-                  <div className="text-xs opacity-75 mt-1">
-                    {studios.find(s => s.id === formData.studioId)?.name}
                   </div>
                 </div>
               </CardContent>

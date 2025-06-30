@@ -5,12 +5,9 @@ export interface Schedule {
   endTime: string;
   programId: number;
   instructorId: number;
-  studioId: number;
   capacity: number;
-  bookedCount: number;
   program?: Program;
   instructor?: Instructor;
-  studio?: Studio;
 }
 
 export interface CreateScheduleData {
@@ -19,11 +16,8 @@ export interface CreateScheduleData {
   endTime: string;
   programId: number;
   instructorId: number;
-  studioId: number;
   capacity: number;
-  repeat?: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-  repeatEndDate?: string;
-  repeatCount?: number;
+  repeat: 'none' | 'weekly' | 'monthly';
 }
 
 export interface CreateReservationData {
@@ -37,20 +31,20 @@ export interface Program {
   id: number;
   name: string;
   description?: string;
+  duration: number;
+  capacity: number;
+  color: string;
   color_class: string;
   text_color_class: string;
-  default_instructor_id?: number;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface Instructor {
   id: number;
   name: string;
-  email?: string;
-  phone?: string;
-  specialties: string[];
   bio?: string;
+  specialties: string[];
+  email: string;
+  phone?: string;
 }
 
 export interface Customer {
@@ -72,23 +66,24 @@ export interface Studio {
 
 export interface Reservation {
   id: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  booking_type?: 'advance' | 'walk_in';
-  cancellation_reason?: string;
-  created_at: string;
-  updated_at: string;
-  schedule_id: number;
-  customer_id: number;
-  customer?: Customer;
-  schedule?: {
-    id: number;
-    date: string;
-    start_time: string;
-    end_time: string;
-    program?: Program;
-    instructor?: Instructor;
-    studio?: Studio;
-  };
+  scheduleId: number;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  reservedAt: string;
+  schedule?: Schedule;
+}
+
+export interface CreateRecurringScheduleData {
+  date: string;
+  startTime: string;
+  endTime: string;
+  programId: number;
+  instructorId: number;
+  capacity: number;
+  repeatWeeks: number;
+  daysOfWeek: number[];
 }
 
 export interface UpdateScheduleData {
@@ -98,6 +93,5 @@ export interface UpdateScheduleData {
   endTime: string;
   programId: number;
   instructorId: number;
-  studioId: number;
   capacity: number;
 }

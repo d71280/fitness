@@ -1,130 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@/lib/supabase/server'
 import { z } from 'zod'
-import { v4 as uuidv4 } from 'uuid'
+import { schedulesService } from '@/lib/database/services'
 
-const createRecurringSchema = z.object({
+const createRecurringScheduleSchema = z.object({
   baseDate: z.string(),
   startTime: z.string(),
   endTime: z.string(),
   programId: z.number(),
   instructorId: z.number(),
-  studioId: z.number(),
-  capacity: z.number().min(1).max(100),
-  repeat: z.enum(['none', 'daily', 'weekly', 'monthly', 'yearly']),
-  repeatEndDate: z.string().optional(),
-  repeatCount: z.number().optional(),
+  capacity: z.number(),
+  repeatWeeks: z.number().min(1).max(52),
+  daysOfWeek: z.array(z.number().min(0).max(6)),
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const data = createRecurringSchema.parse(body)
+    const data = createRecurringScheduleSchema.parse(body)
 
-    const schedules = generateRecurringDates(data)
-    const recurringGroupId = data.repeat !== 'none' ? uuidv4() : null
+    const schedules = []
+    const baseDate = new Date(data.baseDate)
 
-    // データベースが利用可能かチェック
-    try {
-      const supabase = createServiceRoleClient()
-      
-      // 一括挿入用のデータを準備
-      const scheduleData = schedules.map(schedule => ({
-        date: schedule.date,
-        start_time: data.startTime,
-        end_time: data.endTime,
-        program_id: data.programId,
-        instructor_id: data.instructorId,
-        studio_id: data.studioId,
-        capacity: data.capacity,
-        recurring_group_id: recurringGroupId,
-        recurring_type: data.repeat,
-        recurring_end_date: data.repeatEndDate || null,
-        recurring_count: data.repeatCount || null,
-      }))
+    for (let week = 0; week < data.repeatWeeks; week++) {
+      for (const dayOfWeek of data.daysOfWeek) {
+        const scheduleDate = new Date(baseDate)
+        scheduleDate.setDate(baseDate.getDate() + (week * 7) + (dayOfWeek - baseDate.getDay()))
 
-      // 一括挿入
-      const { data: createdSchedules, error } = await supabase
-        .from('schedules')
-        .insert(scheduleData)
-        .select(`
-          *,
-          program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
-        `)
-
-      if (error) throw error
-
-      return NextResponse.json({
-        success: true,
-        schedulesCreated: createdSchedules.length,
-        schedules: createdSchedules,
-      })
-    } catch (dbError) {
-      console.warn('データベース接続エラー、モック応答を返します:', dbError)
-      
-      // モック応答を返す
-      return NextResponse.json({
-        success: true,
-        schedulesCreated: schedules.length,
-        schedules: schedules.map((schedule, index) => ({
-          id: Date.now() + index,
-          date: schedule.date,
+        schedules.push({
+          date: scheduleDate.toISOString().split('T')[0],
           start_time: data.startTime,
           end_time: data.endTime,
+          program_id: data.programId,
+          instructor_id: data.instructorId,
+          studio_id: 1,
           capacity: data.capacity,
-          program: { name: 'モックプログラム' },
-          instructor: { name: 'モックインストラクター' },
-          studio: { name: 'モックスタジオ' },
-        })),
-      })
+        })
+      }
     }
+
+    const createdSchedules = await schedulesService.createRecurring(schedules)
+    
+    return NextResponse.json({
+      success: true,
+      schedules: createdSchedules,
+      count: createdSchedules.length,
+    }, { status: 201 })
   } catch (error) {
-    console.error('繰り返しスケジュール作成エラー:', error)
+    console.error('Recurring schedule creation error:', error)
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          error: 'Validation error',
+          details: error.errors 
+        },
+        { status: 400 }
+      )
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create recurring schedules'
     return NextResponse.json(
-      { error: 'スケジュール作成に失敗しました' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
-}
-
-function generateRecurringDates(data: any): { date: string }[] {
-  const dates = []
-  const startDate = new Date(data.baseDate)
-  
-  if (data.repeat === 'none') {
-    return [{ date: data.baseDate }]
-  }
-
-  let currentDate = new Date(startDate)
-  let count = 0
-  const maxCount = data.repeatCount || 52
-  const endDate = data.repeatEndDate ? new Date(data.repeatEndDate) : null
-
-  while (count < maxCount) {
-    if (endDate && currentDate > endDate) break
-
-    dates.push({
-      date: currentDate.toISOString().split('T')[0],
-    })
-
-    switch (data.repeat) {
-      case 'daily':
-        currentDate.setDate(currentDate.getDate() + 1)
-        break
-      case 'weekly':
-        currentDate.setDate(currentDate.getDate() + 7)
-        break
-      case 'monthly':
-        currentDate.setMonth(currentDate.getMonth() + 1)
-        break
-      case 'yearly':
-        currentDate.setFullYear(currentDate.getFullYear() + 1)
-        break
-    }
-    count++
-  }
-
-  return dates
 }

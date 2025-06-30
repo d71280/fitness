@@ -8,43 +8,29 @@ type Customer = Database['public']['Tables']['customers']['Row']
 type CustomerInsert = Database['public']['Tables']['customers']['Insert']
 
 export interface ReservationWithRelations extends Reservation {
-  customer: Customer
   schedule: Database['public']['Tables']['schedules']['Row'] & {
     program: Database['public']['Tables']['programs']['Row']
     instructor: Database['public']['Tables']['instructors']['Row']
-    studio: Database['public']['Tables']['studios']['Row']
   }
+  customer: Database['public']['Tables']['customers']['Row']
 }
 
 export class ReservationsService {
   private supabase = createServiceRoleClient()
 
-  async getAll(filters?: { status?: string; customerId?: number; scheduleId?: number }) {
-    let query = this.supabase
+  async getAll() {
+    const { data, error } = await this.supabase
       .from('reservations')
       .select(`
         *,
-        customer:customers(*),
         schedule:schedules(
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
-        )
+          instructor:instructors(*)
+        ),
+        customer:customers(*)
       `)
       .order('created_at', { ascending: false })
-
-    if (filters?.status) {
-      query = query.eq('status', filters.status)
-    }
-    if (filters?.customerId) {
-      query = query.eq('customer_id', filters.customerId)
-    }
-    if (filters?.scheduleId) {
-      query = query.eq('schedule_id', filters.scheduleId)
-    }
-
-    const { data, error } = await query
 
     if (error) {
       throw new Error(`Failed to fetch reservations: ${error.message}`)
@@ -53,56 +39,62 @@ export class ReservationsService {
     return data as ReservationWithRelations[]
   }
 
-  async getById(id: number) {
+  async getByScheduleId(scheduleId: number) {
     const { data, error } = await this.supabase
       .from('reservations')
       .select(`
         *,
-        customer:customers(*),
         schedule:schedules(
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
-        )
+          instructor:instructors(*)
+        ),
+        customer:customers(*)
       `)
-      .eq('id', id)
-      .single()
+      .eq('schedule_id', scheduleId)
+      .eq('status', 'confirmed')
 
     if (error) {
-      throw new Error(`Failed to fetch reservation: ${error.message}`)
+      throw new Error(`Failed to fetch reservations for schedule: ${error.message}`)
     }
 
-    return data as ReservationWithRelations
+    return data as ReservationWithRelations[]
   }
 
-  async create(reservation: ReservationInsert, customer?: CustomerInsert) {
-    // トランザクション処理
-    const { data: customerData, error: customerError } = customer
-      ? await this.upsertCustomer(customer)
-      : { data: null, error: null }
-
-    if (customerError) {
-      throw new Error(`Failed to upsert customer: ${customerError.message}`)
-    }
-
-    const reservationData = {
-      ...reservation,
-      customer_id: customerData?.id || reservation.customer_id
-    }
-
+  async getByCustomerId(customerId: number) {
     const { data, error } = await this.supabase
       .from('reservations')
-      .insert(reservationData)
       .select(`
         *,
-        customer:customers(*),
         schedule:schedules(
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
-        )
+          instructor:instructors(*)
+        ),
+        customer:customers(*)
+      `)
+      .eq('customer_id', customerId)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      throw new Error(`Failed to fetch customer reservations: ${error.message}`)
+    }
+
+    return data as ReservationWithRelations[]
+  }
+
+  async create(reservation: ReservationInsert) {
+    const { data, error } = await this.supabase
+      .from('reservations')
+      .insert(reservation)
+      .select(`
+        *,
+        schedule:schedules(
+          *,
+          program:programs(*),
+          instructor:instructors(*)
+        ),
+        customer:customers(*)
       `)
       .single()
 
@@ -120,13 +112,12 @@ export class ReservationsService {
       .eq('id', id)
       .select(`
         *,
-        customer:customers(*),
         schedule:schedules(
           *,
           program:programs(*),
-          instructor:instructors(*),
-          studio:studios(*)
-        )
+          instructor:instructors(*)
+        ),
+        customer:customers(*)
       `)
       .single()
 
@@ -137,14 +128,25 @@ export class ReservationsService {
     return data as ReservationWithRelations
   }
 
-  async cancel(id: number, reason?: string) {
-    const update: ReservationUpdate = {
-      status: 'cancelled',
-      cancellation_reason: reason,
-      cancelled_at: new Date().toISOString()
+  async delete(id: number) {
+    const { error } = await this.supabase
+      .from('reservations')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to delete reservation: ${error.message}`)
     }
 
-    return this.update(id, update)
+    return true
+  }
+
+  async cancel(id: number, reason?: string) {
+    return this.update(id, {
+      status: 'cancelled',
+      cancellation_reason: reason,
+      updated_at: new Date().toISOString(),
+    })
   }
 
   async checkDuplicate(scheduleId: number, customerId: number) {

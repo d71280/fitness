@@ -1,117 +1,134 @@
-import { Program, Instructor, Studio, Schedule, Reservation } from '@/types/api'
+import { Program, Instructor, Schedule, Reservation } from '@/types/api'
 
 // 開発用のモックデータ（データベースが使用できない場合の代替）
 
-export const mockSchedules = {
-  '2025-06-16': [
-    {
-      id: 1,
-      time: '10:00 - 11:00',
-      program: 'ヨガ',
-      instructor: '田中 美香',
-      studio: 'スタジオ1',
-      capacity: 20,
-      booked: 15,
-      color: 'bg-green-500',
-      textColor: 'text-white',
-    },
-    {
-      id: 2,
-      time: '14:00 - 14:45',
-      program: 'ピラティス',
-      instructor: '山田 さくら',
-      studio: 'スタジオ2',
-      capacity: 15,
-      booked: 12,
-      color: 'bg-purple-500',
-      textColor: 'text-white',
-    },
-  ],
-  '2025-06-17': [
-    {
-      id: 3,
-      time: '09:00 - 10:00',
-      program: 'HIIT',
-      instructor: '佐藤 健太',
-      studio: 'スタジオ1',
-      capacity: 25,
-      booked: 20,
-      color: 'bg-orange-500',
-      textColor: 'text-white',
-    },
-    {
-      id: 4,
-      time: '19:00 - 20:00',
-      program: 'ズンバ',
-      instructor: '佐藤 健太',
-      studio: 'スタジオ1',
-      capacity: 30,
-      booked: 28,
-      color: 'bg-red-500',
-      textColor: 'text-white',
-    },
-  ],
-  '2025-06-18': [
-    {
-      id: 5,
-      time: '11:00 - 12:00',
-      program: 'ヨガ',
-      instructor: '田中 美香',
-      studio: 'スタジオ1',
-      capacity: 20,
-      booked: 18,
-      color: 'bg-green-500',
-      textColor: 'text-white',
-    },
-  ],
-  '2025-06-19': [
-    {
-      id: 6,
-      time: '18:00 - 18:45',
-      program: 'ピラティス',
-      instructor: '山田 さくら',
-      studio: 'スタジオ2',
-      capacity: 15,
-      booked: 15,
-      color: 'bg-purple-500',
-      textColor: 'text-white',
-    },
-  ],
-}
+export const mockSchedules: Schedule[] = [
+  {
+    id: 1,
+    date: '2025-01-06',
+    startTime: '10:00',
+    endTime: '11:00',
+    programId: 1,
+    instructorId: 1,
+    capacity: 30,
+  },
+  {
+    id: 2,
+    date: '2025-01-06',
+    startTime: '11:00',
+    endTime: '12:00',
+    programId: 2,
+    instructorId: 2,
+    capacity: 20,
+  },
+  {
+    id: 3,
+    date: '2025-01-06',
+    startTime: '14:00',
+    endTime: '14:45',
+    programId: 3,
+    instructorId: 3,
+    capacity: 25,
+  },
+  {
+    id: 4,
+    date: '2025-01-06',
+    startTime: '18:00',
+    endTime: '18:30',
+    programId: 4,
+    instructorId: 1,
+    capacity: 30,
+  },
+  {
+    id: 5,
+    date: '2025-01-07',
+    startTime: '10:00',
+    endTime: '11:00',
+    programId: 1,
+    instructorId: 1,
+    capacity: 30,
+  },
+  {
+    id: 6,
+    date: '2025-01-07',
+    startTime: '11:00',
+    endTime: '12:00',
+    programId: 4,
+    instructorId: 2,
+    capacity: 30,
+  },
+]
+
+export const mockReservations: Reservation[] = [
+  {
+    id: 1,
+    scheduleId: 1,
+    userId: 'user1',
+    userName: '田中花子',
+    userEmail: 'hanako@example.com',
+    userPhone: '090-1234-5678',
+    reservedAt: '2025-01-05T15:30:00Z',
+  },
+  {
+    id: 2,
+    scheduleId: 1,
+    userId: 'user2',
+    userName: '佐藤太郎',
+    userEmail: 'taro@example.com',
+    reservedAt: '2025-01-05T16:00:00Z',
+  },
+  {
+    id: 3,
+    scheduleId: 2,
+    userId: 'user3',
+    userName: '鈴木一郎',
+    userEmail: 'ichiro@example.com',
+    userPhone: '080-9876-5432',
+    reservedAt: '2025-01-05T17:00:00Z',
+  },
+]
 
 export const mockPrograms: Program[] = [
   {
     id: 1,
-    name: 'ヨガベーシック',
-    description: '初心者向けの基本的なヨガレッスンです',
+    name: 'ヨガ',
+    description: 'リラックスできるヨガクラス',
+    duration: 60,
+    capacity: 20,
+    color: '#10B981',
     color_class: 'bg-green-500',
     text_color_class: 'text-white',
-    default_instructor_id: 1
   },
   {
     id: 2,
     name: 'HIIT',
-    description: '高強度インターバルトレーニングで効率的に脂肪燃焼',
-    color_class: 'bg-red-500',
+    description: '高強度インターバルトレーニング',
+    duration: 30,
+    capacity: 15,
+    color: '#F97316',
+    color_class: 'bg-orange-500',
     text_color_class: 'text-white',
-    default_instructor_id: 2
   },
   {
     id: 3,
     name: 'ピラティス',
-    description: '体幹を鍛えて姿勢改善を目指します',
+    description: 'コア強化のピラティスクラス',
+    duration: 45,
+    capacity: 12,
+    color: '#8B5CF6',
     color_class: 'bg-purple-500',
     text_color_class: 'text-white',
-    default_instructor_id: 3
   },
   {
     id: 4,
-    name: 'エアロビクス',
-    description: '音楽に合わせて楽しく有酸素運動',
-    color_class: 'bg-orange-500',
+    name: 'ダンス',
+    description: 'リズミカルなダンスクラス',
+    duration: 60,
+    capacity: 25,
+    color: '#EF4444',
+    color_class: 'bg-red-500',
     text_color_class: 'text-white',
-    default_instructor_id: 1
-  }
+  },
 ]
 
 export const mockInstructors = [
@@ -135,22 +152,5 @@ export const mockInstructors = [
     email: 'sakura.yamada@studio.com',
     specialties: ['ピラティス', 'ヨガ'],
     bio: '丁寧な指導で初心者にも人気',
-  },
-]
-
-export const mockStudios = [
-  {
-    id: 1,
-    name: 'スタジオ1',
-    capacity: 30,
-    equipment: ['ヨガマット', 'ダンベル', '音響設備'],
-    description: 'メインスタジオ',
-  },
-  {
-    id: 2,
-    name: 'スタジオ2',
-    capacity: 20,
-    equipment: ['ヨガマット', 'ピラティスボール', '音響設備'],
-    description: 'サブスタジオ',
   },
 ]
