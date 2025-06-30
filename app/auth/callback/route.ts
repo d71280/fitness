@@ -6,18 +6,22 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   
-  // 本番環境では確実に正しいURLを使用
-  const origin = requestUrl.hostname.includes('vercel.app')
-    ? 'https://fitness2-q2y0zojae-daiki-akiyama-9051s-projects.vercel.app'
-    : requestUrl.origin
+  // 動的にURLを取得
+  const origin = requestUrl.origin
   
   const redirectTo = requestUrl.searchParams.get('next') ?? '/dashboard'
 
-  console.log('Auth callback - Full URL:', request.url)
-  console.log('Auth callback - Original origin:', requestUrl.origin)
-  console.log('Auth callback - Using origin:', origin)
-  console.log('Auth callback - Code:', code)
-  console.log('Auth callback - Redirect to:', redirectTo)
+  console.log('=== AUTH CALLBACK DEBUG ===')
+  console.log('Full URL:', request.url)
+  console.log('Host:', request.headers.get('host'))
+  console.log('Origin (from URL):', requestUrl.origin)
+  console.log('Origin (from header):', request.headers.get('origin'))
+  console.log('Protocol:', requestUrl.protocol)
+  console.log('Hostname:', requestUrl.hostname)
+  console.log('Port:', requestUrl.port)
+  console.log('Code:', code ? 'Present' : 'Missing')
+  console.log('Next param:', redirectTo)
+  console.log('All search params:', Object.fromEntries(requestUrl.searchParams))
 
   if (code) {
     const cookieStore = cookies()
@@ -40,22 +44,39 @@ export async function GET(request: NextRequest) {
     )
 
     try {
+      console.log('Attempting to exchange code for session...')
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-      console.log('Auth callback - Exchange result:', { user: data?.user?.id, error: error?.message })
+      
+      console.log('Exchange result:')
+      console.log('- User ID:', data?.user?.id)
+      console.log('- User email:', data?.user?.email)
+      console.log('- Error:', error?.message)
+      console.log('- Session exists:', !!data?.session)
       
       if (!error && data.user) {
-        console.log('Auth callback - Success! Redirecting to:', `${origin}${redirectTo}`)
-        return NextResponse.redirect(`${origin}${redirectTo}`)
+        const finalUrl = `${origin}${redirectTo}`
+        console.log('SUCCESS! Final redirect URL:', finalUrl)
+        console.log('=== END AUTH CALLBACK DEBUG ===')
+        return NextResponse.redirect(finalUrl)
       } else {
-        console.error('Auth callback - Exchange failed:', error?.message)
-        return NextResponse.redirect(`${origin}/auth/signin?error=exchange-failed`)
+        console.error('Exchange failed:', error?.message)
+        const errorUrl = `${origin}/auth/signin?error=exchange-failed`
+        console.log('ERROR redirect URL:', errorUrl)
+        console.log('=== END AUTH CALLBACK DEBUG ===')
+        return NextResponse.redirect(errorUrl)
       }
     } catch (err) {
-      console.error('Auth callback - Exception:', err)
-      return NextResponse.redirect(`${origin}/auth/signin?error=callback-exception`)
+      console.error('Exception during exchange:', err)
+      const errorUrl = `${origin}/auth/signin?error=callback-exception`
+      console.log('EXCEPTION redirect URL:', errorUrl)
+      console.log('=== END AUTH CALLBACK DEBUG ===')
+      return NextResponse.redirect(errorUrl)
     }
   }
 
-  console.log('Auth callback - No code provided')
-  return NextResponse.redirect(`${origin}/auth/signin?error=no-code`)
+  console.log('No code provided in callback')
+  const errorUrl = `${origin}/auth/signin?error=no-code`
+  console.log('NO-CODE redirect URL:', errorUrl)
+  console.log('=== END AUTH CALLBACK DEBUG ===')
+  return NextResponse.redirect(errorUrl)
 }

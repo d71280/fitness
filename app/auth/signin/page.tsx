@@ -89,30 +89,38 @@ export default function SignIn() {
     setError('')
 
     try {
-      console.log('Signin - Starting Google OAuth')
+      console.log('=== GOOGLE SIGNIN DEBUG ===')
+      console.log('Window location href:', window.location.href)
+      console.log('Window location origin:', window.location.origin)
+      console.log('Window location hostname:', window.location.hostname)
+      console.log('Window location protocol:', window.location.protocol)
+      console.log('Window location port:', window.location.port)
       
-      // 本番環境のURLを確実に指定
-      const baseUrl = window.location.hostname.includes('vercel.app')
-        ? 'https://fitness2-q2y0zojae-daiki-akiyama-9051s-projects.vercel.app'
-        : window.location.origin
+      // 動的にURLを取得
+      const baseUrl = window.location.origin
+      const redirectUrl = `${baseUrl}/auth/callback?next=%2Fdashboard`
       
-      console.log('Signin - Base URL:', baseUrl)
-      console.log('Signin - Current origin:', window.location.origin)
+      console.log('Base URL:', baseUrl)
+      console.log('Redirect URL:', redirectUrl)
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${baseUrl}/auth/callback?next=%2Fdashboard`,
+          redirectTo: redirectUrl,
         },
       })
 
       if (error) {
-        console.error('Signin - Google OAuth error:', error)
+        console.error('Google OAuth error:', error)
+        console.log('=== END GOOGLE SIGNIN DEBUG ===')
         throw error
       }
-      console.log('Signin - Google OAuth initiated successfully')
+      console.log('Google OAuth initiated successfully')
+      console.log('OAuth data:', data)
+      console.log('=== END GOOGLE SIGNIN DEBUG ===')
     } catch (error: any) {
-      console.error('Signin - Google sign in failed:', error)
+      console.error('Google sign in failed:', error)
       setError(error.message || 'Googleログインに失敗しました')
       setLoading(false)
     }

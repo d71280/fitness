@@ -8,126 +8,248 @@ import { createClient } from '@/utils/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function DebugAuth() {
-  const [user, setUser] = useState<any>(null)
-  const [session, setSession] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  const checkAuth = async () => {
-    setLoading(true)
-    
-    // ユーザー情報取得
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    console.log('User check:', { user, userError })
-    
-    // セッション情報取得
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    console.log('Session check:', { session, sessionError })
-    
-    setUser(user)
-    setSession(session)
-    setLoading(false)
-  }
-
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setSession(null)
-  }
-
-  const testGoogleSignIn = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/debug-auth`,
-      },
-    })
-    console.log('Google signin attempt:', { data, error })
-  }
-
+export default function AuthDebugPage() {
+  const [diagnostics, setDiagnostics] = useState<any>({})
+  const [supabaseConfig, setSupabaseConfig] = useState<any>({})
+  
   useEffect(() => {
-    checkAuth()
+    const runDiagnostics = async () => {
+      // ブラウザ環境情報
+      const browserInfo = {
+        userAgent: navigator.userAgent,
+        currentUrl: window.location.href,
+        origin: window.location.origin,
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        port: window.location.port,
+        pathname: window.location.pathname,
+      }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', { event, session: session?.user?.id })
-      setUser(session?.user ?? null)
-      setSession(session)
-    })
+      // 環境変数情報
+      const envInfo = {
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        nodeEnv: process.env.NODE_ENV,
+      }
 
-    return () => subscription.unsubscribe()
+      // Supabaseクライアント情報
+      const supabase = createClient()
+      let authInfo = {}
+      
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        authInfo = {
+          isAuthenticated: !!user,
+          userId: user?.id,
+          userEmail: user?.email,
+          error: error?.message,
+        }
+      } catch (err: any) {
+        authInfo = {
+          isAuthenticated: false,
+          error: err.message,
+        }
+      }
+
+      // 推奨設定値
+      const recommendations = {
+        googleCloudConsole: {
+          authorizedJavaScriptOrigins: [
+            'http://localhost:3000',
+            window.location.origin,
+          ],
+          authorizedRedirectUris: [
+            'http://localhost:3000/auth/callback',
+            `${window.location.origin}/auth/callback`,
+            'https://*.supabase.co/auth/v1/callback',
+          ],
+        },
+        supabaseSettings: {
+          siteUrl: window.location.origin,
+          redirectUrls: [
+            'http://localhost:3000/**',
+            `${window.location.origin}/**`,
+          ],
+        },
+      }
+
+      setDiagnostics({
+        browserInfo,
+        envInfo,
+        authInfo,
+        recommendations,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
+    runDiagnostics()
   }, [])
 
-  if (loading) {
-    return <div className="p-8">Loading...</div>
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    alert('クリップボードにコピーしました')
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>認証デバッグ</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <h3 className="font-semibold">認証状態:</h3>
-            <p className="text-sm">ユーザー: {user ? '✅ ログイン済み' : '❌ ログインしていません'}</p>
-            <p className="text-sm">セッション: {session ? '✅ 有効' : '❌ 無効'}</p>
-          </div>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-2xl font-bold mb-6">Google認証診断ページ</h1>
+      
+      <div className="space-y-6">
+        {/* ブラウザ環境情報 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🌐 ブラウザ環境情報</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 font-mono text-sm">
+              {Object.entries(diagnostics.browserInfo || {}).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-3 gap-4">
+                  <span className="font-medium">{key}:</span>
+                  <span className="col-span-2 break-all">{value as string}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          {user && (
-            <div className="bg-green-50 p-4 rounded">
-              <h4 className="font-semibold text-green-800">ユーザー情報:</h4>
-              <pre className="text-xs text-green-700 mt-2 overflow-auto">
-                {JSON.stringify(user, null, 2)}
+        {/* 環境変数情報 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>⚙️ 環境変数情報</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 font-mono text-sm">
+              {Object.entries(diagnostics.envInfo || {}).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-3 gap-4">
+                  <span className="font-medium">{key}:</span>
+                  <span className="col-span-2">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 認証状態 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🔐 認証状態</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 font-mono text-sm">
+              {Object.entries(diagnostics.authInfo || {}).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-3 gap-4">
+                  <span className="font-medium">{key}:</span>
+                  <span className="col-span-2">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Google Cloud Console推奨設定 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>☁️ Google Cloud Console推奨設定</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">承認済みJavaScriptの生成元:</h4>
+                <div className="bg-gray-100 p-3 rounded font-mono text-sm">
+                  {diagnostics.recommendations?.googleCloudConsole?.authorizedJavaScriptOrigins?.map((url: string, i: number) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span>{url}</span>
+                      <button 
+                        onClick={() => copyToClipboard(url)}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        コピー
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">承認済みリダイレクトURI:</h4>
+                <div className="bg-gray-100 p-3 rounded font-mono text-sm">
+                  {diagnostics.recommendations?.googleCloudConsole?.authorizedRedirectUris?.map((url: string, i: number) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span>{url}</span>
+                      <button 
+                        onClick={() => copyToClipboard(url)}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        コピー
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Supabase推奨設定 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🚀 Supabase推奨設定</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Site URL:</h4>
+                <div className="bg-gray-100 p-3 rounded font-mono text-sm flex justify-between items-center">
+                  <span>{diagnostics.recommendations?.supabaseSettings?.siteUrl}</span>
+                  <button 
+                    onClick={() => copyToClipboard(diagnostics.recommendations?.supabaseSettings?.siteUrl)}
+                    className="text-blue-600 hover:underline text-xs"
+                  >
+                    コピー
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="font-medium mb-2">Redirect URLs:</h4>
+                <div className="bg-gray-100 p-3 rounded font-mono text-sm">
+                  {diagnostics.recommendations?.supabaseSettings?.redirectUrls?.map((url: string, i: number) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <span>{url}</span>
+                      <button 
+                        onClick={() => copyToClipboard(url)}
+                        className="text-blue-600 hover:underline text-xs"
+                      >
+                        コピー
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* デバッグ情報 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🐛 デバッグ情報（JSON）</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-100 p-3 rounded">
+              <button 
+                onClick={() => copyToClipboard(JSON.stringify(diagnostics, null, 2))}
+                className="mb-2 text-blue-600 hover:underline text-sm"
+              >
+                全データをコピー
+              </button>
+              <pre className="text-xs overflow-auto max-h-96">
+                {JSON.stringify(diagnostics, null, 2)}
               </pre>
             </div>
-          )}
-
-          {session && (
-            <div className="bg-blue-50 p-4 rounded">
-              <h4 className="font-semibold text-blue-800">セッション情報:</h4>
-              <pre className="text-xs text-blue-700 mt-2 overflow-auto">
-                {JSON.stringify({
-                  access_token: session.access_token ? '***' : null,
-                  refresh_token: session.refresh_token ? '***' : null,
-                  expires_at: session.expires_at,
-                  user: session.user?.id
-                }, null, 2)}
-              </pre>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            <Button onClick={checkAuth}>
-              認証状態を再確認
-            </Button>
-            <Button onClick={testGoogleSignIn} variant="outline">
-              Googleログインテスト
-            </Button>
-            {user && (
-              <Button onClick={signOut} variant="destructive">
-                サインアウト
-              </Button>
-            )}
-          </div>
-
-          <div className="bg-yellow-50 p-4 rounded">
-            <h4 className="font-semibold text-yellow-800">環境変数確認:</h4>
-            <p className="text-xs text-yellow-700">
-              SUPABASE_URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ 設定済み' : '❌ 未設定'}
-            </p>
-            <p className="text-xs text-yellow-700">
-              SUPABASE_ANON_KEY: {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? '✅ 設定済み' : '❌ 未設定'}
-            </p>
-          </div>
-
-          <div className="text-sm text-gray-600">
-            <p>このページでGoogleログインをテストして、認証後にこのページに戻ってくるかを確認できます。</p>
-            <p>ブラウザの開発者ツールでコンソールログも確認してください。</p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 } 
