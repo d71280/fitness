@@ -43,10 +43,19 @@ export async function GET(request: NextRequest) {
       console.log('- Session exists:', !!data?.session)
       
       if (!error && data.user) {
+        // セッション確立後に少し待機してからリダイレクト
         const finalUrl = `${origin}${redirectTo}`
         console.log('SUCCESS! Final redirect URL:', finalUrl)
         console.log('=== END AUTH CALLBACK DEBUG ===')
-        return NextResponse.redirect(finalUrl)
+        
+        // セッションクッキーが確実に設定されるようにする
+        const response = NextResponse.redirect(finalUrl)
+        // セッション確立の確実性のためキャッシュ無効化
+        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+        response.headers.set('Pragma', 'no-cache')
+        response.headers.set('Expires', '0')
+        
+        return response
       } else {
         console.error('Exchange failed:', error?.message)
         const errorUrl = `${origin}/auth/signin?error=exchange-failed`
