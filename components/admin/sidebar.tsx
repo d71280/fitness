@@ -13,7 +13,7 @@ import {
   Activity,
   Dumbbell,
   Home,
-  Bell
+  MessageSquare
 } from 'lucide-react'
 
 const navigation = [
@@ -38,9 +38,9 @@ const navigation = [
     icon: Activity
   },
   {
-    name: 'リマインド設定',
-    href: '/dashboard/reminders',
-    icon: Bell
+    name: 'メッセージ・リマインド設定',
+    href: '/dashboard/messages',
+    icon: MessageSquare
   },
   {
     name: '設定',

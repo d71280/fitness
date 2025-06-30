@@ -21,7 +21,7 @@ export default function DashboardLayout({
           <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
           
           <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-none w-full">
+            <div className="max-w-7xl w-full mx-auto">
               {children}
             </div>
           </main>

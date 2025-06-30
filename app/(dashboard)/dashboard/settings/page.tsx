@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone, MessageSquare } from 'lucide-react'
+import { Settings, TestTube, Save, Eye, EyeOff, Mail, Smartphone } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Select } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
-import type { MessageSettings, ReminderSchedule } from '@/lib/message-templates'
+
 
 interface ConnectionSettings {
   appBaseUrl: string
@@ -39,34 +39,15 @@ export default function SettingsPage() {
     sheets?: boolean
     lineGroup?: boolean
     lineOfficial?: boolean | null
-    reminder?: boolean | null
   }>({
     sheets: undefined,
     lineGroup: undefined,
-    lineOfficial: null,
-    reminder: null
+    lineOfficial: null
   })
   const [showSecrets, setShowSecrets] = useState(false)
-  const [messageSettings, setMessageSettings] = useState({
-    bookingConfirmation: {
-      enabled: true,
-      messageText: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n🏢 スタジオ: {studio}\n\nお忘れなくお越しください！'
-    },
-    reminder: {
-      enabled: true,
-      hoursBefore: 24,
-      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊'
-    }
-  })
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [newSchedule, setNewSchedule] = useState<Partial<ReminderSchedule>>({
-    id: '',
-    name: '',
-    isActive: true,
-    timingHours: 1,
-    messageTemplate: ''
-  })
+
+
 
   // 設定読み込み
   useEffect(() => {
@@ -90,9 +71,7 @@ export default function SettingsPage() {
         setGoogleSheetsSettings(data.googleSheets)
       }
 
-      if (data.success && data.messages) {
-        setMessageSettings(data.messages)
-      }
+
     } catch (error) {
       console.error('設定読み込みエラー:', error)
     }
@@ -106,8 +85,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connection: settings,
-          googleSheets: googleSheetsSettings,
-          messages: messageSettings
+          googleSheets: googleSheetsSettings
         })
       })
 
@@ -205,32 +183,7 @@ export default function SettingsPage() {
     }
   }
 
-  const testReminder = async () => {
-    setLoading(true)
-    setTestResults(prev => ({ ...prev, reminder: null }))
-    
-    try {
-      const response = await fetch('/api/test-connection?type=reminder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
-      
-      const data = await response.json()
-      setTestResults(prev => ({ ...prev, reminder: data.success }))
-      
-      if (data.success) {
-        alert(`リマインド機能テスト完了！\n送信数: ${data.details?.sent || 0}/${data.details?.total || 0}`)
-      } else {
-        alert(`リマインド機能テスト失敗: ${data.error}`)
-      }
-    } catch (error) {
-      setTestResults(prev => ({ ...prev, reminder: false }))
-      alert('リマインド機能テストでエラーが発生しました')
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   const updateSetting = (key: keyof ConnectionSettings, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }))
@@ -250,85 +203,7 @@ export default function SettingsPage() {
     return `${start}${'*'.repeat(str.length - 8)}${end}`
   }
 
-  const addCustomSchedule = async () => {
-    if (!newSchedule.id || !newSchedule.name || !newSchedule.messageTemplate) {
-      alert('すべてのフィールドを入力してください')
-      return
-    }
 
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          action: 'addReminderSchedule',
-          schedule: newSchedule
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        await loadSettings()
-        setIsAddModalOpen(false)
-        setNewSchedule({
-          id: '',
-          name: '',
-          enabled: true,
-          hoursBefore: 1,
-          messageText: ''
-        })
-        alert('リマインドスケジュールが追加されました')
-      } else {
-        alert(`追加に失敗しました: ${data.error}`)
-      }
-    } catch (error) {
-      console.error('スケジュール追加エラー:', error)
-      alert('スケジュールの追加でエラーが発生しました')
-    }
-  }
-
-  const deleteCustomSchedule = async (scheduleId: string) => {
-    if (!confirm('このリマインドスケジュールを削除しますか？')) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/settings?scheduleId=${scheduleId}`, {
-        method: 'DELETE'
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        await loadSettings()
-        alert('リマインドスケジュールが削除されました')
-      } else {
-        alert(`削除に失敗しました: ${data.error}`)
-      }
-    } catch (error) {
-      console.error('スケジュール削除エラー:', error)
-      alert('スケジュールの削除でエラーが発生しました')
-    }
-  }
-
-  const updateSchedule = (scheduleId: string, isCustom: boolean, updates: Partial<ReminderSchedule>) => {
-    if (!messageSettings.reminder) return
-
-    const newSettings = { ...messageSettings.reminder }
-    const targetArray = isCustom ? newSettings.customSchedules : newSettings.schedules
-    const scheduleIndex = targetArray.findIndex(s => s.id === scheduleId)
-    
-    if (scheduleIndex !== -1) {
-      targetArray[scheduleIndex] = { ...targetArray[scheduleIndex], ...updates }
-      setMessageSettings(prev => ({
-        ...prev,
-        reminder: { ...newSettings }
-      }))
-    }
-  }
 
   if (loading) {
     return (
@@ -580,146 +455,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* メッセージ設定 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-blue-500" />
-            メッセージ設定
-          </CardTitle>
-          <CardDescription>
-            予約完了時とリマインド通知のメッセージ内容を設定できます
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* 予約完了メッセージ */}
-          <div>
-            <div className="flex items-center space-x-2 mb-3">
-              <Switch
-                checked={messageSettings.bookingConfirmation.enabled}
-                onCheckedChange={(checked) => 
-                  setMessageSettings(prev => ({
-                    ...prev,
-                    bookingConfirmation: { ...prev.bookingConfirmation, enabled: checked }
-                  }))
-                }
-              />
-              <Label className="font-medium">予約完了メッセージを送信</Label>
-            </div>
-            
-            <Label htmlFor="bookingMessage" className="text-sm text-gray-600">
-              メッセージ内容 ({'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}が使用可能)
-            </Label>
-            <Textarea
-              id="bookingMessage"
-              value={messageSettings.bookingConfirmation.messageText}
-              onChange={(e) =>
-                setMessageSettings(prev => ({
-                  ...prev,
-                  bookingConfirmation: { ...prev.bookingConfirmation, messageText: e.target.value }
-                }))
-              }
-              placeholder="予約完了メッセージを入力してください"
-              rows={6}
-              className="mt-2"
-              disabled={!messageSettings.bookingConfirmation.enabled}
-            />
-          </div>
 
-          {/* リマインドメッセージ */}
-          <div>
-            <div className="flex items-center space-x-2 mb-3">
-              <Switch
-                checked={messageSettings.reminder.enabled}
-                onCheckedChange={(checked) => 
-                  setMessageSettings(prev => ({
-                    ...prev,
-                    reminder: { ...prev.reminder, enabled: checked }
-                  }))
-                }
-              />
-              <Label className="font-medium">リマインドメッセージを送信</Label>
-            </div>
-
-            <div className="mb-4">
-              <Label htmlFor="reminderHours" className="text-sm text-gray-600">
-                レッスンの何時間前に送信するか
-              </Label>
-              <Select
-                value={messageSettings.reminder.hoursBefore.toString()}
-                onValueChange={(value: string) =>
-                  setMessageSettings(prev => ({
-                    ...prev,
-                    reminder: { ...prev.reminder, hoursBefore: parseInt(value) }
-                  }))
-                }
-                disabled={!messageSettings.reminder.enabled}
-              >
-                <option value="1">1時間前</option>
-                <option value="3">3時間前</option>
-                <option value="6">6時間前</option>
-                <option value="12">12時間前</option>
-                <option value="24">24時間前（1日前）</option>
-                <option value="48">48時間前（2日前）</option>
-              </Select>
-            </div>
-            
-            <Label htmlFor="reminderMessage" className="text-sm text-gray-600">
-              メッセージ内容 ({'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}が使用可能)
-            </Label>
-            <Textarea
-              id="reminderMessage"
-              value={messageSettings.reminder.messageText}
-              onChange={(e) =>
-                setMessageSettings(prev => ({
-                  ...prev,
-                  reminder: { ...prev.reminder, messageText: e.target.value }
-                }))
-              }
-              placeholder="リマインドメッセージを入力してください"
-              rows={6}
-              className="mt-2"
-              disabled={!messageSettings.reminder.enabled}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* リマインド機能テスト */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-green-500" />
-            リマインド機能テスト
-          </CardTitle>
-          <CardDescription>
-            リマインド機能のテストを行います
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex space-x-2">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={testReminder}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              <TestTube className="h-4 w-4" />
-              {loading ? 'テスト中...' : 'リマインド機能テスト'}
-            </Button>
-            {testResults.reminder !== null && (
-              <div className={`px-3 py-2 rounded-md text-sm ${
-                testResults.reminder 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
-                {testResults.reminder ? '✓ 成功' : '✗ 失敗'}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 保存ボタン */}
       <div className="flex justify-end">
@@ -733,67 +469,7 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      {/* カスタムスケジュール追加モーダル */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="リマインドスケジュール追加">
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="scheduleId">スケジュールID</Label>
-            <Input
-              id="scheduleId"
-              value={newSchedule.id || ''}
-              onChange={(e) => setNewSchedule({ ...newSchedule, id: e.target.value })}
-              placeholder="例: 2h, custom1"
-            />
-          </div>
 
-          <div>
-            <Label htmlFor="scheduleName">スケジュール名</Label>
-            <Input
-              id="scheduleName"
-              value={newSchedule.name || ''}
-              onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
-              placeholder="例: 2時間前"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="hoursBefore">何時間前</Label>
-            <Input
-              id="hoursBefore"
-              type="number"
-              min="0.5"
-              max="168"
-              step="0.5"
-              value={newSchedule.hoursBefore || 1}
-              onChange={(e) => setNewSchedule({ ...newSchedule, hoursBefore: parseFloat(e.target.value) })}
-            />
-            <p className="text-xs text-gray-500 mt-1">0.5〜168時間（1週間）の範囲で設定</p>
-          </div>
-
-          <div>
-            <Label htmlFor="messageText">メッセージテンプレート</Label>
-            <Textarea
-              id="messageText"
-              value={newSchedule.messageText || ''}
-              onChange={(e) => setNewSchedule({ ...newSchedule, messageText: e.target.value })}
-              rows={4}
-              placeholder="リマインドメッセージを入力..."
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              使用可能な変数: {'{date}'}, {'{time}'}, {'{program}'}, {'{instructor}'}, {'{studio}'}
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              キャンセル
-            </Button>
-            <Button onClick={addCustomSchedule} className="bg-blue-600 hover:bg-blue-700">
-              追加
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
 }
