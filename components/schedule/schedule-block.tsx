@@ -5,7 +5,7 @@ import { Schedule } from '@/types/api'
 
 interface ScheduleBlockProps {
   schedule: Schedule
-  onClick?: () => void
+  onClick?: (schedule: Schedule) => void
   className?: string
 }
 
@@ -24,7 +24,7 @@ export function ScheduleBlock({ schedule, onClick, className = '' }: ScheduleBlo
   return (
     <div
       className={`p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity ${programClass} ${textClass} ${className} ${isFullyBooked ? 'opacity-60' : ''}`}
-      onClick={onClick}
+      onClick={() => onClick?.(schedule)}
     >
       <div className="text-xs font-medium mb-1">
         {schedule.startTime?.slice(0, 5)} - {schedule.endTime?.slice(0, 5)}
