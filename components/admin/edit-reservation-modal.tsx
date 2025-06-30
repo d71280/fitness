@@ -109,7 +109,6 @@ export function EditReservationModal({
             <div><strong>予約ID:</strong> {reservation.id}</div>
             <div><strong>日時:</strong> {reservation.schedule?.date} {reservation.schedule?.startTime}-{reservation.schedule?.endTime}</div>
             <div><strong>プログラム:</strong> {reservation.schedule?.program?.name}</div>
-            <div><strong>講師:</strong> {reservation.schedule?.instructor?.name}</div>
           </div>
         </div>
 

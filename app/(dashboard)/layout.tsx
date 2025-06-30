@@ -20,8 +20,10 @@ export default function DashboardLayout({
         <div className="lg:pl-64">
           <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
           
-          <main className="py-6 px-4 sm:px-6 lg:px-8">
-            {children}
+          <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-none w-full">
+              {children}
+            </div>
           </main>
         </div>
       </div>

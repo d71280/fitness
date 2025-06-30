@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         program:programs(*),
-        instructor:instructors(*),
         reservations(
           *,
           customer:customers(*)
@@ -48,10 +47,9 @@ export async function GET(request: NextRequest) {
         startTime: schedule.start_time,
         endTime: schedule.end_time,
         programId: schedule.program_id,
-        instructorId: schedule.instructor_id,
+        instructorId: 1, // デフォルトインストラクター
         capacity: schedule.capacity,
         program: schedule.program,
-        instructor: schedule.instructor,
         currentBookings: confirmedReservations.length,
         availableSlots: schedule.capacity - confirmedReservations.length,
         reservations: confirmedReservations
@@ -91,8 +89,7 @@ export async function POST(request: NextRequest) {
         })
         .select(`
           *,
-          program:programs(*),
-          instructor:instructors(*)
+          program:programs(*)
         `)
         .single()
 
@@ -105,10 +102,9 @@ export async function POST(request: NextRequest) {
         startTime: schedule.start_time,
         endTime: schedule.end_time,
         programId: schedule.program_id,
-        instructorId: schedule.instructor_id,
+        instructorId: 1, // デフォルトインストラクター
         capacity: schedule.capacity,
         program: schedule.program,
-        instructor: schedule.instructor,
       }
 
       return NextResponse.json({
@@ -128,7 +124,7 @@ export async function POST(request: NextRequest) {
           end_time: data.endTime,
           capacity: data.capacity,
           program: { name: 'モックプログラム' },
-          instructor: { name: 'モックインストラクター' },
+
         },
       }, { status: 201 })
     }

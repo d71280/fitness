@@ -194,7 +194,7 @@ export default function RemindersPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 min-h-screen">
+    <div className="w-full">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

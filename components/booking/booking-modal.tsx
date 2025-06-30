@@ -143,8 +143,9 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
 
   if (!schedule) return null
 
-  const isFullyBooked = (schedule as any).bookedCount >= schedule.capacity
-  const availableSpots = schedule.capacity - (schedule as any).bookedCount
+  const currentBookings = schedule.currentBookings || schedule.bookedCount || 0
+  const isFullyBooked = currentBookings >= schedule.capacity
+  const availableSpots = schedule.availableSlots || (schedule.capacity - currentBookings)
 
   return (
     <Modal
@@ -169,10 +170,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 {schedule.program?.name || 'プログラム名未設定'}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-sm opacity-90">
-                <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
-                  {schedule.instructor?.name || 'インストラクター未設定'}
-                </div>
+
 
               </div>
             </div>
@@ -186,7 +184,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 </span>
               </div>
               <span className="text-sm text-gray-500">
-                {(schedule as any).bookedCount}/{schedule.capacity}名
+                {currentBookings}/{schedule.capacity}名
               </span>
             </div>
 

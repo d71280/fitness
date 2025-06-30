@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { AlertCircle, Eye, EyeOff, Chrome } from 'lucide-react'
 
 export default function SignIn() {
   const [email, setEmail] = useState('')
@@ -18,6 +18,15 @@ export default function SignIn() {
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // URLパラメータからエラーを取得
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const errorParam = urlParams.get('error')
+    if (errorParam === 'auth-failed') {
+      setError('認証に失敗しました。再度お試しください。')
+    }
+  }, [])
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +80,27 @@ export default function SignIn() {
     } catch (error: any) {
       setError(error.message || '登録に失敗しました')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      })
+
+      if (error) {
+        throw error
+      }
+    } catch (error: any) {
+      setError(error.message || 'Googleログインに失敗しました')
       setLoading(false)
     }
   }
@@ -143,6 +173,24 @@ export default function SignIn() {
             )}
 
             <div className="space-y-2">
+              {/* Googleログインボタン */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={loading}
+                onClick={handleGoogleSignIn}
+              >
+                <Chrome className="mr-2 h-4 w-4" />
+                Googleでログイン
+              </Button>
+
+              <div className="flex items-center my-4">
+                <div className="flex-1 border-t border-gray-300"></div>
+                <div className="px-3 text-gray-500 text-sm">または</div>
+                <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"

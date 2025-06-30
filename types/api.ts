@@ -8,6 +8,9 @@ export interface Schedule {
   capacity: number;
   program?: Program;
   instructor?: Instructor;
+  currentBookings?: number;
+  availableSlots?: number;
+  bookedCount?: number;
 }
 
 export interface CreateScheduleData {
