@@ -325,9 +325,6 @@ export default function ReservationsCustomersPage() {
                                 <div className="text-gray-600">
                                   プログラム: {reservation.schedule?.program?.name || '不明'}
                                 </div>
-                                <div className="text-gray-600">
-                                  講師: {reservation.schedule?.instructor?.name || '不明'}
-                                </div>
                               </div>
                             </div>
                           </div>
