@@ -126,7 +126,7 @@ ${reminderData.hoursUntil}時間後にレッスンがあります！
 お待ちしております😊`
     }
 
-    return this.sendMessage(lineId, reminderData.customerName)
+    return this.sendMessage(lineId, message)
   }
 
   // キャンセル確認メッセージの送信
