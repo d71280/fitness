@@ -74,7 +74,7 @@ export function getMessageSettings(): MessageSettings {
     bookingConfirmation: {
       enabled: true,
       messageType: 'flex',
-      textMessage: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n\nお忘れなくお越しください！',
+      textMessage: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n\nお忘れなくお越しください！',
       includeDetails: {
         date: true,
         time: true,
@@ -92,7 +92,7 @@ export function getMessageSettings(): MessageSettings {
           id: "24h",
           name: "24時間前",
           timingHours: 24,
-          messageTemplate: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
+          messageTemplate: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
           isActive: true,
         }
       ],
@@ -148,7 +148,7 @@ export function processMessageTemplate(template: string, data: any): string {
 export const defaultMessageSettings: ReminderSettings = {
   templates: {
     booking: {
-      textMessage: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n\nお忘れなくお越しください！',
+      textMessage: '✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n\nお忘れなくお越しください！',
       variables: {
         date: true,
         time: true,
@@ -157,7 +157,7 @@ export const defaultMessageSettings: ReminderSettings = {
       }
     },
     reminder: {
-      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
+      messageText: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
       variables: {
         date: true,
         time: true,
@@ -174,28 +174,28 @@ export const defaultReminderSchedules: ReminderSchedule[] = [
     id: 'default-24h',
     name: '24時間前',
     timingHours: 24,
-    messageTemplate: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
+    messageTemplate: '【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊',
     isActive: true,
   },
   {
     id: 'default-3h',
     name: '3時間前',
     timingHours: 3,
-    messageTemplate: '【まもなくレッスン開始】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\n準備はOKですか？✨',
+    messageTemplate: '【まもなくレッスン開始】\n\n{program}\n📅 {date}\n⏰ {time}\n\n準備はOKですか？✨',
     isActive: true,
   },
   {
     id: 'default-1h',
     name: '1時間前',
     timingHours: 1,
-    messageTemplate: '【レッスン開始まで1時間】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお待ちしています！',
+    messageTemplate: '【レッスン開始まで1時間】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお待ちしています！',
     isActive: true,
   },
   {
     id: 'default-30m',
     name: '30分前',
     timingHours: 0.5,
-    messageTemplate: '【レッスン開始まで30分】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお時間に遅れないよう、お気をつけください！',
+    messageTemplate: '【レッスン開始まで30分】\n\n{program}\n📅 {date}\n⏰ {time}\n\nお時間に遅れないよう、お気をつけください！',
     isActive: false, // デフォルトは無効
   },
 ]
