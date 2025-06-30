@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         .select(`
           *,
           program:programs(*),
-          instructor:instructors(*),
+  
           reservations(
             *,
             customer:customers(*)

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'

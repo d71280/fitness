@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
               schedule:schedules(
                 *,
                 program:programs(*),
-                instructor:instructors(*),
+        
                 studio:studios(*)
               ),
               customer:customers(*)
