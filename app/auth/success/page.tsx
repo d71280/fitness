@@ -15,30 +15,51 @@ export default function AuthSuccessPage() {
         
         // セッション確認を数回試行
         let attempts = 0
-        const maxAttempts = 5
+        const maxAttempts = 3
         let userVerified = false
         
         while (attempts < maxAttempts && !userVerified) {
-          const { data: { user } } = await supabase.auth.getUser()
-          
-          if (user) {
-            console.log('AuthSuccess - User verified:', user.id)
-            userVerified = true
+          try {
+            const { data: { user }, error } = await supabase.auth.getUser()
+            console.log('AuthSuccess - getUser result:', { user: !!user, error: error?.message })
             
-            // URLパラメータから次のページを取得
-            const urlParams = new URLSearchParams(window.location.search)
-            const next = urlParams.get('next') || '/dashboard'
+            if (user) {
+              console.log('AuthSuccess - User verified:', user.id)
+              userVerified = true
+              
+              // URLパラメータから次のページを取得
+              const urlParams = new URLSearchParams(window.location.search)
+              const next = urlParams.get('next') || '/dashboard'
+              
+              console.log('AuthSuccess - Redirecting to:', next)
+              router.push(next)
+              return
+            }
             
-            console.log('AuthSuccess - Redirecting to:', next)
-            router.push(next)
-            return
+            // セッション情報もチェック
+            const { data: { session } } = await supabase.auth.getSession()
+            console.log('AuthSuccess - Session check:', { session: !!session })
+            
+            if (session?.user) {
+              console.log('AuthSuccess - User found in session:', session.user.id)
+              userVerified = true
+              
+              const urlParams = new URLSearchParams(window.location.search)
+              const next = urlParams.get('next') || '/dashboard'
+              
+              console.log('AuthSuccess - Redirecting to:', next)
+              router.push(next)
+              return
+            }
+          } catch (sessionError) {
+            console.log('AuthSuccess - Session check error:', sessionError)
           }
           
           attempts++
           console.log(`AuthSuccess - Attempt ${attempts}/${maxAttempts} - User not found, retrying...`)
           
-          // 500ms待機
-          await new Promise(resolve => setTimeout(resolve, 500))
+          // 1秒待機
+          await new Promise(resolve => setTimeout(resolve, 1000))
         }
         
         // 最大試行回数に達した場合

@@ -38,9 +38,10 @@ export async function updateSession(request: NextRequest) {
   console.log('Middleware - Path:', request.nextUrl.pathname)
   console.log('Middleware - User:', user?.id ? 'Authenticated' : 'Not authenticated')
 
-  // 認証コールバック処理中はミドルウェアチェックをスキップ
-  if (request.nextUrl.pathname.startsWith('/auth/callback')) {
-    console.log('Middleware - Skipping auth check for callback')
+  // 認証関連のパス処理中はミドルウェアチェックをスキップ
+  if (request.nextUrl.pathname.startsWith('/auth/callback') || 
+      request.nextUrl.pathname.startsWith('/auth/success')) {
+    console.log('Middleware - Skipping auth check for auth paths:', request.nextUrl.pathname)
     return supabaseResponse
   }
 
