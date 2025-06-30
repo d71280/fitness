@@ -29,11 +29,8 @@ export function ScheduleBlock({ schedule, onClick, className = '' }: ScheduleBlo
       <div className="text-xs font-medium mb-1">
         {schedule.startTime?.slice(0, 5)} - {schedule.endTime?.slice(0, 5)}
       </div>
-      <div className="text-sm font-bold mb-1">
+      <div className="text-sm font-bold">
         {schedule.program?.name || 'プログラム名'}
-      </div>
-      <div className="text-xs opacity-90">
-        {isFullyBooked ? '満席' : `残り${isNaN(availableSlots) ? '?' : availableSlots}席`}
       </div>
     </div>
   )
