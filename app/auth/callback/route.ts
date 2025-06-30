@@ -5,10 +5,17 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const origin = requestUrl.origin
+  
+  // 本番環境では確実に正しいURLを使用
+  const origin = requestUrl.hostname.includes('vercel.app')
+    ? 'https://fitness2-q2y0zojae-daiki-akiyama-9051s-projects.vercel.app'
+    : requestUrl.origin
+  
   const redirectTo = requestUrl.searchParams.get('next') ?? '/dashboard'
 
   console.log('Auth callback - Full URL:', request.url)
+  console.log('Auth callback - Original origin:', requestUrl.origin)
+  console.log('Auth callback - Using origin:', origin)
   console.log('Auth callback - Code:', code)
   console.log('Auth callback - Redirect to:', redirectTo)
 

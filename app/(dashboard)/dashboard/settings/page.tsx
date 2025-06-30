@@ -457,17 +457,24 @@ export default function SettingsPage() {
 
 
 
-      {/* 保存ボタン */}
-      <div className="flex justify-end">
-        <Button
-          onClick={saveSettings}
-          disabled={loading}
-          className="w-full sm:w-auto"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          設定を保存
-        </Button>
-      </div>
+      {/* 環境変数説明 */}
+      <Card className="border-yellow-200 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-yellow-800">
+            <AlertCircle className="h-5 w-5" />
+            環境変数の設定について
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-yellow-700">
+            LINEチャンネルアクセストークン、Google Sheets認証情報などの機密情報は、<br />
+            セキュリティ上の理由から環境変数として設定されます。<br />
+            <br />
+            これらの設定を変更するには、Vercelまたはホスティング環境の<br />
+            環境変数設定を直接編集してください。
+          </p>
+        </CardContent>
+      </Card>
 
 
     </div>
