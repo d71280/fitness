@@ -8,7 +8,6 @@ const updateScheduleSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   programId: z.number(),
-  instructorId: z.number(),
   capacity: z.number(),
 })
 
@@ -35,8 +34,6 @@ export async function GET(
         .select(`
           *,
           program:programs(*),
-  
-          studio:studios(*),
           reservations!inner(
             *,
             customer:customers(*)
@@ -66,8 +63,6 @@ export async function GET(
         time: `${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)}`,
         capacity: schedule.capacity,
         program: schedule.program.name,
-        instructor: schedule.instructor.name,
-        studio: schedule.studio.name,
         currentBookings: currentBookings,
         availableSlots: availableSlots,
         status: availableSlots > 0 ? 'available' : 'full',
@@ -76,17 +71,6 @@ export async function GET(
           name: schedule.program.name,
           description: schedule.program.description,
           duration: schedule.program.default_duration,
-        },
-        instructorDetails: {
-          id: schedule.instructor.id,
-          name: schedule.instructor.name,
-          bio: schedule.instructor.bio,
-        },
-        studioDetails: {
-          id: schedule.studio.id,
-          name: schedule.studio.name,
-          description: schedule.studio.description,
-          capacity: schedule.studio.capacity,
         },
       }
 
@@ -166,14 +150,12 @@ export async function PUT(
           start_time: validatedData.startTime,
           end_time: validatedData.endTime,
           program_id: validatedData.programId,
-          instructor_id: validatedData.instructorId,
           capacity: validatedData.capacity,
         })
         .eq('id', scheduleId)
         .select(`
           *,
-          program:programs(*),
-  
+          program:programs(*)
         `)
         .single()
 
@@ -188,10 +170,8 @@ export async function PUT(
         startTime: updatedSchedule.start_time,
         endTime: updatedSchedule.end_time,
         programId: updatedSchedule.program_id,
-        instructorId: updatedSchedule.instructor_id,
         capacity: updatedSchedule.capacity,
         program: updatedSchedule.program,
-        instructor: updatedSchedule.instructor,
       }
 
       return NextResponse.json({

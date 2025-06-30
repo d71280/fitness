@@ -196,9 +196,7 @@ export function AddScheduleModal({
                   <div className="text-sm font-bold mb-1">
                     {selectedProgram.name}
                   </div>
-                  <div className="text-xs opacity-90">
-                    {instructors.find(i => i.id === formData.instructorId)?.name}
-                  </div>
+
                 </div>
               </CardContent>
             </Card>

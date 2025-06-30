@@ -10,7 +10,6 @@ const createScheduleSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   programId: z.number(),
-  instructorId: z.number(),
   capacity: z.number().min(1).max(100),
 })
 
@@ -47,7 +46,6 @@ export async function GET(request: NextRequest) {
         startTime: schedule.start_time,
         endTime: schedule.end_time,
         programId: schedule.program_id,
-        instructorId: 1, // デフォルトインストラクター
         capacity: schedule.capacity,
         program: schedule.program,
         currentBookings: confirmedReservations.length,
@@ -84,7 +82,6 @@ export async function POST(request: NextRequest) {
           start_time: data.startTime,
           end_time: data.endTime,
           program_id: data.programId,
-          instructor_id: data.instructorId,
           capacity: data.capacity,
         })
         .select(`
@@ -102,7 +99,6 @@ export async function POST(request: NextRequest) {
         startTime: schedule.start_time,
         endTime: schedule.end_time,
         programId: schedule.program_id,
-        instructorId: 1, // デフォルトインストラクター
         capacity: schedule.capacity,
         program: schedule.program,
       }

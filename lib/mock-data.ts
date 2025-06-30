@@ -1,4 +1,4 @@
-import { Program, Instructor, Schedule, Reservation } from '@/types/api'
+import { Program, Schedule, Reservation } from '@/types/api'
 
 // 開発用のモックデータ（データベースが使用できない場合の代替）
 
@@ -9,7 +9,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '10:00',
     endTime: '11:00',
     programId: 1,
-    instructorId: 1,
     capacity: 30,
   },
   {
@@ -18,7 +17,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '11:00',
     endTime: '12:00',
     programId: 2,
-    instructorId: 2,
     capacity: 20,
   },
   {
@@ -27,7 +25,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '14:00',
     endTime: '14:45',
     programId: 3,
-    instructorId: 3,
     capacity: 25,
   },
   {
@@ -36,7 +33,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '18:00',
     endTime: '18:30',
     programId: 4,
-    instructorId: 1,
     capacity: 30,
   },
   {
@@ -45,7 +41,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '10:00',
     endTime: '11:00',
     programId: 1,
-    instructorId: 1,
     capacity: 30,
   },
   {
@@ -54,7 +49,6 @@ export const mockSchedules: Schedule[] = [
     startTime: '11:00',
     endTime: '12:00',
     programId: 4,
-    instructorId: 2,
     capacity: 30,
   },
 ]
