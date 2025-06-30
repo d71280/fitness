@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
 
     console.log('予約一覧取得 - クエリ実行結果:', { 
       reservationsCount: reservations?.length || 0, 
-      error: error?.message 
+      error: error?.message,
+      sampleReservation: reservations?.[0]
     })
 
     if (error) {
