@@ -183,7 +183,7 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
             <div className={`p-4 rounded-lg ${schedule.program?.color_class || 'bg-blue-500'} ${schedule.program?.text_color_class || 'text-white'}`}>
               <div className="flex items-center gap-2 text-sm font-medium mb-2">
                 <Clock className="h-4 w-4" />
-                {schedule.startTime} - {schedule.endTime}
+                {schedule.startTime?.slice(0, 5)} - {schedule.endTime?.slice(0, 5)}
               </div>
               <div className="text-lg font-bold mb-2">
                 {schedule.program?.name || 'プログラム名未設定'}
@@ -231,7 +231,6 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 type="text"
                 value={formData.customerNameKanji}
                 onChange={(e) => setFormData(prev => ({ ...prev, customerNameKanji: e.target.value }))}
-                placeholder="山田 太郎"
                 required
               />
             </div>
@@ -245,7 +244,6 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 type="text"
                 value={formData.customerNameKatakana}
                 onChange={(e) => setFormData(prev => ({ ...prev, customerNameKatakana: e.target.value }))}
-                placeholder="ヤマダ タロウ"
                 required
               />
             </div>
@@ -259,7 +257,6 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="090-1234-5678"
                 required
               />
             </div>
