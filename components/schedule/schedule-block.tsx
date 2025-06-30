@@ -19,7 +19,7 @@ export function ScheduleBlock({ schedule, onClick, className = '' }: ScheduleBlo
       onClick={onClick}
     >
       <div className="text-xs font-medium mb-1">
-        {schedule.startTime} - {schedule.endTime}
+        {(schedule as any).start_time?.slice(0, 5)} - {(schedule as any).end_time?.slice(0, 5)}
       </div>
       <div className="text-sm font-bold mb-1">
         {schedule.program?.name || 'プログラム名'}
