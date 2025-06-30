@@ -40,14 +40,21 @@ export async function GET(request: NextRequest) {
       console.log('- Error:', error?.message)
       console.log('- Error details:', error)
       
-      if (!error && data.user) {
-        // セッション確立後に少し待機してからリダイレクト
-        const finalUrl = `${origin}${redirectTo}`
-        console.log('SUCCESS! Final redirect URL:', finalUrl)
+      if (!error && data.user && data.session) {
+        console.log('AUTH SUCCESS - User and session confirmed')
+        
+        // セッション確立を確認するため再度ユーザー情報を取得
+        const { data: userCheck } = await supabase.auth.getUser()
+        console.log('Session verification - User exists:', !!userCheck.user)
+        
+        // 中間ページ経由でリダイレクト（セッション確立を確実にするため）
+        const successUrl = `${origin}/auth/success?next=${encodeURIComponent(redirectTo)}`
+        console.log('SUCCESS! Redirecting to intermediate page:', successUrl)
         console.log('=== END AUTH CALLBACK DEBUG ===')
         
-        // セッションクッキーが確実に設定されるようにする
-        const response = NextResponse.redirect(finalUrl)
+        // リダイレクトレスポンスを作成
+        const response = NextResponse.redirect(successUrl)
+        
         // セッション確立の確実性のためキャッシュ無効化
         response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
         response.headers.set('Pragma', 'no-cache')

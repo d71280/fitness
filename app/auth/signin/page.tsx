@@ -48,6 +48,12 @@ export default function SignIn() {
         case 'network-error':
           errorMessage = 'ネットワークエラーが発生しました。接続を確認して再度お試しください。'
           break
+        case 'session-verification-failed':
+          errorMessage = 'セッション確認に失敗しました。再度ログインしてください。'
+          break
+        case 'auth-verification-error':
+          errorMessage = '認証確認中にエラーが発生しました。再度お試しください。'
+          break
         default:
           errorMessage = `認証エラー: ${errorParam}（再度お試しください）`
       }
