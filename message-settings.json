@@ -2,13 +2,13 @@
   "bookingConfirmation": {
     "enabled": true,
     "messageType": "flex",
-    "textMessage": "✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n🏢 スタジオ: {studio}\n\nお忘れなくお越しください！",
+    "textMessage": "✅ 予約が完了しました！\n\n📅 日時: {date} {time}\n🏃 プログラム: {program}\n👨‍🏫 インストラクター: {instructor}\n\nお忘れなくお越しください！",
     "includeDetails": {
       "date": true,
       "time": true,
       "program": true,
       "instructor": true,
-      "studio": true,
+      "studio": false,
       "capacity": false
     },
     "customFields": ""
@@ -21,28 +21,28 @@
         "name": "24時間前",
         "enabled": true,
         "hoursBefore": 24,
-        "messageText": "【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊"
+        "messageText": "【明日のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nお忘れなく！何かご不明な点があればお気軽にお声かけください😊"
       },
       {
         "id": "3h",
         "name": "3時間前",
         "enabled": false,
         "hoursBefore": 3,
-        "messageText": "【まもなくレッスン開始】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\n3時間後にレッスンが始まります！準備はOKですか？✨"
+        "messageText": "【まもなくレッスン開始】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\n3時間後にレッスンが始まります！準備はOKですか？✨"
       },
       {
         "id": "1h",
         "name": "1時間前",
         "enabled": false,
         "hoursBefore": 1,
-        "messageText": "【レッスン開始1時間前】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nもうすぐレッスンです！お気をつけてお越しください🚗"
+        "messageText": "【レッスン開始1時間前】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nもうすぐレッスンです！お気をつけてお越しください🚗"
       },
       {
         "id": "30m",
         "name": "30分前",
         "enabled": false,
         "hoursBefore": 0.5,
-        "messageText": "【レッスン開始30分前】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n🏢 {studio}\n\nもうすぐです！お待ちしております💪"
+        "messageText": "【レッスン開始30分前】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\nもうすぐです！お待ちしております💪"
       }
     ],
     "customSchedules": []
