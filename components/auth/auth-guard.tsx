@@ -24,11 +24,13 @@ export default function AuthGuard({
   useEffect(() => {
     // 初期認証状態確認
     const getInitialUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      console.log('AuthGuard - Initial user check:', { user: user?.id, error })
       setUser(user)
       setLoading(false)
 
       if (requireAuth && !user) {
+        console.log('AuthGuard - Redirecting to signin, no user found')
         router.push(redirectTo)
       }
     }
@@ -37,10 +39,16 @@ export default function AuthGuard({
 
     // 認証状態変更リスナー
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AuthGuard - Auth state change:', { event, user: session?.user?.id })
       setUser(session?.user ?? null)
       
       if (requireAuth && !session?.user && event === 'SIGNED_OUT') {
+        console.log('AuthGuard - User signed out, redirecting')
         router.push(redirectTo)
+      }
+      
+      if (session?.user && event === 'SIGNED_IN') {
+        console.log('AuthGuard - User signed in:', session.user.id)
       }
     })
 
