@@ -17,7 +17,9 @@ const createReservationSchema = z.object({
 // 予約一覧取得
 export async function GET(request: NextRequest) {
   try {
+    console.log('予約一覧取得 - リクエスト開始')
     const supabase = await createClient()
+    console.log('予約一覧取得 - Supabaseクライアント作成成功')
     
     const { data: reservations, error } = await supabase
       .from('reservations')
@@ -31,38 +33,30 @@ export async function GET(request: NextRequest) {
       `)
       .order('created_at', { ascending: false })
 
+    console.log('予約一覧取得 - クエリ実行結果:', { 
+      reservationsCount: reservations?.length || 0, 
+      error: error?.message 
+    })
+
     if (error) {
+      console.error('Supabase予約取得エラー:', error)
       throw error
     }
 
+    console.log('予約一覧取得 - 成功:', reservations?.length || 0, '件')
     return NextResponse.json(reservations || [])
   } catch (error) {
-    console.warn('Supabase接続エラー、モックデータを使用します:', error)
+    console.error('予約一覧取得 - 重大なエラー:', error)
     
-    // モック予約データ
-    const mockReservations = [
-      {
-        id: 1,
-        status: 'confirmed',
-        booking_type: 'advance',
-        created_at: new Date().toISOString(),
-        schedule: {
-          id: 1,
-          date: '2025-06-29',
-          start_time: '10:00',
-          end_time: '11:00',
-          program: { name: 'ヨガ' },
-        },
-        customer: {
-          id: 1,
-          name: '山田 太郎',
-          line_id: 'LINE12345',
-          phone: '090-1234-5678',
-        },
-      },
-    ]
-    
-    return NextResponse.json(mockReservations)
+    // エラーの詳細情報を返す
+    return NextResponse.json(
+      { 
+        error: '予約データの取得に失敗しました',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        debug: true
+      }, 
+      { status: 500 }
+    )
   }
 }
 

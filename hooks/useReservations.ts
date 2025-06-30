@@ -11,13 +11,24 @@ export function useReservations() {
   const fetchReservations = useCallback(async () => {
     try {
       setLoading(true)
+      console.log('useReservations - 予約データ取得開始')
+      
       const response = await fetch('/api/reservations')
-      if (!response.ok) throw new Error('予約取得に失敗しました')
+      console.log('useReservations - レスポンス:', { status: response.status, ok: response.ok })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('useReservations - APIエラー:', errorData)
+        throw new Error(errorData.details || errorData.error || '予約取得に失敗しました')
+      }
       
       const data = await response.json()
+      console.log('useReservations - 取得成功:', data?.length || 0, '件')
+      
       setReservations(data)
       setError(null)
     } catch (err) {
+      console.error('useReservations - エラー:', err)
       setError(err instanceof Error ? err.message : 'エラーが発生しました')
     } finally {
       setLoading(false)
