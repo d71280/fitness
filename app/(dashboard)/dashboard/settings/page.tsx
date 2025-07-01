@@ -53,6 +53,7 @@ export default function SettingsPage() {
   }, [])
 
   const loadSettings = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/settings')
       const data = await response.json()
@@ -69,9 +70,10 @@ export default function SettingsPage() {
         setGoogleSheetsSettings(data.googleSheets)
       }
 
-
     } catch (error) {
       console.error('設定読み込みエラー:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
