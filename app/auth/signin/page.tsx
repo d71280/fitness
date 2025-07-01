@@ -54,6 +54,15 @@ export default function SignIn() {
         case 'auth-verification-error':
           errorMessage = '認証確認中にエラーが発生しました。再度お試しください。'
           break
+        case 'session-verification-timeout':
+          errorMessage = 'セッション確認がタイムアウトしました。再度ログインしてください。'
+          break
+        case 'session-not-found':
+          errorMessage = 'セッションが見つかりません。再度ログインしてください。'
+          break
+        case 'verification-error':
+          errorMessage = '認証処理でエラーが発生しました。再度お試しください。'
+          break
         default:
           errorMessage = `認証エラー: ${errorParam}（再度お試しください）`
       }

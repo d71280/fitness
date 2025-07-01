@@ -3,13 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 
 interface ReservationData {
-  id: number
-  customerName: string
-  customerPhone?: string
-  scheduleDatetime: string
-  programName: string
-  instructorName: string
-  reservedAt: string
+  bookingDate: string      // 予約した日
+  customerName: string     // 顧客名（漢字）
+  experienceDate: string   // 体験日
+  programName: string      // プログラム名
 }
 
 // Google Sheets クライアントの初期化
@@ -37,32 +34,23 @@ async function addReservationToSheet(reservationData: ReservationData) {
     // 最初のシートを取得、なければ作成
     let sheet = doc.sheetsByIndex[0]
     if (!sheet) {
-      sheet = await doc.addSheet({ title: '予約データ' })
+      sheet = await doc.addSheet({ 
+        title: 'シート1',
+        headerValues: ['日付', '名前', '体験日', 'プログラム']
+      })
     }
 
     // ヘッダーが存在しない場合は設定
-    const rows = await sheet.getRows()
-    if (rows.length === 0) {
-      await sheet.setHeaderRow([
-        '予約ID',
-        '顧客名', 
-        '電話番号',
-        '予約日時',
-        'プログラム名',
-        'インストラクター名',
-        '予約完了日時'
-      ])
+    if (!sheet.headerValues || sheet.headerValues.length === 0) {
+      await sheet.setHeaderRow(['日付', '名前', '体験日', 'プログラム'])
     }
 
     // 新しい予約データを追加
     await sheet.addRow({
-      '予約ID': reservationData.id,
-      '顧客名': reservationData.customerName,
-      '電話番号': reservationData.customerPhone || '',
-      '予約日時': reservationData.scheduleDatetime,
-      'プログラム名': reservationData.programName,
-      'インストラクター名': reservationData.instructorName,
-      '予約完了日時': reservationData.reservedAt
+      '日付': reservationData.bookingDate,
+      '名前': reservationData.customerName,
+      '体験日': reservationData.experienceDate,
+      'プログラム': reservationData.programName
     })
 
     return { success: true }
@@ -77,9 +65,9 @@ export async function POST(request: NextRequest) {
     const reservationData: ReservationData = await request.json()
 
     // 必須フィールドのバリデーション
-    if (!reservationData.id || !reservationData.customerName || !reservationData.scheduleDatetime) {
+    if (!reservationData.customerName || !reservationData.experienceDate || !reservationData.programName) {
       return NextResponse.json(
-        { error: '必須フィールドが不足しています' },
+        { error: '必須フィールド（顧客名、体験日、プログラム名）が不足しています' },
         { status: 400 }
       )
     }

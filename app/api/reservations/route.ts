@@ -261,16 +261,29 @@ export async function POST(request: NextRequest) {
       // スプレッドシートに予約を記録
       try {
         const sheetsClient = new GoogleSheetsClient()
+        
+        // 日付のフォーマット（予約した日 = 今日）
+        const today = new Date().toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\//g, '/')
+        
+        // 体験日のフォーマット（レッスンの日付）
+        const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\//g, '/')
+        
+        // 顧客名から漢字部分のみ抽出（括弧内のカタカナを除去）
+        const customerKanjiName = customer.name.split('(')[0].trim()
+        
         const spreadsheetData: SpreadsheetBookingData = {
-          予約ID: reservation.id,
-          予約日時: schedule.date,
-          顧客名: customer.name,
-          電話番号: customer.phone || '',
-          プログラム: schedule.program.name,
-          開始時間: schedule.start_time,
-          終了時間: schedule.end_time,
-          ステータス: 'confirmed',
-          LINE_ID: customer.line_id || ''
+          日付: today,                    // 予約した日（今日）
+          名前: customerKanjiName,        // 顧客名（漢字のみ）
+          体験日: experienceDate,         // 体験する日（レッスンの日付）
+          プログラム: schedule.program.name // 予約したプログラム
         }
 
         const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)

@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
 
   // 認証関連のパス処理中はミドルウェアチェックをスキップ
   if (request.nextUrl.pathname.startsWith('/auth/callback') || 
-      request.nextUrl.pathname.startsWith('/auth/success')) {
+      request.nextUrl.pathname.startsWith('/auth/success') ||
+      request.nextUrl.pathname.startsWith('/auth/verify-session')) {
     console.log('Middleware - Skipping auth check for auth paths:', request.nextUrl.pathname)
     return supabaseResponse
   }

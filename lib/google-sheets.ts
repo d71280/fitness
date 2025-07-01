@@ -2,15 +2,10 @@ import { JWT } from 'google-auth-library'
 import { GoogleSpreadsheet } from 'google-spreadsheet'
 
 export interface SpreadsheetBookingData {
-  予約ID: number
-  予約日時: string
-  顧客名: string
-  電話番号: string
-  プログラム: string
-  開始時間: string
-  終了時間: string
-  ステータス: string
-  LINE_ID: string
+  日付: string        // 予約した日（今日の日付）
+  名前: string        // 顧客名（漢字）
+  体験日: string      // 体験する日（レッスンの日付）
+  プログラム: string   // 予約したプログラム名
 }
 
 export class GoogleSheetsClient {
@@ -40,27 +35,33 @@ export class GoogleSheetsClient {
     try {
       await this.doc.loadInfo()
       
-      // 予約管理シートを取得（存在しない場合は作成）
-      let sheet = this.doc.sheetsByTitle['予約管理']
+      // 最初のシートを取得、なければ作成
+      let sheet = this.doc.sheetsByIndex[0]
       if (!sheet) {
-        sheet = await this.doc.addSheet({
-          title: '予約管理',
-          headerValues: Object.keys(bookingData)
+        sheet = await this.doc.addSheet({ 
+          title: 'シート1',
+          headerValues: ['日付', '名前', '体験日', 'プログラム']
         })
       }
 
       // ヘッダーが設定されていない場合は設定
       if (!sheet.headerValues || sheet.headerValues.length === 0) {
-        await sheet.setHeaderRow(Object.keys(bookingData))
+        await sheet.setHeaderRow(['日付', '名前', '体験日', 'プログラム'])
       }
 
-      // 新しい行を追加（型を明示的にキャスト）
-      const newRow = await sheet.addRow(bookingData as any)
+      // 新しい行を追加
+      const newRow = await sheet.addRow({
+        '日付': bookingData.日付,
+        '名前': bookingData.名前,
+        '体験日': bookingData.体験日,
+        'プログラム': bookingData.プログラム
+      })
       
       console.log('✅ スプレッドシートに予約を記録しました:', {
         rowNumber: newRow.rowNumber,
-        bookingId: bookingData.予約ID,
-        customerName: bookingData.顧客名
+        customerName: bookingData.名前,
+        program: bookingData.プログラム,
+        experienceDate: bookingData.体験日
       })
 
       return { 
@@ -81,21 +82,24 @@ export class GoogleSheetsClient {
   async getTodayBookings() {
     try {
       await this.doc.loadInfo()
-      const sheet = this.doc.sheetsByTitle['予約管理']
+      const sheet = this.doc.sheetsByIndex[0]
       if (!sheet) {
         return { success: true, bookings: [] }
       }
 
       const rows = await sheet.getRows()
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date().toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\//g, '/')
       
       const todayBookings = rows
-        .filter(row => row.get('予約日時').startsWith(today))
+        .filter(row => row.get('体験日') === today)
         .map(row => ({
-          予約ID: row.get('予約ID'),
-          顧客名: row.get('顧客名'),
+          名前: row.get('名前'),
           プログラム: row.get('プログラム'),
-          開始時間: row.get('開始時間')
+          体験日: row.get('体験日')
         }))
 
       return { success: true, bookings: todayBookings }

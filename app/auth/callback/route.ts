@@ -51,44 +51,37 @@ export async function GET(request: NextRequest) {
           expiresIn: data.session.expires_in
         })
         
-        // セッションをしっかり待つ
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // セッション確立を複数回確認
+        let sessionVerified = false
+        let verificationAttempts = 0
+        const maxAttempts = 3
         
-        // セッション確立を確認するため再度ユーザー情報を取得
-        const { data: userCheck } = await supabase.auth.getUser()
-        console.log('Session verification - User exists:', !!userCheck.user)
+        while (!sessionVerified && verificationAttempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          const { data: userCheck } = await supabase.auth.getUser()
+          if (userCheck.user) {
+            sessionVerified = true
+            console.log('Session verified after', verificationAttempts + 1, 'attempts')
+          } else {
+            verificationAttempts++
+            console.log('Session verification attempt', verificationAttempts, 'failed, retrying...')
+          }
+        }
         
-        // 直接ダッシュボードにリダイレクト
-        const finalUrl = `${origin}${redirectTo}`
-        console.log('SUCCESS! Final redirect URL:', finalUrl)
+        if (!sessionVerified) {
+          console.error('Session verification failed after all attempts')
+          const errorUrl = `${origin}/auth/signin?error=session-verification-timeout`
+          return NextResponse.redirect(errorUrl)
+        }
+        
+        // 中間認証確認ページにリダイレクト（セッション確立を確実にするため）
+        const successUrl = `${origin}/auth/verify-session?next=${encodeURIComponent(redirectTo)}`
+        console.log('SUCCESS! Redirecting to session verification:', successUrl)
         console.log('=== END AUTH CALLBACK DEBUG ===')
         
-        // リダイレクトレスポンスを作成
-        const response = NextResponse.redirect(finalUrl)
-        
-        // セッションクッキーを確実に設定
-        const cookieStore = await cookies()
-        const supabaseCookies = cookieStore.getAll().filter(cookie => 
-          cookie.name.startsWith('sb-')
-        )
-        
-        console.log('Setting cookies:', supabaseCookies.length, 'Supabase cookies found')
-        
-        // クッキーを新しいレスポンスにコピー
-        supabaseCookies.forEach(cookie => {
-          response.cookies.set(cookie.name, cookie.value, {
-            ...cookie,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'lax'
-          })
-        })
-        
-        // セッション確立の確実性のためキャッシュ無効化
+        const response = NextResponse.redirect(successUrl)
         response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-        response.headers.set('Pragma', 'no-cache')
-        response.headers.set('Expires', '0')
-        
         return response
       } else {
         console.error('Exchange failed:', error?.message)
