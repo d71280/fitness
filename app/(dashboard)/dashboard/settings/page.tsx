@@ -79,23 +79,21 @@ export default function SettingsPage() {
         setGoogleSheetsSettings(data.googleSheets)
       }
 
-      // サーバー設定が取得できない場合、ローカルストレージをチェック
-      if (!data.success || !data.googleSheets?.enabled) {
-        try {
-          const localSettings = localStorage.getItem('app-settings')
-          if (localSettings) {
-            const parsed = JSON.parse(localSettings)
-            console.log('ローカルストレージから設定を読み込みました:', parsed)
-            if (parsed.spreadsheetEnabled) {
-              setGoogleSheetsSettings(prev => ({
-                ...prev,
-                enabled: parsed.spreadsheetEnabled
-              }))
-            }
-          }
-        } catch (storageError) {
-          console.warn('ローカルストレージ読み込みエラー:', storageError)
+      // ローカルストレージから設定を読み込み（サーバー設定を上書き）
+      try {
+        const localSettings = localStorage.getItem('app-settings')
+        if (localSettings) {
+          const parsed = JSON.parse(localSettings)
+          console.log('ローカルストレージから設定を読み込みました:', parsed)
+          
+          // ローカル設定でサーバー設定を上書き
+          setGoogleSheetsSettings(prev => ({
+            ...prev,
+            enabled: parsed.spreadsheetEnabled !== undefined ? parsed.spreadsheetEnabled : prev.enabled
+          }))
         }
+      } catch (storageError) {
+        console.warn('ローカルストレージ読み込みエラー:', storageError)
       }
 
     } catch (error) {

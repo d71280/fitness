@@ -261,8 +261,9 @@ export async function POST(request: NextRequest) {
           console.warn('LINE通知送信エラー:', lineError)
         }
 
-        // スプレッドシートに予約を記録
+        // スプレッドシートに予約を記録（常に試行し、必要に応じてスキップ）
         try {
+          
           // スプレッドシートIDを取得
           const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
           
