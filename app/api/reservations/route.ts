@@ -14,6 +14,19 @@ const createReservationSchema = z.object({
   phone: z.string().min(1),
 })
 
+// CORSヘッダー
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+}
+
+// プリフライトリクエスト処理
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 200, headers: corsHeaders })
+}
+
 // 予約一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +58,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('予約一覧取得 - 成功:', reservations?.length || 0, '件')
-    return NextResponse.json(reservations || [])
+    return NextResponse.json(reservations || [], { headers: corsHeaders })
   } catch (error) {
     console.error('予約一覧取得 - 重大なエラー:', error)
     
@@ -56,7 +69,7 @@ export async function GET(request: NextRequest) {
         details: error instanceof Error ? error.message : 'Unknown error',
         debug: true
       }, 
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
 }
@@ -372,7 +385,7 @@ export async function POST(request: NextRequest) {
         success: true,
         reservation,
         message: '予約が完了しました'
-      }, { status: 201 })
+      }, { status: 201, headers: corsHeaders })
 
     } catch (dbError) {
       console.warn('Supabase操作エラー、フォールバック処理を実行:', dbError)
