@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // セッション情報を事前に取得（非同期処理で使用するため）
+      // セッション情報を取得
       const { data: { session: currentSession } } = await supabase.auth.getSession()
       const providerToken = currentSession?.provider_token
 
@@ -257,8 +257,78 @@ export async function POST(request: NextRequest) {
         tokenLength: providerToken?.length
       })
 
-      // 非同期で追加処理を実行（エラーが発生しても予約は成功とする）
-      // setImmediateではなくPromise.resolve().then()を使用
+      // Google Sheets連携を先に実行（メイン処理内で）
+      if (providerToken) {
+        try {
+          console.log('=== Google Sheets 予約記録開始（メイン処理） ===')
+          
+          // 予約データを準備
+          const today = new Date().toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit'
+          }).replace(/\//g, '/')
+          
+          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit' 
+          }).replace(/\//g, '/')
+          
+          const customerName = customer.name.split('(')[0].trim()
+          const programName = schedule.program?.name || 'プログラム未設定'
+          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+
+          const writeData = [today, customerName, experienceDate, timeSlot, programName]
+          
+          console.log('準備された予約データ（メイン処理）:', writeData)
+
+          // Google Sheets APIを直接呼び出し
+          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
+          
+          const sheetsResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${providerToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                values: [writeData]
+              })
+            }
+          )
+
+          console.log('Google Sheets API応答（メイン処理）:', {
+            status: sheetsResponse.status,
+            statusText: sheetsResponse.statusText,
+            ok: sheetsResponse.ok,
+            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`
+          })
+
+          if (sheetsResponse.ok) {
+            const sheetsResult = await sheetsResponse.json()
+            console.log('✅ Google Sheets 予約記録成功（メイン処理）:', sheetsResult)
+          } else {
+            const errorText = await sheetsResponse.text()
+            console.error('❌ Google Sheets 予約記録失敗（メイン処理）:', {
+              status: sheetsResponse.status,
+              statusText: sheetsResponse.statusText,
+              error: errorText
+            })
+          }
+        } catch (sheetsError) {
+          console.error('❌ Google Sheets 予約記録エラー（メイン処理）:', {
+            error: sheetsError.message,
+            stack: sheetsError.stack
+          })
+        }
+      } else {
+        console.warn('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします（メイン処理）。')
+      }
+
+      // LINE通知のみ非同期で実行
       Promise.resolve().then(async () => {
         // LINE通知送信（堅牢性向上）
         try {
@@ -313,84 +383,6 @@ export async function POST(request: NextRequest) {
           }
         } catch (lineError) {
           console.error('❌ LINE通知処理エラー:', lineError)
-        }
-
-        // Google Sheetsに予約を記録（直接API呼び出し）
-        try {
-          console.log('=== Google Sheets 予約記録開始 ===')
-          console.log('setImmediate内のセッション情報:', {
-            hasProviderToken: !!providerToken,
-            tokenLength: providerToken?.length,
-            tokenStart: providerToken?.substring(0, 20) + '...'
-          })
-          
-          if (!providerToken) {
-            console.error('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします。')
-            console.error('原因: setImmediate内でセッション情報が失われている可能性があります')
-            return
-          }
-          
-          // 予約データを準備
-          const today = new Date().toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: '2-digit', 
-            day: '2-digit'
-          }).replace(/\//g, '/')
-          
-          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit' 
-          }).replace(/\//g, '/')
-          
-          const customerName = customer.name.split('(')[0].trim()
-          const programName = schedule.program?.name || 'プログラム未設定'
-          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
-
-          const writeData = [today, customerName, experienceDate, timeSlot, programName]
-          
-          console.log('準備された予約データ:', writeData)
-
-          // Google Sheets APIを直接呼び出し
-          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
-          
-          const sheetsResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${providerToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                values: [writeData]
-              })
-            }
-          )
-
-          console.log('Google Sheets API応答:', {
-            status: sheetsResponse.status,
-            statusText: sheetsResponse.statusText,
-            ok: sheetsResponse.ok,
-            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`
-          })
-
-          if (sheetsResponse.ok) {
-            const sheetsResult = await sheetsResponse.json()
-            console.log('✅ Google Sheets 予約記録成功:', sheetsResult)
-          } else {
-            const errorText = await sheetsResponse.text()
-            console.error('❌ Google Sheets 予約記録失敗:', {
-              status: sheetsResponse.status,
-              statusText: sheetsResponse.statusText,
-              error: errorText
-            })
-          }
-        } catch (sheetsError) {
-          console.error('❌ Google Sheets 予約記録エラー:', {
-            error: sheetsError.message,
-            stack: sheetsError.stack
-          })
         }
       }).catch(error => {
         console.error('❌ 非同期処理でエラーが発生しました:', error)
