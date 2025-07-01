@@ -63,10 +63,22 @@ export async function GET() {
       richMenuId: process.env.RICH_MENU_ID || ''
     }
 
+    // 保存された設定を読み込み
+    let savedSettings = {}
+    try {
+      const settingsPath = path.join(process.cwd(), 'app-settings.json')
+      if (fs.existsSync(settingsPath)) {
+        const content = fs.readFileSync(settingsPath, 'utf8')
+        savedSettings = JSON.parse(content)
+      }
+    } catch (error) {
+      console.warn('保存された設定の読み込みに失敗:', error)
+    }
+
     const googleSheets: GoogleSheetsSettings = {
       spreadsheetId: process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '',
       lineGroupToken: process.env.LINE_GROUP_TOKEN || '',
-      enabled: false
+      enabled: savedSettings.spreadsheetEnabled || false
     }
 
     const settings = getMessageSettings()
@@ -93,13 +105,45 @@ export async function POST(request: NextRequest) {
     
     // 基本設定の保存（環境変数以外の設定）
     if (!action && userSettings) {
-      // 現在はスプレッドシート連携設定のみ保存可能
-      // 他の設定は環境変数で管理
-      
-      return NextResponse.json({
-        success: true,
-        message: '設定が保存されました（スプレッドシート連携設定以外は環境変数で管理）'
-      })
+      try {
+        // 設定ファイルのパス
+        const settingsPath = path.join(process.cwd(), 'app-settings.json')
+        
+        // 既存の設定を読み込み
+        let existingSettings = {}
+        if (fs.existsSync(settingsPath)) {
+          try {
+            const content = fs.readFileSync(settingsPath, 'utf8')
+            existingSettings = JSON.parse(content)
+          } catch (parseError) {
+            console.warn('既存設定ファイルの読み込みに失敗:', parseError)
+          }
+        }
+        
+        // 新しい設定をマージ
+        const updatedSettings = {
+          ...existingSettings,
+          ...userSettings,
+          updatedAt: new Date().toISOString()
+        }
+        
+        // 設定ファイルに保存
+        fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf8')
+        
+        console.log('設定が保存されました:', updatedSettings)
+        
+        return NextResponse.json({
+          success: true,
+          message: '設定が保存されました',
+          settings: updatedSettings
+        })
+      } catch (saveError) {
+        console.error('設定保存エラー:', saveError)
+        return NextResponse.json({
+          success: false,
+          error: '設定の保存に失敗しました'
+        }, { status: 500 })
+      }
     }
     
     if (action === 'addReminderSchedule') {
