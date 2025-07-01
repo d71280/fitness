@@ -247,14 +247,24 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // セッション情報を取得
+      // セッション情報を取得（サーバーサイド）
       const { data: { session: currentSession } } = await supabase.auth.getSession()
-      const providerToken = currentSession?.provider_token
+      let providerToken = currentSession?.provider_token
+
+      // サーバーサイドでセッションが取得できない場合、リクエストヘッダーから取得
+      if (!providerToken) {
+        providerToken = request.headers.get('X-Provider-Token') || ''
+        console.log('リクエストヘッダーからトークンを取得:', {
+          hasHeaderToken: !!providerToken,
+          tokenLength: providerToken?.length
+        })
+      }
 
       console.log('メイン処理でのセッション情報:', {
         hasCurrentSession: !!currentSession,
         hasProviderToken: !!providerToken,
-        tokenLength: providerToken?.length
+        tokenLength: providerToken?.length,
+        tokenSource: currentSession?.provider_token ? 'supabase-session' : 'request-header'
       })
 
       // Google Sheets連携を先に実行（メイン処理内で）
