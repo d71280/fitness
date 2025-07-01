@@ -184,6 +184,51 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
+        // 予約成功後、クライアントサイドからシンプルテストAPIを呼び出し
+        try {
+          console.log('📝 予約データをGoogle Sheetsに書き込み開始')
+          
+          // 予約データを準備
+          const reservation = result.reservation
+          const schedule = reservation.schedule
+          const customer = reservation.customer
+          
+          const today = new Date().toLocaleDateString('ja-JP')
+          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
+          const customerName = customer.name.split('(')[0].trim()
+          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+          const programName = schedule.program?.name || 'プログラム未設定'
+          
+          console.log('📝 Google Sheets書き込み用データ:', {
+            today, customerName, experienceDate, timeSlot, programName
+          })
+          
+          // クライアントサイドから直接シンプルテストAPIを呼び出し（設定画面と同じ方法）
+          const sheetsResponse = await fetch('/api/test-simple-sheets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              reservationData: {
+                today, customerName, experienceDate, timeSlot, programName
+              }
+            })
+          })
+          
+          if (sheetsResponse.ok) {
+            const sheetsResult = await sheetsResponse.json()
+            console.log('✅ Google Sheets書き込み成功:', sheetsResult)
+          } else {
+            const errorText = await sheetsResponse.text()
+            console.error('❌ Google Sheets書き込み失敗:', errorText)
+          }
+          
+        } catch (sheetsError) {
+          console.error('❌ Google Sheets書き込みエラー:', sheetsError)
+          // Google Sheets失敗は予約成功には影響しない
+        }
+        
         // リスト更新は失敗しても続行
         try {
           await fetchReservations()

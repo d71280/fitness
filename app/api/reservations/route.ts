@@ -247,51 +247,8 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // 予約完了後にシンプルテストAPIを直接呼び出し
-      try {
-        console.log('=== 予約完了後にシンプルテストAPI呼び出し ===')
-        
-        // 予約データを準備
-        const today = new Date().toLocaleDateString('ja-JP')
-        const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
-        const customerName = customer.name.split('(')[0].trim()
-        const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
-        const programName = schedule.program?.name || 'プログラム未設定'
-        
-        console.log('シンプルテストAPI呼び出し用データ:', {
-          today, customerName, experienceDate, timeSlot, programName
-        })
-        
-        // シンプルテストAPIを直接呼び出し（確実に動作する方法）
-        const simpleTestResponse = await fetch('/api/test-simple-sheets', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            reservationData: {
-              today, customerName, experienceDate, timeSlot, programName
-            }
-          })
-        })
-        
-        console.log('シンプルテストAPI応答:', {
-          status: simpleTestResponse.status,
-          statusText: simpleTestResponse.statusText,
-          ok: simpleTestResponse.ok
-        })
-        
-        if (simpleTestResponse.ok) {
-          const result = await simpleTestResponse.json()
-          console.log('✅ シンプルテストAPI経由でGoogle Sheets書き込み成功:', result)
-        } else {
-          const errorText = await simpleTestResponse.text()
-          console.error('❌ シンプルテストAPI呼び出し失敗:', errorText)
-        }
-        
-      } catch (sheetsError) {
-        console.error('❌ シンプルテストAPI呼び出しエラー:', sheetsError)
-      }
+      // Google Sheets連携はクライアントサイドで実行（コメントアウト）
+      console.log('ℹ️ Google Sheets書き込みはクライアントサイドで実行されます')
 
       // LINE通知のみ非同期で実行
       Promise.resolve().then(async () => {
