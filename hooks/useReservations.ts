@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { CreateReservationData, Reservation } from '@/types/api'
+import { createClient } from '@/utils/supabase/client'
 
 export function useReservations() {
   const [loading, setLoading] = useState(false)
@@ -52,9 +53,23 @@ export function useReservations() {
       }, 10000) // 10秒タイムアウト
 
       try {
+        // Google OAuthトークンを取得
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const providerToken = session?.provider_token
+
+        console.log('予約リクエスト準備:', {
+          hasSession: !!session,
+          hasProviderToken: !!providerToken,
+          tokenLength: providerToken?.length
+        })
+
         const response = await fetch('/api/reservations', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Provider-Token': providerToken || '', // Google OAuthトークンを送信
+          },
           body: JSON.stringify(data),
           signal: controller.signal,
         })
