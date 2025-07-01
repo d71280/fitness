@@ -224,106 +224,109 @@ export async function POST(request: NextRequest) {
 
       if (reservationError) throw reservationError
 
-      // LINE通知送信
-      try {
-        const messageSettings = getMessageSettings()
-        
-        if (messageSettings.bookingConfirmation.enabled && customer.line_id) {
-          const lineClient = new LineMessagingClient()
-          
-          // メッセージデータの準備
-          const messageData = {
-            date: schedule.date,
-            time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
-            program: schedule.program.name,
-            capacity: schedule.capacity
-          }
-          
-          // テンプレートメッセージの生成
-          const messageText = processMessageTemplate(
-            messageSettings.bookingConfirmation.textMessage,
-            messageData
-          )
-          
-          // LINE通知送信
-          const lineResult = await lineClient.pushMessage(customer.line_id, {
-            type: 'text',
-            text: messageText
-          })
-          
-          console.log('予約完了LINE通知結果:', lineResult)
-        }
-      } catch (lineError) {
-        console.warn('LINE通知送信エラー:', lineError)
-        // エラーでも予約は継続（LINE通知は補助機能）
-      }
+      console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // スプレッドシートに予約を記録
-      try {
-        // スプレッドシートIDを取得
-        const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
-        
-        // ユーザーセッションからGoogleアクセストークンを取得
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (session && session.provider_token) {
-          const accessToken = session.provider_token
+      // 非同期で追加処理を実行（エラーが発生しても予約は成功とする）
+      setImmediate(async () => {
+        // LINE通知送信
+        try {
+          const messageSettings = getMessageSettings()
           
-          // 予約データを準備
-          const bookingData = {
-            日付: new Date().toLocaleDateString('ja-JP', {
-              year: 'numeric',
-              month: '2-digit', 
-              day: '2-digit'
-            }).replace(/\//g, '/'),
-            名前: customer.name.split('(')[0].trim(),
-            体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit' 
-            }).replace(/\//g, '/'),
-            プログラム: schedule.program.name
-          }
-
-          // Google Sheets APIに直接データを追加
-          const appendResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                values: [[
-                  bookingData.日付,
-                  bookingData.名前,
-                  bookingData.体験日,
-                  bookingData.プログラム
-                ]]
-              })
+          if (messageSettings.bookingConfirmation.enabled && customer.line_id) {
+            const lineClient = new LineMessagingClient()
+            
+            // メッセージデータの準備
+            const messageData = {
+              date: schedule.date,
+              time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
+              program: schedule.program.name,
+              capacity: schedule.capacity
             }
-          )
-
-          if (appendResponse.ok) {
-            const result = await appendResponse.json()
-            console.log('✅ スプレッドシートに予約を記録しました:', {
-              customerName: bookingData.名前,
-              program: bookingData.プログラム,
-              experienceDate: bookingData.体験日,
-              range: result.updates?.updatedRange
+            
+            // テンプレートメッセージの生成
+            const messageText = processMessageTemplate(
+              messageSettings.bookingConfirmation.textMessage,
+              messageData
+            )
+            
+            // LINE通知送信
+            const lineResult = await lineClient.pushMessage(customer.line_id, {
+              type: 'text',
+              text: messageText
             })
-          } else {
-            const errorText = await appendResponse.text()
-            console.warn('スプレッドシート書き込みに失敗:', appendResponse.status, errorText)
+            
+            console.log('予約完了LINE通知結果:', lineResult)
           }
-        } else {
-          console.warn('Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
+        } catch (lineError) {
+          console.warn('LINE通知送信エラー:', lineError)
         }
-      } catch (sheetsError) {
-        console.warn('スプレッドシート連携エラー:', sheetsError)
-        // エラーでも予約は継続（スプレッドシート連携は補助機能）
-      }
+
+        // スプレッドシートに予約を記録
+        try {
+          // スプレッドシートIDを取得
+          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
+          
+          // ユーザーセッションからGoogleアクセストークンを取得
+          const { data: { session } } = await supabase.auth.getSession()
+          
+          if (session && session.provider_token) {
+            const accessToken = session.provider_token
+            
+            // 予約データを準備
+            const bookingData = {
+              日付: new Date().toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit', 
+                day: '2-digit'
+              }).replace(/\//g, '/'),
+              名前: customer.name.split('(')[0].trim(),
+              体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit' 
+              }).replace(/\//g, '/'),
+              プログラム: schedule.program.name
+            }
+
+            // Google Sheets APIに直接データを追加
+            const appendResponse = await fetch(
+              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  values: [[
+                    bookingData.日付,
+                    bookingData.名前,
+                    bookingData.体験日,
+                    bookingData.プログラム
+                  ]]
+                })
+              }
+            )
+
+            if (appendResponse.ok) {
+              const result = await appendResponse.json()
+              console.log('✅ スプレッドシートに予約を記録しました:', {
+                customerName: bookingData.名前,
+                program: bookingData.プログラム,
+                experienceDate: bookingData.体験日,
+                range: result.updates?.updatedRange
+              })
+            } else {
+              const errorText = await appendResponse.text()
+              console.warn('スプレッドシート書き込みに失敗:', appendResponse.status, errorText)
+            }
+          } else {
+            console.warn('Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
+          }
+        } catch (sheetsError) {
+          console.warn('スプレッドシート連携エラー:', sheetsError)
+        }
+      })
 
       return NextResponse.json({
         success: true,
