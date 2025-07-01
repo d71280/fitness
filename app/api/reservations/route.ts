@@ -272,7 +272,10 @@ export async function POST(request: NextRequest) {
       if (providerToken) {
         try {
           console.log('🔥 === Google Sheets 予約記録開始（メイン処理） ===')
-        console.log('🔥 使用するOAuthトークン:', providerToken ? providerToken.substring(0, 20) + '...' : 'none')
+          console.log('🔥 使用するOAuthトークン:', providerToken ? providerToken.substring(0, 20) + '...' : 'none')
+          
+          // Google Sheets APIの設定
+          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
           
           // 予約データを準備
           const today = new Date().toLocaleDateString('ja-JP', {
@@ -295,10 +298,39 @@ export async function POST(request: NextRequest) {
           
           console.log('🔥 準備された予約データ（メイン処理）:', writeData)
           console.log('🔥 Google Sheets API URL:', `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`)
-
-          // Google Sheets APIを直接呼び出し
-          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
           
+          // Step 1: スプレッドシート情報を確認（シンプルテストと同じ方法）
+          console.log('🔥 Step 1: スプレッドシート情報取得')
+          const infoResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${providerToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          )
+          
+          console.log('🔥 スプレッドシート情報API応答:', {
+            status: infoResponse.status,
+            statusText: infoResponse.statusText,
+            ok: infoResponse.ok
+          })
+          
+          if (!infoResponse.ok) {
+            const errorText = await infoResponse.text()
+            console.error('🔥 ❌ スプレッドシート情報取得エラー:', errorText)
+            throw new Error(`スプレッドシートアクセスエラー (${infoResponse.status}): ${errorText}`)
+          }
+          
+          const spreadsheetInfo = await infoResponse.json()
+          console.log('🔥 ✅ スプレッドシート情報取得成功:', {
+            title: spreadsheetInfo.properties?.title,
+            sheetCount: spreadsheetInfo.sheets?.length
+          })
+          
+          // Step 2: データ書き込み
+          console.log('🔥 Step 2: データ書き込み')
           const sheetsResponse = await fetch(
             `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
             {
