@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 予約作成（予約時の名前を保存）
+      // 予約作成
       const { data: reservation, error: reservationError } = await supabase
         .from('reservations')
         .insert({
@@ -222,7 +222,6 @@ export async function POST(request: NextRequest) {
           customer_id: customer.id,
           status: 'confirmed',
           booking_type: 'advance',
-          customer_name_at_booking: `${customerNameKanji} (${customerNameKatakana})`,
         })
         .select(`
           *,
@@ -234,8 +233,16 @@ export async function POST(request: NextRequest) {
         `)
         .single()
 
-      if (reservationError) throw reservationError
+      if (reservationError) {
+        console.error('❌ 予約作成エラー:', reservationError)
+        throw reservationError
+      }
 
+      console.log('✅ 予約作成が完了しました:', {
+        reservationId: reservation.id,
+        customerId: reservation.customer_id,
+        scheduleId: reservation.schedule_id
+      })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
       // セッション情報を事前に取得（setImmediate内で使用するため）
@@ -258,8 +265,15 @@ export async function POST(request: NextRequest) {
             
             // 環境変数の詳細チェック
             const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+            console.log('LINE アクセストークン確認:', {
+              hasToken: !!accessToken,
+              tokenStart: accessToken?.substring(0, 10),
+              isTestToken: accessToken === 'test_token',
+              startsWithPlaceholder: accessToken?.startsWith('your_line_channel')
+            })
+            
             if (!accessToken || accessToken === 'test_token' || accessToken.startsWith('your_line_channel')) {
-              console.warn('⚠️ LINE_CHANNEL_ACCESS_TOKEN が正しく設定されていません')
+              console.warn('⚠️ LINE_CHANNEL_ACCESS_TOKEN が正しく設定されていません:', accessToken)
               return // LINE通知をスキップ
             }
             
