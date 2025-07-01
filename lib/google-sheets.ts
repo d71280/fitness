@@ -15,40 +15,13 @@ export class GoogleSheetsClient {
     // 環境変数またはパラメータからスプレッドシートIDを取得
     this.spreadsheetId = spreadsheetId || 
                          process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || 
-                         '1fE2aimUZu7yGyswe5rGau27ohXnYB5pJ37x13bOQ4' // デフォルトID
-  }
-
-  // サーバーサイドでSupabaseセッションからGoogleアクセストークンを取得
-  async initializeWithServerAuth(request?: Request) {
-    try {
-      // サーバーサイドでのSupabaseセッション取得
-      const { createClient } = await import('@/utils/supabase/server')
-      const supabase = await createClient()
-      
-      const { data: { session }, error } = await supabase.auth.getSession()
-      
-      if (error || !session) {
-        throw new Error('認証セッションが見つかりません')
-      }
-
-      // Googleプロバイダーのアクセストークンを取得
-      if (session.provider_token) {
-        this.accessToken = session.provider_token
-        console.log('✅ Googleアクセストークンを取得しました')
-        return true
-      } else {
-        throw new Error('Googleプロバイダーのアクセストークンが見つかりません')
-      }
-    } catch (error) {
-      console.error('❌ Google認証初期化エラー:', error)
-      throw error
-    }
+                         '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4' // デフォルトID
   }
 
   // クライアントサイドでSupabaseセッションからGoogleアクセストークンを取得
   async initializeWithClientAuth() {
     try {
-      // クライアントサイドでのSupabaseセッション取得
+      // 動的インポートでクライアントサイドクライアントを取得
       const { createClient } = await import('@/utils/supabase/client')
       const supabase = createClient()
       
@@ -76,12 +49,8 @@ export class GoogleSheetsClient {
   async addBookingRecord(bookingData: SpreadsheetBookingData) {
     try {
       if (!this.accessToken) {
-        // 環境に応じて認証を試行
-        if (typeof window === 'undefined') {
-          await this.initializeWithServerAuth()
-        } else {
-          await this.initializeWithClientAuth()
-        }
+        // クライアントサイドの認証のみを使用
+        await this.initializeWithClientAuth()
       }
 
       if (!this.accessToken) {
@@ -225,11 +194,7 @@ export class GoogleSheetsClient {
   async getTodayBookings() {
     try {
       if (!this.accessToken) {
-        if (typeof window === 'undefined') {
-          await this.initializeWithServerAuth()
-        } else {
-          await this.initializeWithClientAuth()
-        }
+        await this.initializeWithClientAuth()
       }
 
       if (!this.accessToken) {
@@ -286,11 +251,7 @@ export class GoogleSheetsClient {
   // スプレッドシート接続テスト
   async testConnection() {
     try {
-      if (typeof window === 'undefined') {
-        await this.initializeWithServerAuth()
-      } else {
-        await this.initializeWithClientAuth()
-      }
+      await this.initializeWithClientAuth()
       
       if (!this.accessToken) {
         throw new Error('Googleアクセストークンが取得できませんでした。Googleでログインしてください。')

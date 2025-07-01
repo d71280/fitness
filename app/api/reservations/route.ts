@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
-import { GoogleSheetsClient, SpreadsheetBookingData } from '@/lib/google-sheets'
+import { SpreadsheetBookingData } from '@/lib/google-sheets'
 import { LineMessagingClient } from '@/lib/line-messaging'
 import { getMessageSettings, processMessageTemplate } from '@/lib/message-templates'
 import { z } from 'zod'
@@ -260,7 +260,8 @@ export async function POST(request: NextRequest) {
 
       // スプレッドシートに予約を記録（Google Forms経由）
       try {
-        const sheetsClient = new GoogleSheetsClient()
+        const { GoogleSheetsServerClient } = await import('@/lib/google-sheets-server')
+        const sheetsClient = new GoogleSheetsServerClient()
         
         // 日付のフォーマット（予約した日 = 今日）
         const today = new Date().toLocaleDateString('ja-JP', {
