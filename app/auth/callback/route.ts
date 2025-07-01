@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   // 動的にURLを取得
   const origin = requestUrl.origin
   
-  const redirectTo = requestUrl.searchParams.get('next') ?? '/dashboard'
+  const redirectTo = requestUrl.searchParams.get('next') ?? '/dashboard/schedule'
 
   console.log('=== AUTH CALLBACK DEBUG ===')
   console.log('Full URL:', request.url)

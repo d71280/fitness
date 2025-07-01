@@ -145,7 +145,7 @@ export default function SignIn() {
       // プロダクションURLを使用（プレビューデプロイメント対応）
       const isProduction = window.location.hostname === 'fitness2-rho.vercel.app'
       const baseUrl = isProduction ? window.location.origin : 'https://fitness2-rho.vercel.app'
-      const redirectUrl = `${baseUrl}/auth/callback?next=%2Fdashboard`
+      const redirectUrl = `${baseUrl}/auth/callback?next=%2Fdashboard%2Fschedule`
       
       console.log('Base URL:', baseUrl)
       console.log('Redirect URL:', redirectUrl)
