@@ -186,6 +186,20 @@ export default function SettingsPage() {
         }
       })
       
+      console.log('API応答:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API応答エラー:', errorText)
+        alert(`❌ API呼び出し失敗 (${response.status}):\n\n${errorText}`)
+        return
+      }
+      
       const result = await response.json()
       console.log('書き込みテスト結果:', result)
       
