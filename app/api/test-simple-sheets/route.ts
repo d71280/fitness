@@ -5,6 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== シンプルな Google Sheets 書き込みテスト開始 ===')
     
+    // リクエストボディから予約データを取得（予約API呼び出し用）
+    let requestData = null
+    try {
+      requestData = await request.json()
+    } catch (e) {
+      // リクエストボディがない場合はテストモード
+    }
+    
     // Supabase セッション取得
     const supabase = await createClient()
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -25,10 +33,19 @@ export async function POST(request: NextRequest) {
       spreadsheetId
     })
 
-    // テストデータを準備（時間も含める）
-    const today = new Date().toLocaleDateString('ja-JP')
-    const testTime = '11:00-12:00'
-    const testData = [today, 'テストユーザー', today, testTime, 'テストプログラム']
+    // データを準備（予約データがあればそれを使用、なければテストデータ）
+    let testData
+    if (requestData?.reservationData) {
+      const { today, customerName, experienceDate, timeSlot, programName } = requestData.reservationData
+      testData = [today, customerName, experienceDate, timeSlot, programName]
+      console.log('予約データを使用:', testData)
+    } else {
+      // テストデータを準備（時間も含める）
+      const today = new Date().toLocaleDateString('ja-JP')
+      const testTime = '11:00-12:00'
+      testData = [today, 'テストユーザー', today, testTime, 'テストプログラム']
+      console.log('テストデータを使用:', testData)
+    }
     
     console.log('書き込みデータ:', testData)
     

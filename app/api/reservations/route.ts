@@ -247,97 +247,50 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // Google Sheets連携をシンプルテストと同じ方法で実行
+      // 予約完了後にシンプルテストAPIを直接呼び出し
       try {
-        console.log('=== Google Sheets 予約記録開始（シンプルテスト方式） ===')
+        console.log('=== 予約完了後にシンプルテストAPI呼び出し ===')
         
-        // シンプルテストと全く同じ方法でセッション取得
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        // 予約データを準備
+        const today = new Date().toLocaleDateString('ja-JP')
+        const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
+        const customerName = customer.name.split('(')[0].trim()
+        const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+        const programName = schedule.program?.name || 'プログラム未設定'
         
-        if (!session?.provider_token) {
-          console.warn('❌ Google認証が必要です。Googleでログインしてください。')
+        console.log('シンプルテストAPI呼び出し用データ:', {
+          today, customerName, experienceDate, timeSlot, programName
+        })
+        
+        // シンプルテストAPIを直接呼び出し（確実に動作する方法）
+        const simpleTestResponse = await fetch('/api/test-simple-sheets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            reservationData: {
+              today, customerName, experienceDate, timeSlot, programName
+            }
+          })
+        })
+        
+        console.log('シンプルテストAPI応答:', {
+          status: simpleTestResponse.status,
+          statusText: simpleTestResponse.statusText,
+          ok: simpleTestResponse.ok
+        })
+        
+        if (simpleTestResponse.ok) {
+          const result = await simpleTestResponse.json()
+          console.log('✅ シンプルテストAPI経由でGoogle Sheets書き込み成功:', result)
         } else {
-          const accessToken = session.provider_token
-          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
-          
-          console.log('認証情報:', {
-            hasToken: !!accessToken,
-            tokenLength: accessToken.length,
-            spreadsheetId
-          })
-
-          // 予約データを準備（シンプルテストの形式に合わせる）
-          const today = new Date().toLocaleDateString('ja-JP')
-          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
-          const customerName = customer.name.split('(')[0].trim()
-          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
-          const programName = schedule.program?.name || 'プログラム未設定'
-          const testData = [today, customerName, experienceDate, timeSlot, programName]
-          
-          console.log('書き込みデータ:', testData)
-          
-          // 1. まずスプレッドシートの基本情報を取得してみる（シンプルテストと同じ）
-          console.log('=== Step 1: スプレッドシート情報取得 ===')
-          const infoResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          )
-          
-          console.log('スプレッドシート情報API応答:', {
-            status: infoResponse.status,
-            statusText: infoResponse.statusText,
-            ok: infoResponse.ok
-          })
-          
-          if (!infoResponse.ok) {
-            const errorText = await infoResponse.text()
-            console.error('スプレッドシート情報取得エラー:', errorText)
-          } else {
-            const spreadsheetInfo = await infoResponse.json()
-            console.log('✅ スプレッドシート情報取得成功:', {
-              title: spreadsheetInfo.properties?.title,
-              sheetCount: spreadsheetInfo.sheets?.length
-            })
-            
-            // 2. データを書き込む（シンプルテストと同じ）
-            console.log('=== Step 2: データ書き込み ===')
-            
-            const writeResponse = await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  values: [testData]
-                })
-              }
-            )
-            
-            console.log('書き込みAPI応答:', {
-              status: writeResponse.status,
-              statusText: writeResponse.statusText,
-              ok: writeResponse.ok
-            })
-            
-            if (!writeResponse.ok) {
-              const errorText = await writeResponse.text()
-              console.error('書き込みエラー:', errorText)
-            } else {
-              const writeResult = await writeResponse.json()
-              console.log('✅ データ書き込み成功:', writeResult)
-            }
-          }
+          const errorText = await simpleTestResponse.text()
+          console.error('❌ シンプルテストAPI呼び出し失敗:', errorText)
         }
+        
       } catch (sheetsError) {
-        console.error('❌ Google Sheets処理エラー:', sheetsError)
+        console.error('❌ シンプルテストAPI呼び出しエラー:', sheetsError)
       }
 
       // LINE通知のみ非同期で実行
