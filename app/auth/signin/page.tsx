@@ -142,8 +142,9 @@ export default function SignIn() {
       console.log('Window location protocol:', window.location.protocol)
       console.log('Window location port:', window.location.port)
       
-      // 動的にURLを取得
-      const baseUrl = window.location.origin
+      // プロダクションURLを使用（プレビューデプロイメント対応）
+      const isProduction = window.location.hostname === 'fitness2-rho.vercel.app'
+      const baseUrl = isProduction ? window.location.origin : 'https://fitness2-rho.vercel.app'
       const redirectUrl = `${baseUrl}/auth/callback?next=%2Fdashboard`
       
       console.log('Base URL:', baseUrl)
