@@ -134,10 +134,12 @@ export async function POST(request: NextRequest) {
 
       let customer
       if (existingCustomer) {
-        // 既存顧客の場合は、最終予約日のみ更新
+        // 既存顧客の場合は、名前と最終予約日を更新
         const { data: updatedCustomer, error: updateError } = await supabase
           .from('customers')
           .update({
+            name: `${customerNameKanji} (${customerNameKatakana})`,
+            phone: phone,
             last_booking_date: new Date().toISOString(),
           })
           .eq('line_id', lineId)
@@ -245,12 +247,19 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // セッション情報を事前に取得（setImmediate内で使用するため）
+      // セッション情報を事前に取得（非同期処理で使用するため）
       const { data: { session: currentSession } } = await supabase.auth.getSession()
       const providerToken = currentSession?.provider_token
 
+      console.log('メイン処理でのセッション情報:', {
+        hasCurrentSession: !!currentSession,
+        hasProviderToken: !!providerToken,
+        tokenLength: providerToken?.length
+      })
+
       // 非同期で追加処理を実行（エラーが発生しても予約は成功とする）
-      setImmediate(async () => {
+      // setImmediateではなくPromise.resolve().then()を使用
+      Promise.resolve().then(async () => {
         // LINE通知送信（堅牢性向上）
         try {
           console.log('LINE通知処理を開始します...')
@@ -309,9 +318,15 @@ export async function POST(request: NextRequest) {
         // Google Sheetsに予約を記録（直接API呼び出し）
         try {
           console.log('=== Google Sheets 予約記録開始 ===')
+          console.log('setImmediate内のセッション情報:', {
+            hasProviderToken: !!providerToken,
+            tokenLength: providerToken?.length,
+            tokenStart: providerToken?.substring(0, 20) + '...'
+          })
           
           if (!providerToken) {
-            console.warn('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします。')
+            console.error('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします。')
+            console.error('原因: setImmediate内でセッション情報が失われている可能性があります')
             return
           }
           
@@ -356,7 +371,8 @@ export async function POST(request: NextRequest) {
           console.log('Google Sheets API応答:', {
             status: sheetsResponse.status,
             statusText: sheetsResponse.statusText,
-            ok: sheetsResponse.ok
+            ok: sheetsResponse.ok,
+            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`
           })
 
           if (sheetsResponse.ok) {
@@ -376,6 +392,8 @@ export async function POST(request: NextRequest) {
             stack: sheetsError.stack
           })
         }
+      }).catch(error => {
+        console.error('❌ 非同期処理でエラーが発生しました:', error)
       })
 
       return NextResponse.json({
