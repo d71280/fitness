@@ -57,49 +57,59 @@ export default function SettingsPage() {
     setLoading(true)
     try {
       console.log('設定を読み込み中...')
-      const response = await fetch('/api/settings')
-      console.log('APIレスポンス:', response.status, response.statusText)
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      console.log('設定データ:', data)
-      
-      if (data.success && data.connection) {
-        setSettings({
-          appBaseUrl: data.connection.appBaseUrl || '',
-          lineChannelAccessToken: data.connection.lineChannelAccessToken || '',
-          lineChannelSecret: data.connection.lineChannelSecret || '',
-        })
-      }
-      
-      if (data.success && data.googleSheets) {
-        setGoogleSheetsSettings(data.googleSheets)
-      }
-
-      // ローカルストレージから設定を読み込み（サーバー設定を上書き）
+      // まずローカルストレージから読み込み
       try {
-        const localSettings = localStorage.getItem('app-settings')
+        const localSettings = localStorage.getItem('fitness-app-settings')
         if (localSettings) {
           const parsed = JSON.parse(localSettings)
-          console.log('ローカルストレージから設定を読み込みました:', parsed)
+          console.log('✅ ローカルストレージから設定を読み込みました:', parsed)
           
-          // ローカル設定でサーバー設定を上書き
           setGoogleSheetsSettings(prev => ({
             ...prev,
-            enabled: parsed.spreadsheetEnabled !== undefined ? parsed.spreadsheetEnabled : prev.enabled
+            enabled: parsed.spreadsheetEnabled || false,
+            spreadsheetId: parsed.spreadsheetId || prev.spreadsheetId,
+            lineGroupToken: parsed.lineGroupToken || prev.lineGroupToken
           }))
+          
+          // グローバル設定にも保存
+          window.fitnessAppSettings = parsed
+        } else {
+          console.log('ローカルストレージに設定が見つかりません')
         }
       } catch (storageError) {
         console.warn('ローカルストレージ読み込みエラー:', storageError)
       }
 
+      // 環境変数から基本設定を読み込み
+      try {
+        const response = await fetch('/api/settings')
+        if (response.ok) {
+          const data = await response.json()
+          console.log('サーバー設定データ:', data)
+          
+          if (data.success && data.connection) {
+            setSettings({
+              appBaseUrl: data.connection.appBaseUrl || '',
+              lineChannelAccessToken: data.connection.lineChannelAccessToken || '',
+              lineChannelSecret: data.connection.lineChannelSecret || '',
+            })
+          }
+          
+          // サーバーからのスプレッドシートIDがある場合は設定
+          if (data.success && data.googleSheets?.spreadsheetId) {
+            setGoogleSheetsSettings(prev => ({
+              ...prev,
+              spreadsheetId: data.googleSheets.spreadsheetId
+            }))
+          }
+        }
+      } catch (apiError) {
+        console.warn('API設定読み込みエラー:', apiError)
+      }
+
     } catch (error) {
       console.error('設定読み込みエラー:', error)
-      // エラーが発生してもUIを表示する
-      alert('設定の読み込みに失敗しました。デフォルト設定を使用します。')
     } finally {
       setLoading(false)
       setInitialLoad(false)
@@ -111,49 +121,27 @@ export default function SettingsPage() {
     try {
       console.log('設定保存開始:', { enabled: googleSheetsSettings.enabled })
       
-      const response = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          settings: {
-            spreadsheetEnabled: googleSheetsSettings.enabled
-          }
-        })
-      })
-
-      console.log('API応答:', response.status, response.statusText)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('API応答エラー:', errorText)
-        alert(`設定保存に失敗しました（HTTP ${response.status}）: ${errorText}`)
-        return
+      // ローカルストレージに直接保存（確実な方法）
+      const settingsToSave = {
+        spreadsheetEnabled: googleSheetsSettings.enabled,
+        spreadsheetId: googleSheetsSettings.spreadsheetId,
+        lineGroupToken: googleSheetsSettings.lineGroupToken,
+        updatedAt: new Date().toISOString()
       }
-
-      const result = await response.json()
-      console.log('API結果:', result)
       
-      if (result.success) {
-        // サーバーでファイル保存に失敗した場合、ローカルストレージを使用
-        if (result.useClientStorage) {
-          try {
-            const settingsToSave = {
-              spreadsheetEnabled: googleSheetsSettings.enabled,
-              updatedAt: new Date().toISOString()
-            }
-            localStorage.setItem('app-settings', JSON.stringify(settingsToSave))
-            console.log('ローカルストレージに設定を保存しました:', settingsToSave)
-          } catch (storageError) {
-            console.error('ローカルストレージ保存エラー:', storageError)
-          }
-        }
+      try {
+        localStorage.setItem('fitness-app-settings', JSON.stringify(settingsToSave))
+        console.log('✅ ローカルストレージに設定を保存しました:', settingsToSave)
         
-        alert(result.message || '設定が保存されました！')
-        // 保存成功後、設定を再読み込み
-        await loadSettings()
-      } else {
-        alert(`設定保存に失敗しました: ${result.error || 'Unknown error'}`)
+        // グローバル設定として window オブジェクトにも保存（確実性向上）
+        window.fitnessAppSettings = settingsToSave
+        
+        alert('設定が保存されました！')
+      } catch (storageError) {
+        console.error('ローカルストレージ保存エラー:', storageError)
+        alert('設定の保存に失敗しました')
       }
+      
     } catch (error) {
       console.error('設定保存エラー:', error)
       alert(`設定保存でエラーが発生しました: ${error.message}`)

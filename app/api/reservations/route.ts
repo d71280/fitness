@@ -230,68 +230,73 @@ export async function POST(request: NextRequest) {
       setImmediate(async () => {
         // LINE通知送信
         try {
-          const messageSettings = getMessageSettings()
+          console.log('LINE通知処理を開始します...')
           
-          if (messageSettings.bookingConfirmation.enabled && customer.line_id) {
-            const lineClient = new LineMessagingClient()
+          if (customer.line_id) {
+            console.log('顧客のLINE ID:', customer.line_id)
             
-            // メッセージデータの準備
-            const messageData = {
-              date: schedule.date,
-              time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
-              program: schedule.program.name,
-              capacity: schedule.capacity
+            try {
+              const lineClient = new LineMessagingClient()
+              
+              // シンプルなメッセージ
+              const messageText = `✅ 予約が完了しました！\n\n📅 日時: ${schedule.date} ${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}\n🏃 プログラム: ${schedule.program.name}\n\nお忘れなくお越しください！`
+              
+              console.log('送信メッセージ:', messageText)
+              
+              // LINE通知送信
+              const lineResult = await lineClient.pushMessage(customer.line_id, {
+                type: 'text',
+                text: messageText
+              })
+              
+              console.log('✅ LINE通知送信成功:', lineResult)
+            } catch (lineApiError) {
+              console.error('❌ LINE API呼び出しエラー:', lineApiError)
             }
-            
-            // テンプレートメッセージの生成
-            const messageText = processMessageTemplate(
-              messageSettings.bookingConfirmation.textMessage,
-              messageData
-            )
-            
-            // LINE通知送信
-            const lineResult = await lineClient.pushMessage(customer.line_id, {
-              type: 'text',
-              text: messageText
-            })
-            
-            console.log('予約完了LINE通知結果:', lineResult)
+          } else {
+            console.log('⚠️ 顧客のLINE IDが設定されていません')
           }
         } catch (lineError) {
-          console.warn('LINE通知送信エラー:', lineError)
+          console.error('❌ LINE通知処理エラー:', lineError)
         }
 
-        // スプレッドシートに予約を記録（常に試行し、必要に応じてスキップ）
+        // Google Sheetsに予約を記録
         try {
-          
-          // スプレッドシートIDを取得
-          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
-          
           // ユーザーセッションからGoogleアクセストークンを取得
           const { data: { session } } = await supabase.auth.getSession()
           
           if (session && session.provider_token) {
+            console.log('Google Sheets連携を開始します...')
+            
             const accessToken = session.provider_token
+            const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
             
             // 予約データを準備
-            const bookingData = {
-              日付: new Date().toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: '2-digit', 
-                day: '2-digit'
-              }).replace(/\//g, '/'),
-              名前: customer.name.split('(')[0].trim(),
-              体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit' 
-              }).replace(/\//g, '/'),
-              プログラム: schedule.program.name
-            }
+            const today = new Date().toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit', 
+              day: '2-digit'
+            }).replace(/\//g, '/')
+            
+            const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit' 
+            }).replace(/\//g, '/')
+            
+            const customerName = customer.name.split('(')[0].trim()
+            const programName = schedule.program.name
+
+            console.log('書き込みデータ:', {
+              日付: today,
+              名前: customerName,
+              体験日: experienceDate,
+              プログラム: programName
+            })
 
             // Google Sheets APIに直接データを追加
             const appendResponse = await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW`,
+              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
               {
                 method: 'POST',
                 headers: {
@@ -300,32 +305,39 @@ export async function POST(request: NextRequest) {
                 },
                 body: JSON.stringify({
                   values: [[
-                    bookingData.日付,
-                    bookingData.名前,
-                    bookingData.体験日,
-                    bookingData.プログラム
+                    today,
+                    customerName,
+                    experienceDate,
+                    programName
                   ]]
                 })
               }
             )
 
+            console.log('Google Sheets API応答:', appendResponse.status, appendResponse.statusText)
+
             if (appendResponse.ok) {
               const result = await appendResponse.json()
               console.log('✅ スプレッドシートに予約を記録しました:', {
-                customerName: bookingData.名前,
-                program: bookingData.プログラム,
-                experienceDate: bookingData.体験日,
-                range: result.updates?.updatedRange
+                customerName: customerName,
+                program: programName,
+                experienceDate: experienceDate,
+                range: result.updates?.updatedRange,
+                updatedRows: result.updates?.updatedRows
               })
             } else {
               const errorText = await appendResponse.text()
-              console.warn('スプレッドシート書き込みに失敗:', appendResponse.status, errorText)
+              console.error('❌ スプレッドシート書き込みエラー:', {
+                status: appendResponse.status,
+                statusText: appendResponse.statusText,
+                error: errorText
+              })
             }
           } else {
-            console.warn('Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
+            console.warn('⚠️ Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
           }
         } catch (sheetsError) {
-          console.warn('スプレッドシート連携エラー:', sheetsError)
+          console.error('❌ スプレッドシート連携でエラー:', sheetsError)
         }
       })
 
