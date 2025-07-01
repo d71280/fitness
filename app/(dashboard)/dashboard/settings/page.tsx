@@ -33,6 +33,7 @@ export default function SettingsPage() {
   })
 
   const [loading, setLoading] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [testResults, setTestResults] = useState<{
     sheets?: boolean
     lineGroup?: boolean
@@ -84,6 +85,7 @@ export default function SettingsPage() {
       alert('設定の読み込みに失敗しました。デフォルト設定を使用します。')
     } finally {
       setLoading(false)
+      setInitialLoad(false)
     }
   }
 
@@ -214,7 +216,8 @@ export default function SettingsPage() {
 
 
 
-  if (loading) {
+  
+  if (loading && !initialLoad) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
