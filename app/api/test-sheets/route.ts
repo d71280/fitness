@@ -43,6 +43,39 @@ export async function POST(request: NextRequest) {
       tokenPrefix: accessToken.substring(0, 10) + '...'
     })
 
+    // OAuth トークンの詳細情報を取得
+    try {
+      const tokenInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`)
+      if (tokenInfoResponse.ok) {
+        const tokenInfo = await tokenInfoResponse.json()
+        console.log('OAuth トークン情報:', {
+          scopes: tokenInfo.scope,
+          audience: tokenInfo.audience,
+          expires_in: tokenInfo.expires_in
+        })
+        
+        // Google Sheets APIに必要なスコープをチェック
+        const requiredScopes = ['https://www.googleapis.com/auth/spreadsheets']
+        const hasRequiredScopes = requiredScopes.every(scope => 
+          tokenInfo.scope?.includes(scope)
+        )
+        
+        if (!hasRequiredScopes) {
+          console.error('❌ 必要なスコープが不足しています')
+          console.error('現在のスコープ:', tokenInfo.scope)
+          console.error('必要なスコープ:', requiredScopes)
+          
+          return NextResponse.json({
+            success: false,
+            error: `OAuth トークンにGoogle Sheets APIの権限がありません。現在のスコープ: ${tokenInfo.scope}`,
+            tokenInfo: tokenInfo
+          }, { status: 403 })
+        }
+      }
+    } catch (tokenCheckError) {
+      console.warn('OAuth トークン情報の取得に失敗:', tokenCheckError)
+    }
+
     // データを準備（予約データがある場合はそれを使用、なければテストデータ）
     let writeData
     if (reservationData) {
@@ -98,8 +131,24 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    const result = await response.json()
-    console.log('✅ Google Sheets 書き込み成功:', result)
+    // レスポンスを一度だけ読み取る
+    const responseText = await response.text()
+    console.log('Google Sheets API生レスポンス:', responseText)
+    
+    let result
+    try {
+      result = JSON.parse(responseText)
+      console.log('✅ Google Sheets 書き込み成功:', result)
+    } catch (jsonError) {
+      console.error('Google Sheets API応答のJSON解析エラー:', jsonError)
+      console.error('応答テキスト:', responseText)
+      
+      return NextResponse.json({
+        success: false,
+        error: `Google Sheets API応答のJSON解析に失敗: ${jsonError.message}`,
+        responseText: responseText
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
