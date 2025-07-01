@@ -169,6 +169,7 @@ export default function SignIn() {
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
+            scope: 'openid email profile https://www.googleapis.com/auth/spreadsheets',
           },
         },
       })
