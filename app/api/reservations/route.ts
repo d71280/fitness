@@ -228,12 +228,24 @@ export async function POST(request: NextRequest) {
 
       // 非同期で追加処理を実行（エラーが発生しても予約は成功とする）
       setImmediate(async () => {
-        // LINE通知送信
+        // LINE通知送信（堅牢性向上）
         try {
           console.log('LINE通知処理を開始します...')
+          console.log('環境変数チェック:', {
+            hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
+            debugMode: process.env.LINE_DEBUG_MODE,
+            nodeEnv: process.env.NODE_ENV
+          })
           
           if (customer.line_id) {
             console.log('顧客のLINE ID:', customer.line_id)
+            
+            // 環境変数の詳細チェック
+            const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+            if (!accessToken || accessToken === 'test_token' || accessToken.startsWith('your_line_channel')) {
+              console.warn('⚠️ LINE_CHANNEL_ACCESS_TOKEN が正しく設定されていません')
+              return // LINE通知をスキップ
+            }
             
             try {
               const lineClient = new LineMessagingClient()
@@ -249,7 +261,11 @@ export async function POST(request: NextRequest) {
                 text: messageText
               })
               
-              console.log('✅ LINE通知送信成功:', lineResult)
+              if (lineResult.success) {
+                console.log('✅ LINE通知送信成功:', lineResult)
+              } else {
+                console.error('❌ LINE通知送信失敗:', lineResult.error)
+              }
             } catch (lineApiError) {
               console.error('❌ LINE API呼び出しエラー:', lineApiError)
             }
