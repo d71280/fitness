@@ -258,37 +258,49 @@ export async function POST(request: NextRequest) {
         // エラーでも予約は継続（LINE通知は補助機能）
       }
 
-      // スプレッドシートに予約を記録（Google Forms経由）
+      // スプレッドシートに予約を記録
       try {
-        const { GoogleSheetsServerClient } = await import('@/lib/google-sheets-server')
-        const sheetsClient = new GoogleSheetsServerClient()
+        // スプレッドシートIDを取得
+        const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
         
-        // 日付のフォーマット（予約した日 = 今日）
-        const today = new Date().toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '/')
+        // ユーザーの認証情報を取得
+        const { data: authData } = await supabase.auth.getUser()
         
-        // 体験日のフォーマット（レッスンの日付）
-        const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).replace(/\//g, '/')
-        
-        // 顧客名から漢字部分のみ抽出（括弧内のカタカナを除去）
-        const customerKanjiName = customer.name.split('(')[0].trim()
-        
-        const spreadsheetData: SpreadsheetBookingData = {
-          日付: today,                    // 予約した日（今日）
-          名前: customerKanjiName,        // 顧客名（漢字のみ）
-          体験日: experienceDate,         // 体験する日（レッスンの日付）
-          プログラム: schedule.program.name // 予約したプログラム
-        }
+        if (authData.user) {
+          // 認証済みユーザーのアクセストークンを使用してスプレッドシートに書き込み
+          const response = await fetch('/api/google-sheets/sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              spreadsheetId,
+              bookingData: {
+                日付: new Date().toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit', 
+                  day: '2-digit'
+                }).replace(/\//g, '/'),
+                名前: customer.name.split('(')[0].trim(),
+                体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit' 
+                }).replace(/\//g, '/'),
+                プログラム: schedule.program.name
+              }
+            })
+          })
 
-        const sheetsResult = await sheetsClient.addBookingRecord(spreadsheetData)
-        console.log('スプレッドシート連携結果:', sheetsResult)
+          if (response.ok) {
+            const result = await response.json()
+            console.log('✅ スプレッドシートに予約を記録しました:', result)
+          } else {
+            console.warn('スプレッドシート書き込みAPI呼び出しに失敗:', response.status)
+          }
+        } else {
+          console.warn('ユーザー認証情報が見つかりません。スプレッドシート連携をスキップします。')
+        }
       } catch (sheetsError) {
         console.warn('スプレッドシート連携エラー:', sheetsError)
         // エラーでも予約は継続（スプレッドシート連携は補助機能）

@@ -217,7 +217,7 @@ export default function SettingsPage() {
 
 
   
-  if (loading && !initialLoad) {
+  if (initialLoad) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
