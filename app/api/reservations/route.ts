@@ -247,71 +247,48 @@ export async function POST(request: NextRequest) {
       })
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
 
-      // セッション情報を取得（サーバーサイド）
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      let providerToken = currentSession?.provider_token
-
-      // サーバーサイドでセッションが取得できない場合、リクエストヘッダーから取得
-      if (!providerToken) {
-        providerToken = request.headers.get('X-Provider-Token') || ''
-        console.log('リクエストヘッダーからトークンを取得:', {
-          hasHeaderToken: !!providerToken,
-          tokenLength: providerToken?.length
-        })
-      }
-
-      console.log('🔍 メイン処理でのセッション情報:', {
-        hasCurrentSession: !!currentSession,
-        hasProviderToken: !!providerToken,
-        tokenLength: providerToken?.length,
-        tokenSource: currentSession?.provider_token ? 'supabase-session' : 'request-header',
-        tokenStart: providerToken ? providerToken.substring(0, 20) + '...' : 'none'
-      })
-
-      // Google Sheets連携を先に実行（メイン処理内で）
-      if (providerToken) {
-        try {
-          console.log('🔥 === Google Sheets 予約記録開始（メイン処理） ===')
-          console.log('🔥 使用するOAuthトークン:', providerToken ? providerToken.substring(0, 20) + '...' : 'none')
-          
-          // Google Sheets APIの設定
+      // Google Sheets連携をシンプルテストと同じ方法で実行
+      try {
+        console.log('=== Google Sheets 予約記録開始（シンプルテスト方式） ===')
+        
+        // シンプルテストと全く同じ方法でセッション取得
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (!session?.provider_token) {
+          console.warn('❌ Google認証が必要です。Googleでログインしてください。')
+        } else {
+          const accessToken = session.provider_token
           const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
           
-          // 予約データを準備
-          const today = new Date().toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: '2-digit', 
-            day: '2-digit'
-          }).replace(/\//g, '/')
-          
-          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit' 
-          }).replace(/\//g, '/')
-          
-          const customerName = customer.name.split('(')[0].trim()
-          const programName = schedule.program?.name || 'プログラム未設定'
-          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+          console.log('認証情報:', {
+            hasToken: !!accessToken,
+            tokenLength: accessToken.length,
+            spreadsheetId
+          })
 
-          const writeData = [today, customerName, experienceDate, timeSlot, programName]
+          // 予約データを準備（シンプルテストの形式に合わせる）
+          const today = new Date().toLocaleDateString('ja-JP')
+          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
+          const customerName = customer.name.split('(')[0].trim()
+          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+          const programName = schedule.program?.name || 'プログラム未設定'
+          const testData = [today, customerName, experienceDate, timeSlot, programName]
           
-          console.log('🔥 準備された予約データ（メイン処理）:', writeData)
-          console.log('🔥 Google Sheets API URL:', `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`)
+          console.log('書き込みデータ:', testData)
           
-          // Step 1: スプレッドシート情報を確認（シンプルテストと同じ方法）
-          console.log('🔥 Step 1: スプレッドシート情報取得')
+          // 1. まずスプレッドシートの基本情報を取得してみる（シンプルテストと同じ）
+          console.log('=== Step 1: スプレッドシート情報取得 ===')
           const infoResponse = await fetch(
             `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
             {
               headers: {
-                'Authorization': `Bearer ${providerToken}`,
+                'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
               }
             }
           )
           
-          console.log('🔥 スプレッドシート情報API応答:', {
+          console.log('スプレッドシート情報API応答:', {
             status: infoResponse.status,
             statusText: infoResponse.statusText,
             ok: infoResponse.ok
@@ -319,64 +296,48 @@ export async function POST(request: NextRequest) {
           
           if (!infoResponse.ok) {
             const errorText = await infoResponse.text()
-            console.error('🔥 ❌ スプレッドシート情報取得エラー:', errorText)
-            throw new Error(`スプレッドシートアクセスエラー (${infoResponse.status}): ${errorText}`)
-          }
-          
-          const spreadsheetInfo = await infoResponse.json()
-          console.log('🔥 ✅ スプレッドシート情報取得成功:', {
-            title: spreadsheetInfo.properties?.title,
-            sheetCount: spreadsheetInfo.sheets?.length
-          })
-          
-          // Step 2: データ書き込み
-          console.log('🔥 Step 2: データ書き込み')
-          const sheetsResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${providerToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                values: [writeData]
-              })
-            }
-          )
-
-          console.log('🔥 Google Sheets API応答（メイン処理）:', {
-            status: sheetsResponse.status,
-            statusText: sheetsResponse.statusText,
-            ok: sheetsResponse.ok,
-            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`,
-            headers: Object.fromEntries(sheetsResponse.headers.entries())
-          })
-
-          if (sheetsResponse.ok) {
-            const sheetsResult = await sheetsResponse.json()
-            console.log('✅ Google Sheets 予約記録成功（メイン処理）:', sheetsResult)
+            console.error('スプレッドシート情報取得エラー:', errorText)
           } else {
-            const errorText = await sheetsResponse.text()
-            console.error('❌ Google Sheets 予約記録失敗（メイン処理）:', {
-              status: sheetsResponse.status,
-              statusText: sheetsResponse.statusText,
-              error: errorText
+            const spreadsheetInfo = await infoResponse.json()
+            console.log('✅ スプレッドシート情報取得成功:', {
+              title: spreadsheetInfo.properties?.title,
+              sheetCount: spreadsheetInfo.sheets?.length
             })
+            
+            // 2. データを書き込む（シンプルテストと同じ）
+            console.log('=== Step 2: データ書き込み ===')
+            
+            const writeResponse = await fetch(
+              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  values: [testData]
+                })
+              }
+            )
+            
+            console.log('書き込みAPI応答:', {
+              status: writeResponse.status,
+              statusText: writeResponse.statusText,
+              ok: writeResponse.ok
+            })
+            
+            if (!writeResponse.ok) {
+              const errorText = await writeResponse.text()
+              console.error('書き込みエラー:', errorText)
+            } else {
+              const writeResult = await writeResponse.json()
+              console.log('✅ データ書き込み成功:', writeResult)
+            }
           }
-        } catch (sheetsError) {
-          console.error('❌ Google Sheets 予約記録エラー（メイン処理）:', {
-            error: sheetsError.message,
-            stack: sheetsError.stack
-          })
         }
-      } else {
-        console.error('🔥 ❌ Google OAuthトークンがありません。Google Sheets書き込みをスキップします（メイン処理）。')
-        console.error('🔥 ❌ セッション情報:', {
-          hasSession: !!currentSession,
-          hasHeaderToken: !!request.headers.get('X-Provider-Token'),
-          headerTokenValue: request.headers.get('X-Provider-Token')?.substring(0, 20) + '...'
-        })
+      } catch (sheetsError) {
+        console.error('❌ Google Sheets処理エラー:', sheetsError)
       }
 
       // LINE通知のみ非同期で実行
