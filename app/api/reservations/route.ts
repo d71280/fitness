@@ -306,16 +306,14 @@ export async function POST(request: NextRequest) {
           console.error('❌ LINE通知処理エラー:', lineError)
         }
 
-        // Google Sheetsに予約を記録（専用APIを使用）
+        // Google Sheetsに予約を記録（直接API呼び出し）
         try {
           console.log('=== Google Sheets 予約記録開始 ===')
-          console.log('スケジュールデータ詳細:', {
-            schedule_id: schedule.id,
-            date: schedule.date,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            program: schedule.program
-          })
+          
+          if (!providerToken) {
+            console.warn('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします。')
+            return
+          }
           
           // 予約データを準備
           const today = new Date().toLocaleDateString('ja-JP', {
@@ -334,41 +332,26 @@ export async function POST(request: NextRequest) {
           const programName = schedule.program?.name || 'プログラム未設定'
           const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
 
-          console.log('準備された予約データ:', {
-            日付: today,
-            名前: customerName,
-            体験日: experienceDate,
-            時間: timeSlot,
-            プログラム: programName
-          })
-
-          // Google Sheets書き込み専用APIを呼び出し
-          const baseUrl = process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : 'http://localhost:3000'
+          const writeData = [today, customerName, experienceDate, timeSlot, programName]
           
-          console.log('Google Sheets API呼び出し準備:', {
-            baseUrl,
-            endpoint: `${baseUrl}/api/test-sheets`
-          })
-            
-          const sheetsResponse = await fetch(`${baseUrl}/api/test-sheets`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': providerToken ? `Bearer ${providerToken}` : '',
-            },
-            body: JSON.stringify({
-              reservationData: {
-                日付: today,
-                名前: customerName,
-                体験日: experienceDate,
-                時間: timeSlot,
-                プログラム: programName
+          console.log('準備された予約データ:', writeData)
+
+          // Google Sheets APIを直接呼び出し
+          const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
+          
+          const sheetsResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${providerToken}`,
+                'Content-Type': 'application/json'
               },
-              providerToken: providerToken // トークンも送信
-            })
-          })
+              body: JSON.stringify({
+                values: [writeData]
+              })
+            }
+          )
 
           console.log('Google Sheets API応答:', {
             status: sheetsResponse.status,
