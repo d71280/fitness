@@ -260,17 +260,19 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.log('メイン処理でのセッション情報:', {
+      console.log('🔍 メイン処理でのセッション情報:', {
         hasCurrentSession: !!currentSession,
         hasProviderToken: !!providerToken,
         tokenLength: providerToken?.length,
-        tokenSource: currentSession?.provider_token ? 'supabase-session' : 'request-header'
+        tokenSource: currentSession?.provider_token ? 'supabase-session' : 'request-header',
+        tokenStart: providerToken ? providerToken.substring(0, 20) + '...' : 'none'
       })
 
       // Google Sheets連携を先に実行（メイン処理内で）
       if (providerToken) {
         try {
-          console.log('=== Google Sheets 予約記録開始（メイン処理） ===')
+          console.log('🔥 === Google Sheets 予約記録開始（メイン処理） ===')
+        console.log('🔥 使用するOAuthトークン:', providerToken ? providerToken.substring(0, 20) + '...' : 'none')
           
           // 予約データを準備
           const today = new Date().toLocaleDateString('ja-JP', {
@@ -291,7 +293,8 @@ export async function POST(request: NextRequest) {
 
           const writeData = [today, customerName, experienceDate, timeSlot, programName]
           
-          console.log('準備された予約データ（メイン処理）:', writeData)
+          console.log('🔥 準備された予約データ（メイン処理）:', writeData)
+          console.log('🔥 Google Sheets API URL:', `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`)
 
           // Google Sheets APIを直接呼び出し
           const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
@@ -310,11 +313,12 @@ export async function POST(request: NextRequest) {
             }
           )
 
-          console.log('Google Sheets API応答（メイン処理）:', {
+          console.log('🔥 Google Sheets API応答（メイン処理）:', {
             status: sheetsResponse.status,
             statusText: sheetsResponse.statusText,
             ok: sheetsResponse.ok,
-            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`
+            url: `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append`,
+            headers: Object.fromEntries(sheetsResponse.headers.entries())
           })
 
           if (sheetsResponse.ok) {
@@ -335,7 +339,12 @@ export async function POST(request: NextRequest) {
           })
         }
       } else {
-        console.warn('⚠️ Google OAuthトークンがありません。Google Sheets書き込みをスキップします（メイン処理）。')
+        console.error('🔥 ❌ Google OAuthトークンがありません。Google Sheets書き込みをスキップします（メイン処理）。')
+        console.error('🔥 ❌ セッション情報:', {
+          hasSession: !!currentSession,
+          hasHeaderToken: !!request.headers.get('X-Provider-Token'),
+          headerTokenValue: request.headers.get('X-Provider-Token')?.substring(0, 20) + '...'
+        })
       }
 
       // LINE通知のみ非同期で実行

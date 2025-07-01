@@ -58,10 +58,12 @@ export function useReservations() {
         const { data: { session } } = await supabase.auth.getSession()
         const providerToken = session?.provider_token
 
-        console.log('予約リクエスト準備:', {
+        console.log('🔥 予約リクエスト準備:', {
           hasSession: !!session,
           hasProviderToken: !!providerToken,
-          tokenLength: providerToken?.length
+          tokenLength: providerToken?.length,
+          tokenStart: providerToken ? providerToken.substring(0, 20) + '...' : 'none',
+          headerValue: providerToken || ''
         })
 
         const response = await fetch('/api/reservations', {
