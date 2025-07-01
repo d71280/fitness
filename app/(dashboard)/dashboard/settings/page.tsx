@@ -55,8 +55,16 @@ export default function SettingsPage() {
   const loadSettings = async () => {
     setLoading(true)
     try {
+      console.log('設定を読み込み中...')
       const response = await fetch('/api/settings')
+      console.log('APIレスポンス:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
+      console.log('設定データ:', data)
       
       if (data.success && data.connection) {
         setSettings({
@@ -72,6 +80,8 @@ export default function SettingsPage() {
 
     } catch (error) {
       console.error('設定読み込みエラー:', error)
+      // エラーが発生してもUIを表示する
+      alert('設定の読み込みに失敗しました。デフォルト設定を使用します。')
     } finally {
       setLoading(false)
     }
