@@ -98,9 +98,9 @@ export async function POST(request: NextRequest) {
       console.log('テストデータを書き込み:', writeData)
     }
 
-    // Google Sheets API 呼び出し
+    // Google Sheets API 呼び出し（B5から書き込み）
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         headers: {
