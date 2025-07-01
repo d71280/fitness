@@ -14,8 +14,6 @@ interface ConnectionSettings {
 }
 
 interface GoogleSheetsSettings {
-  serviceAccountEmail?: string
-  privateKey?: string
   spreadsheetId?: string
   lineGroupToken?: string
   enabled?: boolean
@@ -66,9 +64,7 @@ export async function GET() {
     }
 
     const googleSheets: GoogleSheetsSettings = {
-      serviceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '',
-      privateKey: process.env.GOOGLE_PRIVATE_KEY || '',
-      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID || '',
+      spreadsheetId: process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '',
       lineGroupToken: process.env.LINE_GROUP_TOKEN || '',
       enabled: false
     }

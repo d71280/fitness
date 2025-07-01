@@ -79,37 +79,22 @@ async function testLineOfficialConnection(settings: any) {
 
 async function testSheetsConnection(body: any) {
   try {
-    const { serviceAccountEmail, privateKey, spreadsheetId } = body
+    const { spreadsheetId } = body
     
-    if (!serviceAccountEmail || !privateKey || !spreadsheetId) {
+    if (!spreadsheetId) {
       return NextResponse.json({
         success: false,
-        error: 'Google Sheets設定が不完全です'
+        error: 'スプレッドシートIDが必要です'
       })
     }
 
-    // テスト用のGoogleSpreadsheetクライアントを作成
-    const serviceAccountAuth = new JWT({
-      email: serviceAccountEmail,
-      key: privateKey.replace(/\\n/g, '\n'),
-      scopes: [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
-      ],
-    })
-
-    const doc = new GoogleSpreadsheet(spreadsheetId, serviceAccountAuth)
-    await doc.loadInfo()
+    // OAuth2.0を使用したGoogle Sheetsクライアントでテスト
+    const { GoogleSheetsClient } = await import('@/lib/google-sheets')
+    const sheetsClient = new GoogleSheetsClient(spreadsheetId)
     
-    return NextResponse.json({
-      success: true,
-      message: 'Google Sheets接続テストが成功しました',
-      details: {
-        spreadsheetTitle: doc.title,
-        sheetCount: doc.sheetCount,
-        spreadsheetId: doc.spreadsheetId
-      }
-    })
+    const result = await sheetsClient.testConnection()
+    
+    return NextResponse.json(result)
 
   } catch (error) {
     console.error('Google Sheets接続テストエラー:', error)

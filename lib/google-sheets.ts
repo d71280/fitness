@@ -293,7 +293,31 @@ export class GoogleSheetsClient {
       }
       
       if (!this.accessToken) {
-        throw new Error('Googleアクセストークンが取得できませんでした')
+        throw new Error('Googleアクセストークンが取得できませんでした。Googleでログインしてください。')
+      }
+
+      console.log('🔍 アクセストークンを取得しました:', this.accessToken.substring(0, 20) + '...')
+
+      // まず、現在のトークンでGoogle User Infoを取得してスコープを確認
+      try {
+        const userInfoResponse = await fetch(
+          'https://www.googleapis.com/oauth2/v2/userinfo',
+          {
+            headers: {
+              'Authorization': `Bearer ${this.accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        if (userInfoResponse.ok) {
+          const userInfo = await userInfoResponse.json()
+          console.log('✅ Google User Info取得成功:', userInfo.email)
+        } else {
+          console.warn('⚠️ Google User Info取得失敗:', userInfoResponse.status)
+        }
+      } catch (error) {
+        console.warn('⚠️ Google User Info取得エラー:', error)
       }
 
       // スプレッドシート情報を取得してテスト
@@ -307,8 +331,19 @@ export class GoogleSheetsClient {
         }
       )
 
+      console.log('📊 Google Sheets API呼び出し結果:', response.status, response.statusText)
+
       if (!response.ok) {
-        throw new Error(`接続テストエラー: ${response.status} ${response.statusText}`)
+        const errorText = await response.text()
+        console.error('❌ Google Sheets APIエラー詳細:', errorText)
+        
+        if (response.status === 403) {
+          throw new Error(`アクセス権限がありません (403): Googleアカウント「${await this.getCurrentUserEmail()}」がスプレッドシートID「${this.spreadsheetId}」への編集権限を持っていない可能性があります。またはGoogle Sheets APIのスコープが不足しています。`)
+        } else if (response.status === 404) {
+          throw new Error(`スプレッドシートが見つかりません (404): スプレッドシートID「${this.spreadsheetId}」が正しくない可能性があります。`)
+        } else {
+          throw new Error(`Google Sheets API接続エラー (${response.status}): ${errorText}`)
+        }
       }
 
       const spreadsheetInfo = await response.json()
@@ -319,7 +354,8 @@ export class GoogleSheetsClient {
         spreadsheetTitle: spreadsheetInfo.properties.title,
         sheetCount: spreadsheetInfo.sheets.length,
         sheetUrl: `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/edit`,
-        message: 'OAuth2.0を使用してGoogle Sheets APIに接続しました'
+        message: 'OAuth2.0を使用してGoogle Sheets APIに接続しました',
+        userEmail: await this.getCurrentUserEmail()
       }
     } catch (error) {
       console.error('スプレッドシート接続テストエラー:', error)
@@ -327,6 +363,31 @@ export class GoogleSheetsClient {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       }
+    }
+  }
+
+  // 現在のユーザーメールアドレスを取得
+  private async getCurrentUserEmail(): Promise<string> {
+    try {
+      if (!this.accessToken) return '不明'
+      
+      const response = await fetch(
+        'https://www.googleapis.com/oauth2/v2/userinfo',
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+
+      if (response.ok) {
+        const userInfo = await response.json()
+        return userInfo.email || '不明'
+      }
+      return '不明'
+    } catch {
+      return '不明'
     }
   }
 } 

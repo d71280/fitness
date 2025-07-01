@@ -27,8 +27,6 @@ export default function SettingsPage() {
   })
 
   const [googleSheetsSettings, setGoogleSheetsSettings] = useState({
-    serviceAccountEmail: '',
-    privateKey: '',
     spreadsheetId: '',
     lineGroupToken: '',
     enabled: false
@@ -108,24 +106,22 @@ export default function SettingsPage() {
   const testGoogleSheets = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/test-connection?type=sheets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(googleSheetsSettings)
-      })
-
-      const result = await response.json()
+      // クライアントサイドで直接Google Sheetsクライアントをテスト
+      const { GoogleSheetsClient } = await import('@/lib/google-sheets')
+      const sheetsClient = new GoogleSheetsClient(googleSheetsSettings.spreadsheetId)
+      
+      const result = await sheetsClient.testConnection()
       setTestResults(prev => ({ ...prev, sheets: result.success }))
       
       if (result.success) {
-        alert('Google Sheets接続テストが成功しました')
+        alert(`Google Sheets接続テストが成功しました！\n\nスプレッドシート: ${result.spreadsheetTitle}\nシート数: ${result.sheetCount}`)
       } else {
         alert(`Google Sheets接続テストが失敗しました: ${result.error}`)
       }
     } catch (error) {
       console.error('Google Sheets接続テストエラー:', error)
       setTestResults(prev => ({ ...prev, sheets: false }))
-      alert('Google Sheets接続テストに失敗しました')
+      alert(`Google Sheets接続テストに失敗しました: ${error instanceof Error ? error.message : '不明なエラー'}`)
     } finally {
       setLoading(false)
     }
@@ -351,40 +347,15 @@ export default function SettingsPage() {
 
           {googleSheetsSettings.enabled && (
             <>
-              <div>
-                <Label htmlFor="serviceAccountEmail">Google サービスアカウントメール</Label>
-                <Input
-                  id="serviceAccountEmail"
-                  value={googleSheetsSettings.serviceAccountEmail}
-                  onChange={(e) => updateGoogleSheetsSetting('serviceAccountEmail', e.target.value)}
-                  placeholder="service-account@project.iam.gserviceaccount.com"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Google Cloud Platform で作成したサービスアカウントのメールアドレス
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="privateKey">Google プライベートキー</Label>
-                <Textarea
-                  id="privateKey"
-                  value={showSecrets ? googleSheetsSettings.privateKey : maskString(googleSheetsSettings.privateKey)}
-                  onChange={(e) => updateGoogleSheetsSetting('privateKey', e.target.value)}
-                  placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-                  rows={4}
-                />
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-gray-500">
-                    サービスアカウントのJSONキーファイルから取得
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowSecrets(!showSecrets)}
-                  >
-                    {showSecrets ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <strong className="text-blue-800">OAuth2.0認証を使用</strong>
                 </div>
+                <p className="text-sm text-blue-700">
+                  Googleでログインした時の認証情報を使用してスプレッドシートに書き込みます。
+                  サービスアカウントの設定は不要です。
+                </p>
               </div>
 
               <div>
@@ -397,6 +368,8 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Google SheetsのURLから取得: https://docs.google.com/spreadsheets/d/<strong>ID</strong>/edit
+                  <br />
+                  <strong>重要:</strong> ログインしたGoogleアカウントがこのスプレッドシートに編集権限を持っている必要があります
                 </p>
               </div>
 
