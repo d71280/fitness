@@ -51,37 +51,18 @@ export async function GET(request: NextRequest) {
           expiresIn: data.session.expires_in
         })
         
-        // セッション確立を複数回確認
-        let sessionVerified = false
-        let verificationAttempts = 0
-        const maxAttempts = 3
-        
-        while (!sessionVerified && verificationAttempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-          
-          const { data: userCheck } = await supabase.auth.getUser()
-          if (userCheck.user) {
-            sessionVerified = true
-            console.log('Session verified after', verificationAttempts + 1, 'attempts')
-          } else {
-            verificationAttempts++
-            console.log('Session verification attempt', verificationAttempts, 'failed, retrying...')
-          }
-        }
-        
-        if (!sessionVerified) {
-          console.error('Session verification failed after all attempts')
-          const errorUrl = `${origin}/auth/signin?error=session-verification-timeout`
-          return NextResponse.redirect(errorUrl)
-        }
-        
-        // 中間認証確認ページにリダイレクト（セッション確立を確実にするため）
-        const successUrl = `${origin}/auth/verify-session?next=${encodeURIComponent(redirectTo)}`
-        console.log('SUCCESS! Redirecting to session verification:', successUrl)
+        // 直接最終目的地にリダイレクト（シンプルで確実）
+        const finalUrl = `${origin}${redirectTo}`
+        console.log('SUCCESS! Direct redirect to:', finalUrl)
         console.log('=== END AUTH CALLBACK DEBUG ===')
         
-        const response = NextResponse.redirect(successUrl)
+        const response = NextResponse.redirect(finalUrl)
+        
+        // セッション確立のため適切なヘッダー設定
         response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+        response.headers.set('Pragma', 'no-cache')
+        response.headers.set('Expires', '0')
+        
         return response
       } else {
         console.error('Exchange failed:', error?.message)

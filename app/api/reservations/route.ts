@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
         // エラーでも予約は継続（LINE通知は補助機能）
       }
 
-      // スプレッドシートに予約を記録
+      // スプレッドシートに予約を記録（Google Forms経由）
       try {
         const sheetsClient = new GoogleSheetsClient()
         
