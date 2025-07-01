@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -42,18 +43,46 @@ export async function GET(request: NextRequest) {
       
       if (!error && data.user && data.session) {
         console.log('AUTH SUCCESS - User and session confirmed')
+        console.log('Session details:', {
+          userId: data.user.id,
+          email: data.user.email,
+          accessToken: !!data.session.access_token,
+          refreshToken: !!data.session.refresh_token,
+          expiresIn: data.session.expires_in
+        })
+        
+        // セッションをしっかり待つ
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
         // セッション確立を確認するため再度ユーザー情報を取得
         const { data: userCheck } = await supabase.auth.getUser()
         console.log('Session verification - User exists:', !!userCheck.user)
         
-        // 中間ページ経由でリダイレクト（セッション確立を確実にするため）
-        const successUrl = `${origin}/auth/success?next=${encodeURIComponent(redirectTo)}`
-        console.log('SUCCESS! Redirecting to intermediate page:', successUrl)
+        // 直接ダッシュボードにリダイレクト
+        const finalUrl = `${origin}${redirectTo}`
+        console.log('SUCCESS! Final redirect URL:', finalUrl)
         console.log('=== END AUTH CALLBACK DEBUG ===')
         
         // リダイレクトレスポンスを作成
-        const response = NextResponse.redirect(successUrl)
+        const response = NextResponse.redirect(finalUrl)
+        
+        // セッションクッキーを確実に設定
+        const cookieStore = await cookies()
+        const supabaseCookies = cookieStore.getAll().filter(cookie => 
+          cookie.name.startsWith('sb-')
+        )
+        
+        console.log('Setting cookies:', supabaseCookies.length, 'Supabase cookies found')
+        
+        // クッキーを新しいレスポンスにコピー
+        supabaseCookies.forEach(cookie => {
+          response.cookies.set(cookie.name, cookie.value, {
+            ...cookie,
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax'
+          })
+        })
         
         // セッション確立の確実性のためキャッシュ無効化
         response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
