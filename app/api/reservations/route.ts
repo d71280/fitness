@@ -276,84 +276,64 @@ export async function POST(request: NextRequest) {
           console.error('❌ LINE通知処理エラー:', lineError)
         }
 
-        // Google Sheetsに予約を記録
+        // Google Sheetsに予約を記録（専用APIを使用）
         try {
-          // ユーザーセッションからGoogleアクセストークンを取得
-          const { data: { session } } = await supabase.auth.getSession()
+          console.log('=== Google Sheets 予約記録開始 ===')
           
-          if (session && session.provider_token) {
-            console.log('Google Sheets連携を開始します...')
-            
-            const accessToken = session.provider_token
-            const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
-            
-            // 予約データを準備
-            const today = new Date().toLocaleDateString('ja-JP', {
-              year: 'numeric',
-              month: '2-digit', 
-              day: '2-digit'
-            }).replace(/\//g, '/')
-            
-            const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit' 
-            }).replace(/\//g, '/')
-            
-            const customerName = customer.name.split('(')[0].trim()
-            const programName = schedule.program.name
+          // 予約データを準備
+          const today = new Date().toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit'
+          }).replace(/\//g, '/')
+          
+          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit' 
+          }).replace(/\//g, '/')
+          
+          const customerName = customer.name.split('(')[0].trim()
+          const programName = schedule.program.name
 
-            console.log('書き込みデータ:', {
-              日付: today,
-              名前: customerName,
-              体験日: experienceDate,
-              プログラム: programName
-            })
+          console.log('予約データ:', {
+            日付: today,
+            名前: customerName,
+            体験日: experienceDate,
+            プログラム: programName
+          })
 
-            // Google Sheets APIに直接データを追加
-            const appendResponse = await fetch(
-              `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  values: [[
-                    today,
-                    customerName,
-                    experienceDate,
-                    programName
-                  ]]
-                })
+          // Google Sheets書き込み専用APIを呼び出し
+          const baseUrl = process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : 'http://localhost:3000'
+          const sheetsResponse = await fetch(`${baseUrl}/api/test-sheets`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              reservationData: {
+                日付: today,
+                名前: customerName,
+                体験日: experienceDate,
+                プログラム: programName
               }
-            )
+            })
+          })
 
-            console.log('Google Sheets API応答:', appendResponse.status, appendResponse.statusText)
-
-            if (appendResponse.ok) {
-              const result = await appendResponse.json()
-              console.log('✅ スプレッドシートに予約を記録しました:', {
-                customerName: customerName,
-                program: programName,
-                experienceDate: experienceDate,
-                range: result.updates?.updatedRange,
-                updatedRows: result.updates?.updatedRows
-              })
-            } else {
-              const errorText = await appendResponse.text()
-              console.error('❌ スプレッドシート書き込みエラー:', {
-                status: appendResponse.status,
-                statusText: appendResponse.statusText,
-                error: errorText
-              })
-            }
+          if (sheetsResponse.ok) {
+            const sheetsResult = await sheetsResponse.json()
+            console.log('✅ Google Sheets 予約記録成功:', sheetsResult)
           } else {
-            console.warn('⚠️ Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
+            const errorText = await sheetsResponse.text()
+            console.error('❌ Google Sheets 予約記録失敗:', {
+              status: sheetsResponse.status,
+              error: errorText
+            })
           }
         } catch (sheetsError) {
-          console.error('❌ スプレッドシート連携でエラー:', sheetsError)
+          console.error('❌ Google Sheets 予約記録エラー:', sheetsError)
         }
       })
 

@@ -174,6 +174,34 @@ export default function SettingsPage() {
     }
   }
 
+  const testSheetsWrite = async () => {
+    setLoading(true)
+    try {
+      console.log('Google Sheets書き込みテストを開始...')
+      
+      const response = await fetch('/api/test-sheets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      const result = await response.json()
+      console.log('書き込みテスト結果:', result)
+      
+      if (result.success) {
+        alert(`✅ スプレッドシート書き込みテスト成功！\n\n書き込みデータ: ${result.testData.join(', ')}\n\nスプレッドシートを確認してください。`)
+      } else {
+        alert(`❌ スプレッドシート書き込みテスト失敗:\n\n${result.error}`)
+      }
+    } catch (error) {
+      console.error('書き込みテストエラー:', error)
+      alert(`書き込みテストでエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const testLineNotification = async () => {
     setLoading(true)
     try {
@@ -444,6 +472,15 @@ export default function SettingsPage() {
                 >
                   <TestTube className="h-4 w-4 mr-2" />
                   📊 スプレッドシート接続テスト
+                </Button>
+                <Button
+                  onClick={testSheetsWrite}
+                  disabled={loading}
+                  variant="outline"
+                  className="w-full sm:w-auto bg-blue-50 hover:bg-blue-100"
+                >
+                  <TestTube className="h-4 w-4 mr-2" />
+                  ✏️ 書き込みテスト
                 </Button>
                 {testResults.sheets !== undefined && (
                   <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${
