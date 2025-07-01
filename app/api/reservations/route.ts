@@ -18,7 +18,7 @@ const createReservationSchema = z.object({
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Provider-Token',
   'Access-Control-Allow-Credentials': 'true',
 }
 

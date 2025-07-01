@@ -121,11 +121,25 @@ export default function SettingsPage() {
     try {
       console.log('設定保存開始:', { enabled: googleSheetsSettings.enabled })
       
+      // 現在のセッションからOAuthトークンを取得
+      let oauthToken = ''
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.provider_token) {
+          oauthToken = session.provider_token
+          console.log('✅ OAuthトークンを取得しました（設定保存時）:', oauthToken.substring(0, 20) + '...')
+        }
+      } catch (tokenError) {
+        console.warn('⚠️ OAuthトークン取得失敗（設定保存時）:', tokenError)
+      }
+
       // ローカルストレージに直接保存（確実な方法）
       const settingsToSave = {
         spreadsheetEnabled: googleSheetsSettings.enabled,
         spreadsheetId: googleSheetsSettings.spreadsheetId,
         lineGroupToken: googleSheetsSettings.lineGroupToken,
+        oauthToken: oauthToken, // OAuthトークンを保存
         updatedAt: new Date().toISOString()
       }
       
