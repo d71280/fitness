@@ -19,8 +19,19 @@ export default function SignIn() {
   const router = useRouter()
   const supabase = createClient()
 
-  // URLパラメータからエラーを取得
+  // プレビューURLの場合は本番URLにリダイレクト
   useEffect(() => {
+    const hostname = window.location.hostname
+    const isPreviewDeployment = hostname.includes('vercel.app') && hostname !== 'fitness2-rho.vercel.app'
+    
+    if (isPreviewDeployment) {
+      const currentPath = window.location.pathname + window.location.search
+      const productionUrl = `https://fitness2-rho.vercel.app${currentPath}`
+      console.log('Preview deployment detected, redirecting to production:', productionUrl)
+      window.location.replace(productionUrl)
+      return
+    }
+
     const urlParams = new URLSearchParams(window.location.search)
     const errorParam = urlParams.get('error')
     
@@ -90,7 +101,7 @@ export default function SignIn() {
       }
 
       if (data.user) {
-        router.push('/dashboard')
+        router.push('/dashboard/schedule')
         router.refresh()
       }
     } catch (error: any) {
