@@ -121,12 +121,10 @@ export async function POST(request: NextRequest) {
 
       let customer
       if (existingCustomer) {
-        // 既存顧客の更新
+        // 既存顧客の場合は、最終予約日のみ更新
         const { data: updatedCustomer, error: updateError } = await supabase
           .from('customers')
           .update({
-            name: `${customerNameKanji} (${customerNameKatakana})`,
-            phone: phone,
             last_booking_date: new Date().toISOString(),
           })
           .eq('line_id', lineId)
@@ -203,7 +201,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // 予約作成
+      // 予約作成（予約時の名前を保存）
       const { data: reservation, error: reservationError } = await supabase
         .from('reservations')
         .insert({
@@ -211,6 +209,7 @@ export async function POST(request: NextRequest) {
           customer_id: customer.id,
           status: 'confirmed',
           booking_type: 'advance',
+          customer_name_at_booking: `${customerNameKanji} (${customerNameKatakana})`,
         })
         .select(`
           *,
@@ -225,6 +224,10 @@ export async function POST(request: NextRequest) {
       if (reservationError) throw reservationError
 
       console.log('✅ 予約作成が完了しました。追加処理を開始します。')
+
+      // セッション情報を事前に取得（setImmediate内で使用するため）
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      const providerToken = currentSession?.provider_token
 
       // 非同期で追加処理を実行（エラーが発生しても予約は成功とする）
       setImmediate(async () => {
@@ -325,7 +328,8 @@ export async function POST(request: NextRequest) {
           const sheetsResponse = await fetch(`${baseUrl}/api/test-sheets`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Authorization': providerToken ? `Bearer ${providerToken}` : '',
             },
             body: JSON.stringify({
               reservationData: {
@@ -334,7 +338,8 @@ export async function POST(request: NextRequest) {
                 体験日: experienceDate,
                 時間: timeSlot,
                 プログラム: programName
-              }
+              },
+              providerToken: providerToken // トークンも送信
             })
           })
 

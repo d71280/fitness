@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     // リクエストボディから予約データを取得
     const body = await request.json()
     const reservationData = body.reservationData
+    const providerToken = body.providerToken // 予約APIから送られたトークン
     
     // Supabase セッション取得
     const supabase = await createClient()
@@ -23,21 +24,19 @@ export async function POST(request: NextRequest) {
       providerTokenLength: session?.provider_token?.length
     })
 
-    if (!session) {
-      return NextResponse.json({
-        success: false,
-        error: 'セッションが見つかりません'
-      }, { status: 401 })
-    }
+    // トークンを優先的に使用（予約APIから送られた場合）
+    const accessToken = providerToken || session?.provider_token
 
-    if (!session.provider_token) {
+    if (!accessToken) {
+      console.error('アクセストークンが見つかりません:', {
+        hasProviderToken: !!providerToken,
+        hasSessionToken: !!session?.provider_token
+      })
       return NextResponse.json({
         success: false,
         error: 'Googleアクセストークンがありません'
       }, { status: 401 })
     }
-
-    const accessToken = session.provider_token
     const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
     
     console.log('API呼び出し準備:', {
