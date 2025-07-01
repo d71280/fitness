@@ -18,7 +18,9 @@ export async function POST(request: NextRequest) {
       hasUser: !!session?.user,
       hasProviderToken: !!session?.provider_token,
       provider: session?.user?.app_metadata?.provider,
-      sessionError: sessionError?.message
+      sessionError: sessionError?.message,
+      userMetadata: session?.user?.user_metadata,
+      providerTokenLength: session?.provider_token?.length
     })
 
     if (!session) {
@@ -98,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     // Google Sheets API 呼び出し
     const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         headers: {
