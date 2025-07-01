@@ -127,10 +127,22 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date().toISOString()
         }
         
-        // 設定ファイルに保存
-        fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf8')
-        
-        console.log('設定が保存されました:', updatedSettings)
+        // 設定ファイルに保存（Vercel環境では書き込み権限がない場合があるため、try-catch）
+        try {
+          fs.writeFileSync(settingsPath, JSON.stringify(updatedSettings, null, 2), 'utf8')
+          console.log('設定がファイルに保存されました:', updatedSettings)
+        } catch (writeError) {
+          // Vercel環境などでファイル書き込みができない場合
+          console.warn('ファイル書き込みに失敗（読み取り専用環境）:', writeError.message)
+          
+          // この場合、クライアントサイドのローカルストレージを使用するよう指示
+          return NextResponse.json({
+            success: true,
+            message: '設定が保存されました（クライアントサイドストレージ使用）',
+            settings: updatedSettings,
+            useClientStorage: true
+          })
+        }
         
         return NextResponse.json({
           success: true,

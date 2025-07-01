@@ -79,6 +79,25 @@ export default function SettingsPage() {
         setGoogleSheetsSettings(data.googleSheets)
       }
 
+      // サーバー設定が取得できない場合、ローカルストレージをチェック
+      if (!data.success || !data.googleSheets?.enabled) {
+        try {
+          const localSettings = localStorage.getItem('app-settings')
+          if (localSettings) {
+            const parsed = JSON.parse(localSettings)
+            console.log('ローカルストレージから設定を読み込みました:', parsed)
+            if (parsed.spreadsheetEnabled) {
+              setGoogleSheetsSettings(prev => ({
+                ...prev,
+                enabled: parsed.spreadsheetEnabled
+              }))
+            }
+          }
+        } catch (storageError) {
+          console.warn('ローカルストレージ読み込みエラー:', storageError)
+        }
+      }
+
     } catch (error) {
       console.error('設定読み込みエラー:', error)
       // エラーが発生してもUIを表示する
@@ -92,6 +111,8 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setLoading(true)
     try {
+      console.log('設定保存開始:', { enabled: googleSheetsSettings.enabled })
+      
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,16 +123,42 @@ export default function SettingsPage() {
         })
       })
 
+      console.log('API応答:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API応答エラー:', errorText)
+        alert(`設定保存に失敗しました（HTTP ${response.status}）: ${errorText}`)
+        return
+      }
+
       const result = await response.json()
+      console.log('API結果:', result)
       
       if (result.success) {
-        alert('設定が保存されました')
+        // サーバーでファイル保存に失敗した場合、ローカルストレージを使用
+        if (result.useClientStorage) {
+          try {
+            const settingsToSave = {
+              spreadsheetEnabled: googleSheetsSettings.enabled,
+              updatedAt: new Date().toISOString()
+            }
+            localStorage.setItem('app-settings', JSON.stringify(settingsToSave))
+            console.log('ローカルストレージに設定を保存しました:', settingsToSave)
+          } catch (storageError) {
+            console.error('ローカルストレージ保存エラー:', storageError)
+          }
+        }
+        
+        alert(result.message || '設定が保存されました！')
+        // 保存成功後、設定を再読み込み
+        await loadSettings()
       } else {
-        alert(`設定保存に失敗しました: ${result.error}`)
+        alert(`設定保存に失敗しました: ${result.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('設定保存エラー:', error)
-      alert('設定保存に失敗しました')
+      alert(`設定保存でエラーが発生しました: ${error.message}`)
     } finally {
       setLoading(false)
     }
