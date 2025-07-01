@@ -244,7 +244,7 @@ export default function SettingsPage() {
       console.log('シンプルテスト結果:', result)
       
       if (result.success) {
-        alert(`✅ シンプルテスト成功！\n\nスプレッドシート: ${result.spreadsheetInfo?.title}\n書き込みデータ: ${result.testData.join(', ')}\n\nスプレッドシートを確認してください。`)
+        alert(`✅ シンプルテスト成功！\n\nスプレッドシート: ${result.spreadsheetInfo?.title}\n書き込みデータ: ${result.testData.join(' | ')}\n\nスプレッドシートを確認してください。`)
       } else {
         alert(`❌ シンプルテスト失敗:\n\nステップ: ${result.step || '不明'}\nエラー: ${result.error}`)
       }

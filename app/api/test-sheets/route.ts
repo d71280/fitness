@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         reservationData.日付,
         reservationData.名前,
         reservationData.体験日,
+        reservationData.時間,
         reservationData.プログラム
       ]
       console.log('予約データを書き込み:', writeData)
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
         new Date().toLocaleDateString('ja-JP').replace(/\//g, '/'),
         'テストユーザー',
         new Date().toLocaleDateString('ja-JP').replace(/\//g, '/'),
+        '10:00-11:00',
         'テストプログラム'
       ]
       console.log('テストデータを書き込み:', writeData)

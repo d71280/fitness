@@ -295,11 +295,13 @@ export async function POST(request: NextRequest) {
           
           const customerName = customer.name.split('(')[0].trim()
           const programName = schedule.program.name
+          const timeSlot = `${schedule.start_time?.slice(0, 5)}-${schedule.end_time?.slice(0, 5)}`
 
           console.log('予約データ:', {
             日付: today,
             名前: customerName,
             体験日: experienceDate,
+            時間: timeSlot,
             プログラム: programName
           })
 
@@ -317,6 +319,7 @@ export async function POST(request: NextRequest) {
                 日付: today,
                 名前: customerName,
                 体験日: experienceDate,
+                時間: timeSlot,
                 プログラム: programName
               }
             })

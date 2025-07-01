@@ -25,9 +25,10 @@ export async function POST(request: NextRequest) {
       spreadsheetId
     })
 
-    // テストデータを準備
+    // テストデータを準備（時間も含める）
     const today = new Date().toLocaleDateString('ja-JP')
-    const testData = [today, 'テストユーザー', today, 'テストプログラム']
+    const testTime = '11:00-12:00'
+    const testData = [today, 'テストユーザー', today, testTime, 'テストプログラム']
     
     console.log('書き込みデータ:', testData)
     
