@@ -174,6 +174,47 @@ export default function SettingsPage() {
     }
   }
 
+  const testSheetsServiceAccount = async () => {
+    setLoading(true)
+    try {
+      console.log('サービスアカウントでGoogle Sheets書き込みテストを開始...')
+      
+      const response = await fetch('/api/test-sheets-service', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('サービスアカウントAPI応答:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('サービスアカウントAPI応答エラー:', errorText)
+        alert(`❌ サービスアカウントAPI呼び出し失敗 (${response.status}):\n\n${errorText}`)
+        return
+      }
+      
+      const result = await response.json()
+      console.log('サービスアカウント書き込みテスト結果:', result)
+      
+      if (result.success) {
+        alert(`✅ サービスアカウントでスプレッドシート書き込み成功！\n\n書き込みデータ: ${result.testData.join(', ')}\n\nスプレッドシートを確認してください。`)
+      } else {
+        alert(`❌ サービスアカウントテスト失敗:\n\n${result.error}`)
+      }
+    } catch (error) {
+      console.error('サービスアカウントテストエラー:', error)
+      alert(`サービスアカウントテストでエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const testSheetsWrite = async () => {
     setLoading(true)
     try {
@@ -494,7 +535,16 @@ export default function SettingsPage() {
                   className="w-full sm:w-auto bg-blue-50 hover:bg-blue-100"
                 >
                   <TestTube className="h-4 w-4 mr-2" />
-                  ✏️ 書き込みテスト
+                  ✏️ OAuth書き込みテスト
+                </Button>
+                <Button
+                  onClick={testSheetsServiceAccount}
+                  disabled={loading}
+                  variant="outline"
+                  className="w-full sm:w-auto bg-green-50 hover:bg-green-100"
+                >
+                  <TestTube className="h-4 w-4 mr-2" />
+                  🔑 サービスアカウントテスト
                 </Button>
                 {testResults.sheets !== undefined && (
                   <div className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${
