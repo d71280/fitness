@@ -263,43 +263,62 @@ export async function POST(request: NextRequest) {
         // スプレッドシートIDを取得
         const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID || '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4'
         
-        // ユーザーの認証情報を取得
-        const { data: authData } = await supabase.auth.getUser()
+        // ユーザーセッションからGoogleアクセストークンを取得
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (authData.user) {
-          // 認証済みユーザーのアクセストークンを使用してスプレッドシートに書き込み
-          const response = await fetch('/api/google-sheets/sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              spreadsheetId,
-              bookingData: {
-                日付: new Date().toLocaleDateString('ja-JP', {
-                  year: 'numeric',
-                  month: '2-digit', 
-                  day: '2-digit'
-                }).replace(/\//g, '/'),
-                名前: customer.name.split('(')[0].trim(),
-                体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit' 
-                }).replace(/\//g, '/'),
-                プログラム: schedule.program.name
-              }
-            })
-          })
+        if (session && session.provider_token) {
+          const accessToken = session.provider_token
+          
+          // 予約データを準備
+          const bookingData = {
+            日付: new Date().toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit', 
+              day: '2-digit'
+            }).replace(/\//g, '/'),
+            名前: customer.name.split('(')[0].trim(),
+            体験日: new Date(schedule.date).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit' 
+            }).replace(/\//g, '/'),
+            プログラム: schedule.program.name
+          }
 
-          if (response.ok) {
-            const result = await response.json()
-            console.log('✅ スプレッドシートに予約を記録しました:', result)
+          // Google Sheets APIに直接データを追加
+          const appendResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                values: [[
+                  bookingData.日付,
+                  bookingData.名前,
+                  bookingData.体験日,
+                  bookingData.プログラム
+                ]]
+              })
+            }
+          )
+
+          if (appendResponse.ok) {
+            const result = await appendResponse.json()
+            console.log('✅ スプレッドシートに予約を記録しました:', {
+              customerName: bookingData.名前,
+              program: bookingData.プログラム,
+              experienceDate: bookingData.体験日,
+              range: result.updates?.updatedRange
+            })
           } else {
-            console.warn('スプレッドシート書き込みAPI呼び出しに失敗:', response.status)
+            const errorText = await appendResponse.text()
+            console.warn('スプレッドシート書き込みに失敗:', appendResponse.status, errorText)
           }
         } else {
-          console.warn('ユーザー認証情報が見つかりません。スプレッドシート連携をスキップします。')
+          console.warn('Googleアクセストークンが見つかりません。スプレッドシート連携をスキップします。')
         }
       } catch (sheetsError) {
         console.warn('スプレッドシート連携エラー:', sheetsError)
