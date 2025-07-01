@@ -279,6 +279,13 @@ export async function POST(request: NextRequest) {
         // Google Sheetsに予約を記録（専用APIを使用）
         try {
           console.log('=== Google Sheets 予約記録開始 ===')
+          console.log('スケジュールデータ詳細:', {
+            schedule_id: schedule.id,
+            date: schedule.date,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            program: schedule.program
+          })
           
           // 予約データを準備
           const today = new Date().toLocaleDateString('ja-JP', {
@@ -294,10 +301,10 @@ export async function POST(request: NextRequest) {
           }).replace(/\//g, '/')
           
           const customerName = customer.name.split('(')[0].trim()
-          const programName = schedule.program.name
-          const timeSlot = `${schedule.start_time?.slice(0, 5)}-${schedule.end_time?.slice(0, 5)}`
+          const programName = schedule.program?.name || 'プログラム未設定'
+          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
 
-          console.log('予約データ:', {
+          console.log('準備された予約データ:', {
             日付: today,
             名前: customerName,
             体験日: experienceDate,
@@ -309,6 +316,12 @@ export async function POST(request: NextRequest) {
           const baseUrl = process.env.VERCEL_URL 
             ? `https://${process.env.VERCEL_URL}` 
             : 'http://localhost:3000'
+          
+          console.log('Google Sheets API呼び出し準備:', {
+            baseUrl,
+            endpoint: `${baseUrl}/api/test-sheets`
+          })
+            
           const sheetsResponse = await fetch(`${baseUrl}/api/test-sheets`, {
             method: 'POST',
             headers: {
@@ -325,6 +338,12 @@ export async function POST(request: NextRequest) {
             })
           })
 
+          console.log('Google Sheets API応答:', {
+            status: sheetsResponse.status,
+            statusText: sheetsResponse.statusText,
+            ok: sheetsResponse.ok
+          })
+
           if (sheetsResponse.ok) {
             const sheetsResult = await sheetsResponse.json()
             console.log('✅ Google Sheets 予約記録成功:', sheetsResult)
@@ -332,11 +351,15 @@ export async function POST(request: NextRequest) {
             const errorText = await sheetsResponse.text()
             console.error('❌ Google Sheets 予約記録失敗:', {
               status: sheetsResponse.status,
+              statusText: sheetsResponse.statusText,
               error: errorText
             })
           }
         } catch (sheetsError) {
-          console.error('❌ Google Sheets 予約記録エラー:', sheetsError)
+          console.error('❌ Google Sheets 予約記録エラー:', {
+            error: sheetsError.message,
+            stack: sheetsError.stack
+          })
         }
       })
 
