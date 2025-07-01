@@ -40,6 +40,69 @@ export function useReservations() {
     fetchReservations()
   }, [fetchReservations])
 
+  const debugReservationAuth = async () => {
+    try {
+      console.log('🔍 デバッグAPI呼び出し開始')
+      
+      // Google OAuthトークンを取得（複数の方法を試行）
+      let providerToken = ''
+      let tokenSource = 'none'
+      
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.provider_token) {
+          providerToken = session.provider_token
+          tokenSource = 'supabase-session'
+        }
+      } catch (sessionError) {
+        console.warn('🔥 Supabaseセッション取得失敗:', sessionError)
+      }
+
+      // Supabaseセッションからトークンが取得できない場合、localStorageを試行
+      if (!providerToken) {
+        try {
+          const settings = JSON.parse(localStorage.getItem('fitness-app-settings') || '{}')
+          if (settings.oauthToken) {
+            providerToken = settings.oauthToken
+            tokenSource = 'localStorage'
+          }
+        } catch (storageError) {
+          console.warn('🔥 localStorage設定取得失敗:', storageError)
+        }
+      }
+
+      // ウィンドウオブジェクトからの取得も試行
+      if (!providerToken && typeof window !== 'undefined' && (window as any).fitnessAppSettings?.oauthToken) {
+        providerToken = (window as any).fitnessAppSettings.oauthToken
+        tokenSource = 'window-object'
+      }
+
+      console.log('🔍 デバッグAPI用トークン情報:', {
+        hasProviderToken: !!providerToken,
+        tokenLength: providerToken?.length,
+        tokenSource: tokenSource
+      })
+
+      const response = await fetch('/api/debug-reservation', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Provider-Token': providerToken || '',
+        },
+        body: JSON.stringify({ debug: true }),
+      })
+
+      const result = await response.json()
+      console.log('🔍 デバッグAPI結果:', result)
+      return result
+      
+    } catch (error) {
+      console.error('🔍 デバッグAPIエラー:', error)
+      throw error
+    }
+  }
+
   const createReservation = async (data: CreateReservationData) => {
     try {
       setLoading(true)
@@ -176,6 +239,7 @@ export function useReservations() {
     error,
     createReservation,
     cancelReservation,
-    refetch: fetchReservations
+    refetch: fetchReservations,
+    debugReservationAuth
   }
 }
