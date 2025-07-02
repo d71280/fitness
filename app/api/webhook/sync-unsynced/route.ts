@@ -112,12 +112,19 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('未同期予約同期エラー:', error)
+    console.error('🚨 未同期予約同期エラー詳細:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown',
+      fullError: error
+    })
+    
     return NextResponse.json(
       { 
         success: false,
         error: '未同期予約データの同期に失敗しました',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       }, 
       { status: 500 }
     )
