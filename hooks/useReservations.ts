@@ -215,7 +215,10 @@ export function useReservations() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                reservationData: { today, customerName, experienceDate, timeSlot, programName }
+                customerName,
+                experienceDate,
+                timeSlot,
+                programName
               }),
               signal: controller.signal
             })

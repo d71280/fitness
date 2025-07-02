@@ -67,13 +67,10 @@ export async function POST(request: NextRequest) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            reservationData: {
-              today,
-              customerName,
-              experienceDate,
-              timeSlot,
-              programName
-            }
+            customerName,
+            experienceDate,
+            timeSlot,
+            programName
           }),
           signal: AbortSignal.timeout(10000) // 10秒でタイムアウト
         })
