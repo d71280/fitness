@@ -54,24 +54,31 @@ export async function POST(request: NextRequest) {
         const schedule = reservation.schedule || {}
         const customer = reservation.customer || {}
         
-        // データフォーマット
-        const today = new Date().toLocaleDateString('ja-JP')
+        // GASが期待するデータフォーマットに合わせる
         const customerName = customer.name ? customer.name.split('(')[0].trim() : 'Unknown'
         const experienceDate = schedule.date ? new Date(schedule.date).toLocaleDateString('ja-JP') : ''
         const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
         const programName = schedule.program?.name || 'プログラム未設定'
         
+        const gasData = {
+          customerName: customerName,
+          experienceDate: experienceDate,
+          timeSlot: timeSlot,
+          programName: programName,
+          email: customer.email || '',
+          phone: customer.phone || '',
+          notes: `予約ID: ${reservation.id}`,
+          status: '新規'
+        }
+        
+        console.log('📤 GAS送信データ:', gasData)
+        
         // GASに送信
         const response = await fetch(gasWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerName,
-            experienceDate,
-            timeSlot,
-            programName
-          }),
-          signal: AbortSignal.timeout(10000) // 10秒でタイムアウト
+          body: JSON.stringify(gasData),
+          signal: AbortSignal.timeout(15000) // 15秒に延長
         })
         
         if (response.ok) {

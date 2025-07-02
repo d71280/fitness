@@ -10,12 +10,16 @@ export async function POST(request: NextRequest) {
     const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWYY5L9tmVgDBL7A/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
-    // テストデータ
+    // テストデータ（GAS期待フォーマット）
     const testData = {
       customerName: 'テスト太郎',
       experienceDate: '2025/07/02',
       timeSlot: '10:00-11:00',
-      programName: 'テストプログラム'
+      programName: 'テストプログラム',
+      email: 'test@example.com',
+      phone: '090-1234-5678',
+      notes: 'API自動テスト',
+      status: '新規'
     }
     
     console.log('📤 送信データ:', testData)
