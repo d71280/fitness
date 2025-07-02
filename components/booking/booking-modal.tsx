@@ -73,10 +73,13 @@ export function BookingModal({
 
     setLoading(true)
     try {
-      // LIFF ユーザーIDを確実に設定
+      // LIFF ユーザーIDを確実に設定 + スケジュール情報を追加
       const reservationData = {
         ...formData,
-        lineId: liffUserId
+        lineId: liffUserId,
+        experienceDate: schedule.date,
+        timeSlot: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
+        programName: schedule.program?.name || 'プログラム'
       }
       
       console.log('📝 予約データ送信開始:', reservationData)

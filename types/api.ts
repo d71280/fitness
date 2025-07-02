@@ -26,6 +26,9 @@ export interface CreateReservationData {
   customerNameKatakana: string;
   lineId: string;
   phone: string;
+  experienceDate?: string;
+  timeSlot?: string;
+  programName?: string;
 }
 
 export interface Program {
