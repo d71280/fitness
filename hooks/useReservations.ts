@@ -144,7 +144,8 @@ export function useReservations() {
           phone: data.phone,
           experienceDate: data.experienceDate || new Date().toLocaleDateString('ja-JP'),
           timeSlot: data.timeSlot || '',
-          programName: data.programName || ''
+          programName: data.programName || '',
+          lineId: data.lineId  // LINE通知のためにLINE IDを追加
         }
         
         console.log('📋 useReservations GAS送信データ:', gasData)

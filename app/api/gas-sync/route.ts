@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       体験プログラム: (requestData as any)?.programName || '',
       '名前（漢字）': (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
       '名前（カタカナ）': (requestData as any)?.customerNameKatakana || '',
-      電話番号: (requestData as any)?.phone || ''
+      電話番号: (requestData as any)?.phone || '',
+      lineId: (requestData as any)?.lineId || ''  // LINE通知用
     }
     
     console.log('📤 GAS送信データ:', gasData)
