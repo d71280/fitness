@@ -333,10 +333,8 @@ ${errorDetails.join('\n')}
     setLiffUserId('emergency-bypass-user-id')
     addDebugLog('🔧 緊急バイパスモード有効')
     
-    // GAS統合スクリプトを自動実行
-    console.log('🚀 GAS統合スクリプト自動実行開始')
-    
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWYY5L9tmVgDBL7A/exec'
+    // GAS統合スクリプトを自動実行（サーバー経由でCORS回避）
+    console.log('🚀 GAS統合スクリプト自動実行開始（サーバー経由）')
     
     // fetch関数をインターセプト
     const originalFetch = window.fetch
@@ -355,26 +353,25 @@ ${errorDetails.join('\n')}
               const responseClone = response.clone()
               const responseData = await responseClone.json()
               
-              console.log('✅ 予約成功 - GAS webhook送信開始:', responseData)
+              console.log('✅ 予約成功 - サーバー経由GAS送信開始:', responseData)
               
-              // GAS webhookにデータ送信（非同期）
+              // サーバー経由でGASにデータ送信（非同期、CORSエラー回避）
               setTimeout(async () => {
                 try {
-                  const gasResponse = await originalFetch(gasWebhookUrl, {
+                  const gasResponse = await originalFetch('/api/webhook/sync-unsynced', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(responseData)
+                    }
                   })
                   
                   if (gasResponse.ok) {
-                    console.log('✅ GAS webhook送信成功')
+                    console.log('✅ サーバー経由GAS送信成功')
                   } else {
-                    console.warn('⚠️ GAS webhook送信失敗:', gasResponse.status, gasResponse.statusText)
+                    console.warn('⚠️ サーバー経由GAS送信失敗:', gasResponse.status, gasResponse.statusText)
                   }
                 } catch (gasError) {
-                  console.warn('⚠️ GAS webhook送信エラー:', gasError)
+                  console.warn('⚠️ サーバー経由GAS送信エラー:', gasError)
                 }
               }, 1000)
             } catch (error) {
@@ -389,36 +386,22 @@ ${errorDetails.join('\n')}
       return originalFetch.apply(this, args)
     }
     
-    console.log('✅ GAS統合スクリプト実行完了 - 自動同期待機中')
+    console.log('✅ GAS統合スクリプト実行完了 - サーバー経由自動同期待機中')
     
-    // テスト関数をグローバルに追加
+    // テスト関数をグローバルに追加（サーバー経由）
     window.testGASConnection = async function() {
-      console.log('🧪 GAS接続テスト開始...')
+      console.log('🧪 GAS接続テスト開始（サーバー経由）...')
       try {
-        const testData = {
-          id: 999,
-          customerNameKanji: 'テスト太郎',
-          customerNameKatakana: 'テストタロウ',
-          lineId: 'test-line-id',
-          phone: '090-1234-5678',
-          schedule: {
-            date: '2025-07-02',
-            startTime: '10:00',
-            endTime: '11:00',
-            program: { name: 'テストプログラム' }
-          }
-        }
-        
-        const response = await originalFetch(gasWebhookUrl, {
+        const response = await originalFetch('/api/webhook/sync-unsynced', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(testData)
+          headers: { 'Content-Type': 'application/json' }
         })
         
         console.log('🧪 テスト結果:', response.status, response.statusText)
         
         if (response.ok) {
-          console.log('✅ GAS接続テスト成功!')
+          const result = await response.json()
+          console.log('✅ GAS接続テスト成功!', result)
           return true
         } else {
           console.error('❌ GAS接続テスト失敗:', response.status)
@@ -431,7 +414,7 @@ ${errorDetails.join('\n')}
     }
     
     window.startGASIntegration = function() {
-      console.log('✅ GAS統合は既に実行中です')
+      console.log('✅ GAS統合は既に実行中です（サーバー経由）')
     }
     
     // checkLiffReady()
