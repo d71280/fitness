@@ -80,7 +80,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { scheduleId, customerNameKanji, customerNameKatakana, lineId, phone } = createReservationSchema.parse(body)
     
-    console.log('予約リクエスト受信:', { scheduleId, customerNameKanji, customerNameKatakana, lineId, phone })
+    // LIFFバイパスフラグをチェック
+    const isLiffBypass = request.headers.get('X-LIFF-Bypass') === 'true'
+    console.log('予約リクエスト受信:', { 
+      scheduleId, 
+      customerNameKanji, 
+      customerNameKatakana, 
+      lineId, 
+      phone,
+      isLiffBypass 
+    })
 
     // Supabase接続を試行
     let supabase

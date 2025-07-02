@@ -110,61 +110,22 @@ export function useReservations() {
       setLoading(true)
       console.log('🎯 予約作成開始:', data)
       
-      // タイムアウト設定付きのAbortController
+      // LIFF バイパス環境での簡略化されたリクエスト
+      console.log('🔧 LIFF バイパス環境での予約リクエスト')
+      
+      // タイムアウト設定を延長（LIFF バイパス環境用）
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
         controller.abort()
-        console.log('⏰ 予約APIタイムアウト（10秒）')
-      }, 10000) // 10秒タイムアウト
+        console.log('⏰ 予約APIタイムアウト（30秒）')
+      }, 30000) // 30秒タイムアウトに延長
 
       try {
-        // Google OAuthトークンを取得（複数の方法を試行）
-        let providerToken = ''
-        let tokenSource = 'none'
-        
-        try {
-          const supabase = createClient()
-          const { data: { session } } = await supabase.auth.getSession()
-          if (session?.provider_token) {
-            providerToken = session.provider_token
-            tokenSource = 'supabase-session'
-          }
-        } catch (sessionError) {
-          console.warn('🔥 Supabaseセッション取得失敗:', sessionError)
-        }
-
-        // Supabaseセッションからトークンが取得できない場合、localStorageを試行
-        if (!providerToken) {
-          try {
-            const settings = JSON.parse(localStorage.getItem('fitness-app-settings') || '{}')
-            if (settings.oauthToken) {
-              providerToken = settings.oauthToken
-              tokenSource = 'localStorage'
-            }
-          } catch (storageError) {
-            console.warn('🔥 localStorage設定取得失敗:', storageError)
-          }
-        }
-
-        // ウィンドウオブジェクトからの取得も試行
-        if (!providerToken && typeof window !== 'undefined' && (window as any).fitnessAppSettings?.oauthToken) {
-          providerToken = (window as any).fitnessAppSettings.oauthToken
-          tokenSource = 'window-object'
-        }
-
-        console.log('🔥 予約リクエスト準備:', {
-          hasProviderToken: !!providerToken,
-          tokenLength: providerToken?.length,
-          tokenStart: providerToken ? providerToken.substring(0, 20) + '...' : 'none',
-          tokenSource: tokenSource,
-          isLiffEnvironment: typeof window !== 'undefined' && window.location.hostname.includes('liff')
-        })
-
         const response = await fetch('/api/reservations', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Provider-Token': providerToken || '', // Google OAuthトークンを送信
+            'X-LIFF-Bypass': 'true', // LIFFバイパスフラグ
           },
           body: JSON.stringify(data),
           signal: controller.signal,
