@@ -560,7 +560,8 @@ ${errorDetails.join('\n')}
   }
 
   const handleScheduleClick = (schedule: Schedule) => {
-    if (!liffUserId) {
+    // WEB環境では認証チェックをスキップ
+    if (!liffUserId && !isWebEnvironment) {
       alert('LINE認証が必要です。ページを再読み込みしてください。')
       return
     }
