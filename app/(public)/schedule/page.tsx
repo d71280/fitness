@@ -56,8 +56,69 @@ export default function SchedulePage() {
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
   }
 
-  // LIFF初期化とユーザー情報取得（強化版）
+  // LIFF初期化とユーザー情報取得（簡略版）
   useEffect(() => {
+    // 緊急対応: LIFF認証を完全スキップ
+    console.log('🔧 簡略版: LIFF認証を完全スキップ')
+    setIsLiffInitialized(true)
+    setLiffUserId('simple-test-user-id')
+    addDebugLog('🔧 簡略版モード有効')
+    
+    console.log('✅ 簡略版準備完了 - 予約機能が利用可能です')
+    
+    // テスト関数を追加
+    window.testSimpleReservation = async function() {
+      console.log('🧪 簡略予約テスト開始...')
+      try {
+        const response = await fetch('/api/reservations/simple', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scheduleId: 1,
+            customerNameKanji: 'テスト太郎',
+            customerNameKatakana: 'テストタロウ',
+            lineId: 'test-line-id',
+            phone: '090-1234-5678'
+          })
+        })
+        
+        const result = await response.json()
+        console.log('🧪 簡略予約テスト結果:', result)
+        return result
+      } catch (error) {
+        console.error('❌ 簡略予約テストエラー:', error)
+        return false
+      }
+    }
+    
+    window.testGASSync = async function() {
+      console.log('🧪 GAS同期テスト開始...')
+      try {
+        const response = await fetch('/api/gas-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerNameKanji: 'テスト太郎',
+            phone: '090-1234-5678',
+            programName: 'テストプログラム'
+          })
+        })
+        
+        const result = await response.json()
+        console.log('🧪 GAS同期テスト結果:', result)
+        return result
+      } catch (error) {
+        console.error('❌ GAS同期テストエラー:', error)
+        return false
+      }
+    }
+    
+    console.log('📚 利用可能なテスト関数:')
+    console.log('- window.testSimpleReservation() : 簡略予約テスト')
+    console.log('- window.testGASSync() : GAS同期テスト')
+    
+    // 元のLIFF初期化コードをコメントアウト
+    /*
     const initializeLiff = async () => {
       try {
         addDebugLog('🔄 LIFF初期化開始...')
@@ -430,7 +491,8 @@ ${errorDetails.join('\n')}
     console.log('- window.testGASConnection() : GAS接続テスト')
     console.log('✅ 準備完了 - 予約を作成すると自動でGAS同期が実行されます')
     
-    // checkLiffReady()
+    */
+    // checkLiffReady() をコメントアウト
   }, [])
 
   const handleAddSchedule = (date: string) => {

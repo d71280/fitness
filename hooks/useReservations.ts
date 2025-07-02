@@ -108,79 +108,57 @@ export function useReservations() {
   const createReservation = async (data: CreateReservationData) => {
     try {
       setLoading(true)
-      console.log('🎯 予約作成開始:', data)
+      console.log('🎯 シンプル予約作成開始:', data)
       
-      // LIFF バイパス環境での簡略化されたリクエスト
-      console.log('🔧 LIFF バイパス環境での予約リクエスト')
-      
-      // タイムアウト設定を延長（LIFF バイパス環境用）
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        controller.abort()
-        console.log('⏰ 予約APIタイムアウト（30秒）')
-      }, 30000) // 30秒タイムアウトに延長
+      // シンプルな予約APIを使用
+      const response = await fetch('/api/reservations/simple', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data),
+      })
 
-      try {
-        const response = await fetch('/api/reservations', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-LIFF-Bypass': 'true', // LIFFバイパスフラグ
-          },
-          body: JSON.stringify(data),
-          signal: controller.signal,
-        })
+      console.log('✅ 予約APIレスポンス受信:', { 
+        status: response.status, 
+        ok: response.ok,
+        statusText: response.statusText 
+      })
 
-        clearTimeout(timeoutId) // タイムアウトをクリア
-        console.log('✅ 予約APIレスポンス受信:', { 
-          status: response.status, 
-          ok: response.ok,
-          statusText: response.statusText 
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'レスポンス解析エラー' }))
-          console.error('❌ 予約API失敗:', errorData)
-          
-          // ビジネスロジックエラーの場合は具体的なメッセージを表示
-          if (response.status === 400) {
-            throw new Error(errorData.error || errorData.details || '予約処理でエラーが発生しました')
-          }
-          
-          throw new Error(errorData.error || `予約に失敗しました (HTTP ${response.status})`)
-        }
-
-        const result = await response.json()
-        console.log('🎉 予約作成成功:', result)
-        
-        console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
-        
-        // リスト更新は失敗しても続行
-        try {
-          await fetchReservations()
-          console.log('✅ 予約リスト更新成功')
-        } catch (fetchError) {
-          console.warn('⚠️ 予約リスト更新失敗（予約は成功済み）:', fetchError)
-        }
-        
-        return result
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId)
-        
-        if (fetchError.name === 'AbortError') {
-          console.error('⏰ 予約リクエストタイムアウト')
-          throw new Error('予約処理がタイムアウトしました。時間をおいて再度お試しください。')
-        }
-        
-        // 既に具体的なエラーメッセージがある場合はそれを使用
-        if (fetchError.message && !fetchError.message.includes('Failed to fetch')) {
-          console.error('🔥 予約処理エラー:', fetchError)
-          throw fetchError // 既存のエラーをそのまま再スロー
-        }
-        
-        console.error('🌐 ネットワークエラー:', fetchError)
-        throw new Error('ネットワーク接続エラーです。インターネット接続を確認してください。')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'レスポンス解析エラー' }))
+        console.error('❌ 予約API失敗:', errorData)
+        throw new Error(errorData.error || `予約に失敗しました (HTTP ${response.status})`)
       }
+
+      const result = await response.json()
+      console.log('🎉 予約作成成功:', result)
+      
+      // GAS同期を試行（失敗しても予約は成功とする）
+      try {
+        console.log('🔄 GAS同期開始...')
+        const gasResponse = await fetch('/api/gas-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerNameKanji: data.customerNameKanji,
+            phone: data.phone,
+            programName: 'プログラム',
+            notes: `予約ID: ${result.reservation?.id || 'unknown'}`
+          })
+        })
+        
+        if (gasResponse.ok) {
+          const gasResult = await gasResponse.json()
+          console.log('✅ GAS同期成功:', gasResult)
+        } else {
+          console.warn('⚠️ GAS同期失敗（予約は成功済み）')
+        }
+      } catch (gasError) {
+        console.warn('⚠️ GAS同期エラー（予約は成功済み）:', gasError)
+      }
+      
+      return result
     } catch (error) {
       console.error('❌ 予約作成エラー:', error)
       throw error
