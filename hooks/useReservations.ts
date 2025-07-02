@@ -4,64 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { CreateReservationData, Reservation } from '@/types/api'
 import { createClient } from '@/utils/supabase/client'
 
-// 完全に分離されたGAS webhook送信関数
-const sendToGASWebhook = async (reservation: any) => {
-  try {
-    console.log('📝 Google Sheets書き込み開始（非同期分離実行）')
-    
-    const schedule = reservation?.schedule
-    const customer = reservation?.customer
-    
-    if (!schedule || !customer) {
-      console.warn('⚠️ 予約データが不完全のためwebhook送信をスキップ')
-      return
-    }
-    
-    // データフォーマット
-    const customerName = customer.name ? customer.name.split('(')[0].trim() : 'Unknown'
-    const experienceDate = schedule.date ? new Date(schedule.date).toLocaleDateString('ja-JP') : ''
-    const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
-    const programName = schedule.program?.name || 'プログラム未設定'
-    
-    console.log('📝 Google Sheets書き込み用データ:', {
-      customerName, experienceDate, timeSlot, programName
-    })
-    
-    // GAS Webhook URL
-    const gasWebhookUrl = process.env.NEXT_PUBLIC_GAS_WEBHOOK_URL
-    if (!gasWebhookUrl || gasWebhookUrl.includes('YOUR_GAS_ID')) {
-      console.warn('⚠️ GAS Webhook URLが設定されていません')
-      return
-    }
-    
-    // 短いタイムアウトで確実に非ブロッキング
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3秒でタイムアウト
-    
-    const response = await fetch(gasWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        customerName,
-        experienceDate,
-        timeSlot,
-        programName
-      }),
-      signal: controller.signal
-    })
-    
-    clearTimeout(timeoutId)
-    
-    if (response.ok) {
-      console.log('✅ Google Sheets書き込み成功')
-    } else {
-      console.warn('⚠️ Google Sheets書き込み失敗:', response.status)
-    }
-    
-  } catch (error) {
-    console.warn('⚠️ Google Sheets書き込みエラー（予約成功には影響なし）:', error)
-  }
-}
+// 予約完了時の自動同期：手動ボタンと同じAPIを使用
 
 export function useReservations() {
   const [loading, setLoading] = useState(false)
@@ -243,14 +186,23 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
-        // 予約成功後、バックグラウンドでwebhook送信（予約処理には影響しない）
+        // 予約成功後、手動ボタンと同じ仕組みで未同期データを自動送信
         if (typeof window !== 'undefined' && result?.reservation) {
-          // 完全に非同期で実行、エラーは無視
           setTimeout(() => {
-            sendToGASWebhook(result.reservation).catch((error) => {
-              console.warn('⚠️ バックグラウンドwebhook送信失敗（予約成功には影響なし）:', error)
+            // 手動ボタンと同じAPI（未同期データ送信）を呼び出し
+            fetch('/api/webhook/sync-unsynced', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            }).then(response => {
+              if (response.ok) {
+                console.log('✅ 予約完了後の自動同期成功')
+              } else {
+                console.warn('⚠️ 予約完了後の自動同期失敗:', response.status)
+              }
+            }).catch((error) => {
+              console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
             })
-          }, 2000) // 2秒後に実行でより確実に分離
+          }, 3000) // 3秒後に実行で確実にデータベース更新完了後
         }
         
         // リスト更新は失敗しても続行

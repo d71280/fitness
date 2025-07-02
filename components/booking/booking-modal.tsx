@@ -81,21 +81,23 @@ export function BookingModal({
       
       const result = await onSubmit(reservationData)
       
-      // 予約完了後、バックグラウンドでトリガー実行（予約処理には影響しない）
+      // 予約完了後、手動ボタンと同じ仕組みで自動同期
       if (result?.reservation) {
-        // 非同期でトリガー実行、エラーは無視
         setTimeout(() => {
-          fetch('/api/trigger-reservation-complete', {
+          // 手動ボタンと同じAPI（未同期データ送信）を呼び出し
+          fetch('/api/webhook/sync-unsynced', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              reservation: result.reservation,
-              trigger: 'reservation_complete'
-            })
+            headers: { 'Content-Type': 'application/json' }
+          }).then(response => {
+            if (response.ok) {
+              console.log('✅ 予約完了後の自動同期成功（LINE）')
+            } else {
+              console.warn('⚠️ 予約完了後の自動同期失敗（LINE）:', response.status)
+            }
           }).catch((error) => {
-            console.warn('⚠️ バックグラウンドトリガー実行失敗（予約成功には影響なし）:', error)
+            console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
           })
-        }, 1500) // 1.5秒後に実行
+        }, 2000) // 2秒後に実行
       }
       
       onClose()
