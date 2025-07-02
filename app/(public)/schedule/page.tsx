@@ -82,10 +82,22 @@ export default function SchedulePage() {
           return
         }
 
-        // LIFF SDKが読み込まれているかチェック
-        if (typeof window === 'undefined' || !window.liff) {
+        // デバッグモード: PCブラウザでのテストを許可
+        const isDebugMode = window.location.hostname === 'localhost' || window.location.search.includes('debug=true')
+        
+        // LIFF SDKが読み込まれているかチェック（デバッグモードでは無視）
+        if (!isDebugMode && (typeof window === 'undefined' || !window.liff)) {
           setLiffError('LIFFアプリでのアクセスが必要です。LINEアプリから再度お試しください。')
           addDebugLog('❌ LIFF SDK未読み込み')
+          return
+        }
+        
+        // デバッグモードの場合は LIFF なしで続行
+        if (isDebugMode && !window.liff) {
+          console.log('🔧 デバッグモード: LIFF なしで動作')
+          setIsLiffInitialized(true)
+          setLiffUserId('debug-user-id')
+          addDebugLog('🔧 デバッグモード有効')
           return
         }
 
