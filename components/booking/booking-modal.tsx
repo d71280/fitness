@@ -105,7 +105,10 @@ export function BookingModal({
         if (liffUserId) {
           alert('予約が完了しました！LINEに確認メッセージをお送りします。')
         } else {
-          alert('予約が完了しました！')
+          const liffUrl = `https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`
+          if (confirm('予約が完了しました！\n\n次回はLINEアプリから予約していただくと、予約完了の通知をLINEで受け取れます。\n\nLINEアプリで開きますか？')) {
+            window.open(liffUrl, '_blank')
+          }
         }
       } else {
         // 明確な失敗の場合
@@ -228,13 +231,31 @@ LINEアプリの設定で「外部リンクをブラウザで開く」がオン�
         </Card>
 
         {/* LINE 認証確認 */}
-        {liffUserId && (
+        {liffUserId ? (
           <div className="p-3 bg-green-50 border border-green-200 rounded-md">
             <div className="flex items-center gap-2">
               <div className="text-green-600">✅</div>
               <div className="text-sm text-green-700">
                 <strong>LINE認証済み</strong><br />
                 予約完了後、LINEに確認メッセージをお送りします。
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <div className="text-yellow-600">ℹ️</div>
+              <div className="text-sm text-yellow-700">
+                <strong>WEB環境でのアクセス</strong><br />
+                予約完了の通知をLINEで受け取りたい場合は、<br />
+                <a 
+                  href={`https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline"
+                >
+                  LINEアプリから予約
+                </a>してください。
               </div>
             </div>
           </div>
