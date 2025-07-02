@@ -5,10 +5,18 @@ const GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0
 
 export async function POST(request: NextRequest) {
   console.log('🔄 GAS同期開始')
+  console.log('🔗 GAS URL確認:', GAS_WEBHOOK_URL)
   
   try {
-    const body = await request.json()
-    console.log('📝 受信データ:', body)
+    // リクエスト本文の安全な読み取り
+    let body = {}
+    try {
+      body = await request.json()
+      console.log('📝 受信データ:', body)
+    } catch (parseError) {
+      console.log('⚠️ JSON解析失敗、空のボディを使用:', parseError)
+      body = {}
+    }
     
     // GASに送信するデータを準備
     const gasData = {
@@ -24,14 +32,26 @@ export async function POST(request: NextRequest) {
     
     console.log('📤 GAS送信データ:', gasData)
     
-    // GASに送信
-    const response = await fetch(GAS_WEBHOOK_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(gasData),
-    })
+    // GASに送信（タイムアウト設定付き）
+    let response
+    try {
+      response = await fetch(GAS_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(gasData),
+        signal: AbortSignal.timeout(15000) // 15秒タイムアウト
+      })
+    } catch (fetchError) {
+      console.error('❌ GAS fetch エラー:', fetchError)
+      return NextResponse.json({
+        success: false,
+        error: 'GAS接続エラー',
+        details: fetchError instanceof Error ? fetchError.message : 'Network error',
+        gasUrl: GAS_WEBHOOK_URL
+      }, { status: 500 })
+    }
     
     console.log('📥 GAS応答:', {
       status: response.status,
