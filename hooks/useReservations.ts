@@ -110,8 +110,8 @@ export function useReservations() {
       setLoading(true)
       console.log('🎯 シンプル予約作成開始:', data)
       
-      // シンプルな予約APIを使用
-      const response = await fetch('/api/reservations/simple', {
+      // 実際のデータベース保存APIを使用
+      const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'

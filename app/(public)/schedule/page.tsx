@@ -68,9 +68,9 @@ export default function SchedulePage() {
     
     // テスト関数を追加
     window.testSimpleReservation = async function() {
-      console.log('🧪 簡略予約テスト開始...')
+      console.log('🧪 予約テスト開始...')
       try {
-        const response = await fetch('/api/reservations/simple', {
+        const response = await fetch('/api/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -83,10 +83,10 @@ export default function SchedulePage() {
         })
         
         const result = await response.json()
-        console.log('🧪 簡略予約テスト結果:', result)
+        console.log('🧪 予約テスト結果:', result)
         return result
       } catch (error) {
-        console.error('❌ 簡略予約テストエラー:', error)
+        console.error('❌ 予約テストエラー:', error)
         return false
       }
     }
