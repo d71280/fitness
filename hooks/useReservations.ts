@@ -141,6 +141,12 @@ export function useReservations() {
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'レスポンス解析エラー' }))
           console.error('❌ 予約API失敗:', errorData)
+          
+          // ビジネスロジックエラーの場合は具体的なメッセージを表示
+          if (response.status === 400) {
+            throw new Error(errorData.error || errorData.details || '予約処理でエラーが発生しました')
+          }
+          
           throw new Error(errorData.error || `予約に失敗しました (HTTP ${response.status})`)
         }
 
@@ -164,6 +170,12 @@ export function useReservations() {
         if (fetchError.name === 'AbortError') {
           console.error('⏰ 予約リクエストタイムアウト')
           throw new Error('予約処理がタイムアウトしました。時間をおいて再度お試しください。')
+        }
+        
+        // 既に具体的なエラーメッセージがある場合はそれを使用
+        if (fetchError.message && !fetchError.message.includes('Failed to fetch')) {
+          console.error('🔥 予約処理エラー:', fetchError)
+          throw fetchError // 既存のエラーをそのまま再スロー
         }
         
         console.error('🌐 ネットワークエラー:', fetchError)
