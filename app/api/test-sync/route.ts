@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     console.log('🧪 テスト同期開始')
     
     // GAS Webhook URL
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWY5L9tmVgDBL7A/exec'
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbyCHPRIrSjqCdAnK2eN32WyLoodNGtxbhZg5EPbNiaPM762RLsEUz_ArMlnfRXmKhYaDw/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
     // テストデータ（GAS期待フォーマット）

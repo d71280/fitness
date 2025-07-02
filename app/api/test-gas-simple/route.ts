@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   console.log('🧪 簡単GASテスト開始')
   
   try {
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWY5L9tmVgDBL7A/exec'
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCHPRIrSjqCdAnK2eN32WyLoodNGtxbhZg5EPbNiaPM762RLsEUz_ArMlnfRXmKhYaDw/exec'
     
     const testData = {
       customerName: 'テスト太郎',
