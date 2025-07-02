@@ -83,7 +83,16 @@ export default function SchedulePage() {
         }
 
         // デバッグモード: PCブラウザでのテストを許可
-        const isDebugMode = window.location.hostname === 'localhost' || window.location.search.includes('debug=true')
+        const isDebugMode = window.location.hostname === 'localhost' || 
+                           window.location.search.includes('debug=true') ||
+                           process.env.NODE_ENV === 'development'
+        
+        console.log('🔍 デバッグモード確認:', {
+          hostname: window.location.hostname,
+          search: window.location.search,
+          nodeEnv: process.env.NODE_ENV,
+          isDebugMode
+        })
         
         // LIFF SDKが読み込まれているかチェック（デバッグモードでは無視）
         if (!isDebugMode && (typeof window === 'undefined' || !window.liff)) {
