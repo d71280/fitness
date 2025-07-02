@@ -136,28 +136,39 @@ export function useReservations() {
       
       // GAS同期を試行（失敗しても予約は成功とする）
       try {
-        console.log('🔄 GAS同期開始...')
+        console.log('🔄 useReservations GAS同期開始...')
+        
+        const gasData = {
+          customerNameKanji: data.customerNameKanji,
+          customerNameKatakana: data.customerNameKatakana,
+          phone: data.phone,
+          experienceDate: data.experienceDate || new Date().toLocaleDateString('ja-JP'),
+          timeSlot: data.timeSlot || '',
+          programName: data.programName || ''
+        }
+        
+        console.log('📋 useReservations GAS送信データ:', gasData)
+        
         const gasResponse = await fetch('/api/gas-sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customerNameKanji: data.customerNameKanji,
-            customerNameKatakana: data.customerNameKatakana,
-            phone: data.phone,
-            experienceDate: data.experienceDate || new Date().toLocaleDateString('ja-JP'),
-            timeSlot: data.timeSlot || '',
-            programName: data.programName || ''
-          })
+          body: JSON.stringify(gasData)
         })
+        
+        console.log('📥 useReservations GAS応答:', gasResponse.status, gasResponse.statusText)
         
         if (gasResponse.ok) {
           const gasResult = await gasResponse.json()
-          console.log('✅ GAS同期成功:', gasResult)
+          console.log('✅ useReservations GAS同期成功:', gasResult)
         } else {
-          console.warn('⚠️ GAS同期失敗（予約は成功済み）')
+          const errorText = await gasResponse.text().catch(() => 'エラー詳細取得失敗')
+          console.warn('⚠️ useReservations GAS同期失敗:', {
+            status: gasResponse.status,
+            error: errorText
+          })
         }
       } catch (gasError) {
-        console.warn('⚠️ GAS同期エラー（予約は成功済み）:', gasError)
+        console.warn('⚠️ useReservations GAS同期エラー:', gasError)
       }
       
       return result

@@ -400,51 +400,73 @@ ${errorDetails.join('\n')}
     // 元のfetchを保存
     const originalFetch = window.fetch
     
-    // fetch interceptor設定
+    // fetch interceptor設定（デバッグ強化版）
     window.fetch = function(...args) {
       const [url, options] = args
+      
+      console.log('🔍 Fetchリクエスト検出:', url, options?.method)
       
       // 予約API呼び出しを検出
       if (url.includes('/api/reservations') && options?.method === 'POST') {
         console.log('🎯 予約API呼び出し検出:', url)
+        console.log('📤 送信データ:', options?.body)
         
         return originalFetch.apply(this, args).then(async response => {
+          console.log('📥 予約APIレスポンス:', response.status, response.ok)
+          
           if (response.ok) {
             try {
               const responseClone = response.clone()
               const data = await responseClone.json()
-              console.log('✅ 予約成功 - サーバー経由GAS送信開始:', data)
+              console.log('✅ 予約成功 - データ詳細:', data)
+              console.log('🔄 GAS同期開始準備...')
               
-              // 少し待ってからGAS同期実行
+              // 予約データからGAS送信用データを構築
+              let gasData = {}
+              if (options?.body) {
+                try {
+                  gasData = JSON.parse(options.body)
+                  console.log('📋 GAS送信用データ準備:', gasData)
+                } catch (e) {
+                  console.warn('⚠️ 送信データ解析失敗:', e)
+                }
+              }
+              
+              // GAS同期実行
               setTimeout(async () => {
                 try {
-                  console.log('📡 GAS同期リクエスト送信中...')
-                  const syncResponse = await originalFetch('/api/webhook/sync-unsynced', {
+                  console.log('📡 GAS同期リクエスト開始...')
+                  const syncResponse = await originalFetch('/api/gas-sync', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
-                    }
+                    },
+                    body: JSON.stringify(gasData)
                   })
+                  
+                  console.log('📥 GAS同期レスポンス:', syncResponse.status)
                   
                   if (syncResponse.ok) {
                     const syncData = await syncResponse.json()
-                    console.log('✅ サーバー経由GAS送信成功:', syncData)
+                    console.log('✅ GAS同期成功:', syncData)
                   } else {
                     const errorText = await syncResponse.text().catch(() => 'エラー詳細取得失敗')
-                    console.warn('⚠️ サーバー経由GAS送信失敗:', {
+                    console.warn('⚠️ GAS同期失敗:', {
                       status: syncResponse.status,
                       statusText: syncResponse.statusText,
                       error: errorText
                     })
                   }
                 } catch (error) {
-                  console.warn('⚠️ サーバー経由GAS送信エラー:', error)
+                  console.warn('⚠️ GAS同期エラー:', error)
                 }
               }, 1000)
               
             } catch (error) {
               console.warn('⚠️ 予約レスポンス処理エラー:', error)
             }
+          } else {
+            console.error('❌ 予約API失敗:', response.status)
           }
           return response
         })
