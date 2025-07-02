@@ -28,13 +28,14 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     
-    // GASに送信するデータ（シンプル版）
+    // GASに送信するデータ
     const gasData = {
-      '名前（漢字）': (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || 'テストユーザー',
-      '名前（カタカナ）': (requestData as any)?.customerNameKatakana || 'テストユーザー',
-      時間: (requestData as any)?.timeSlot || '10:00-11:00',
-      電話番号: (requestData as any)?.phone || '',
-      入力日: timestamp
+      予約入力日時: timestamp,
+      体験日: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
+      体験プログラム: (requestData as any)?.programName || '',
+      '名前（漢字）': (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
+      '名前（カタカナ）': (requestData as any)?.customerNameKatakana || '',
+      電話番号: (requestData as any)?.phone || ''
     }
     
     console.log('📤 GAS送信データ:', gasData)

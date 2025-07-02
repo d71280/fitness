@@ -142,9 +142,11 @@ export function useReservations() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             customerNameKanji: data.customerNameKanji,
+            customerNameKatakana: data.customerNameKatakana,
             phone: data.phone,
-            programName: 'プログラム',
-            notes: `予約ID: ${result.reservation?.id || 'unknown'}`
+            experienceDate: data.experienceDate || new Date().toLocaleDateString('ja-JP'),
+            timeSlot: data.timeSlot || '',
+            programName: data.programName || ''
           })
         })
         

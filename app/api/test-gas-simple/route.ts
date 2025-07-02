@@ -20,11 +20,12 @@ export async function POST(request: NextRequest) {
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     
     const testData = {
-      '名前（漢字）': 'テスト太郎',
-      '名前（カタカナ）': 'テストタロウ',
-      時間: '10:00-11:00',
-      電話番号: '090-1234-5678',
-      入力日: timestamp
+      予約入力日時: timestamp,
+      体験日: new Date().toLocaleDateString('ja-JP'),
+      体験プログラム: 'ヨガ',
+      '名前（漢字）': '',
+      '名前（カタカナ）': '',
+      電話番号: ''
     }
     
     console.log('📤 テストデータ送信:', testData)
