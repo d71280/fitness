@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   console.log('🧪 簡単GASテスト開始')
   
   try {
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbx16laKZK-V7gVgzGz39e8mW1S_JU2TtKKMXZEKnHWdYL3MYWyJGb8cNBlQzAktbD71bg/exec'
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbylBdKZ-0FiUMVbc8DHCWm2ifyoxBUcfFxswGinPDyK1fmQT69TBgS9-SazObGrQvt7jA/exec'
     
     // 現在時刻を「2025/07/02 20:31:16」形式で生成
     const now = new Date()
