@@ -82,10 +82,8 @@ export default function SchedulePage() {
           return
         }
 
-        // デバッグモード: PCブラウザでのテストを許可
-        const isDebugMode = window.location.hostname === 'localhost' || 
-                           window.location.search.includes('debug=true') ||
-                           process.env.NODE_ENV === 'development'
+        // デバッグモード: すべての環境で一時的に有効化（テスト用）
+        const isDebugMode = true  // 一時的にすべての環境でデバッグモード有効
         
         console.log('🔍 デバッグモード確認:', {
           hostname: window.location.hostname,
