@@ -186,27 +186,27 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
-        // 予約成功後、確実に自動同期を実行
-        if (typeof window !== 'undefined' && result && result.success !== false) {
-          console.log('✅ 予約成功確認 - 自動同期準備')
-          setTimeout(() => {
-            console.log('🔄 自動同期API呼び出し開始（Web）')
-            // 手動ボタンと同じAPI（未同期データ送信）を呼び出し
-            fetch('/api/webhook/sync-unsynced', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            }).then(response => {
-              console.log('🔄 自動同期API応答（Web）:', response.status)
-              if (response.ok) {
-                console.log('✅ 予約完了後の自動同期成功（Web）')
-              } else {
-                console.warn('⚠️ 予約完了後の自動同期失敗（Web）:', response.status)
-              }
-            }).catch((error) => {
-              console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
-            })
-          }, 3000) // 3秒後に実行で確実にデータベース更新完了後
-        }
+        // TODO: 自動同期を一時的に無効化（ネットワークエラーデバッグ用）
+        console.log('⚠️ 自動同期は一時的に無効化されています')
+        // if (typeof window !== 'undefined' && result && result.success !== false) {
+        //   console.log('✅ 予約成功確認 - 自動同期準備')
+        //   setTimeout(() => {
+        //     console.log('🔄 自動同期API呼び出し開始（Web）')
+        //     fetch('/api/webhook/sync-unsynced', {
+        //       method: 'POST',
+        //       headers: { 'Content-Type': 'application/json' }
+        //     }).then(response => {
+        //       console.log('🔄 自動同期API応答（Web）:', response.status)
+        //       if (response.ok) {
+        //         console.log('✅ 予約完了後の自動同期成功（Web）')
+        //       } else {
+        //         console.warn('⚠️ 予約完了後の自動同期失敗（Web）:', response.status)
+        //       }
+        //     }).catch((error) => {
+        //       console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
+        //     })
+        //   }, 3000)
+        // }
         
         // リスト更新は失敗しても続行
         try {
