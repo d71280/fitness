@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     
-    // GASに送信するデータ
+    // GASに送信するデータ（テスト用）
     const testData = {
       予約入力日時: timestamp,
       体験日: '2025/07/02',
       体験プログラム: 'ヨガ',
-      '名前（漢字）': '',
-      '名前（カタカナ）': '',
-      電話番号: ''
+      '名前（漢字）': 'テスト太郎',
+      '名前（カタカナ）': 'テストタロウ',
+      電話番号: '090-1234-5678'
     }
     
     console.log('📤 送信データ:', testData)

@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       予約入力日時: timestamp,
       体験日: new Date().toLocaleDateString('ja-JP'),
       体験プログラム: 'ヨガ',
-      '名前（漢字）': '',
-      '名前（カタカナ）': '',
-      電話番号: ''
+      '名前（漢字）': 'テスト花子',
+      '名前（カタカナ）': 'テストハナコ',
+      電話番号: '080-9876-5432'
     }
     
     console.log('📤 テストデータ送信:', testData)

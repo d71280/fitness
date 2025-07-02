@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('📤 GAS送信データ:', gasData)
+    console.log('📡 送信先URL:', gasWebhookUrl)
+    console.log('🔍 送信JSONサイズ:', JSON.stringify(gasData).length, 'bytes')
     
     // GASに送信（シンプル版）
     const response = await fetch(gasWebhookUrl, {
