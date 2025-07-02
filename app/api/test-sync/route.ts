@@ -1,13 +1,12 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 
-// 簡単なテスト用GAS同期エンドポイント
 export async function POST(request: NextRequest) {
   try {
     console.log('🧪 テスト同期開始')
     
     // GAS Webhook URL
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWYY5L9tmVgDBL7A/exec'
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWY5L9tmVgDBL7A/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
     // テストデータ（GAS期待フォーマット）
@@ -24,56 +23,54 @@ export async function POST(request: NextRequest) {
     
     console.log('📤 送信データ:', testData)
     
-    // GASにPOST
     const response = await fetch(gasWebhookUrl, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json'
+      headers: {
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(testData),
-    })
-    
-    console.log('📥 GAS応答:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
+      signal: AbortSignal.timeout(15000)
     })
     
     const responseText = await response.text()
-    console.log('📄 GAS応答内容:', responseText)
+    console.log('📥 GAS応答:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText
+    })
     
     if (response.ok) {
       return NextResponse.json({
         success: true,
-        message: 'テスト同期成功',
+        message: 'GAS接続テスト成功',
         gasResponse: responseText,
-        testData
+        testData: testData
       })
     } else {
-      throw new Error(`GAS応答エラー: ${response.status} ${response.statusText}`)
+      return NextResponse.json({
+        success: false,
+        error: 'GAS接続テスト失敗',
+        status: response.status,
+        statusText: response.statusText,
+        gasResponse: responseText
+      }, { status: 500 })
     }
     
   } catch (error) {
-    console.error('🚨 テスト同期エラー:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace',
-      fullError: error
-    })
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'テスト同期に失敗しました',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }, 
-      { status: 500 }
-    )
+    console.error('❌ テスト同期エラー:', error)
+    return NextResponse.json({
+      success: false,
+      error: 'テスト同期でエラーが発生しました',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 
+// GET メソッド（ヘルスチェック）
 export async function GET() {
   return NextResponse.json({
-    message: 'テスト同期エンドポイント',
-    usage: 'POST /api/test-sync でテスト実行'
+    status: 'ready',
+    message: 'GASテスト同期エンドポイントは準備完了です',
+    timestamp: new Date().toISOString()
   })
 }

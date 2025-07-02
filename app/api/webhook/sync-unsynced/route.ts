@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
         customer:customers(*)
       `)
       .eq('status', 'confirmed')
-      .is('synced_to_sheets', null) // 同期フラグがnullのもの
+      .or('synced_to_sheets.is.null,synced_to_sheets.eq.false') // 同期フラグがnullまたはfalse
       .order('created_at', { ascending: true })
       .limit(50) // 最大50件
     
@@ -86,13 +86,20 @@ export async function POST(request: NextRequest) {
           console.log(`✅ 予約ID ${reservation.id} 送信成功`)
           
           // 同期完了フラグを更新
-          await supabase
+          const { error: updateError } = await supabase
             .from('reservations')
             .update({ 
               synced_to_sheets: true,
               synced_at: new Date().toISOString()
             })
             .eq('id', reservation.id)
+          
+          if (updateError) {
+            console.error(`❌ 予約ID${reservation.id}の同期ステータス更新失敗:`, updateError)
+            errorCount++
+          } else {
+            console.log(`✅ 予約ID${reservation.id}をGASに同期完了`)
+          }
             
         } else {
           errorCount++
@@ -136,4 +143,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+// GET メソッドも追加（ステータス確認用）
+export async function GET() {
+  return NextResponse.json({
+    status: 'active',
+    message: 'GAS同期エンドポイントは正常に動作しています',
+    timestamp: new Date().toISOString()
+  })
 }

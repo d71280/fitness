@@ -333,79 +333,92 @@ ${errorDetails.join('\n')}
     setLiffUserId('emergency-bypass-user-id')
     addDebugLog('🔧 緊急バイパスモード有効')
     
-    // GAS統合スクリプトを自動実行（サーバー経由でCORS回避）
-    console.log('🚀 GAS統合スクリプト自動実行開始（サーバー経由）')
+    // GAS統合スクリプト自動実行開始（修正版）
+    console.log('🚀 GAS統合スクリプト自動実行開始（修正版）')
     
-    // fetch関数をインターセプト
+    // 元のfetchを保存
     const originalFetch = window.fetch
+    
+    // fetch interceptor設定
     window.fetch = function(...args) {
       const [url, options] = args
       
-      // 予約API呼び出しを監視
+      // 予約API呼び出しを検出
       if (url.includes('/api/reservations') && options?.method === 'POST') {
         console.log('🎯 予約API呼び出し検出:', url)
         
-        // 元のリクエストを実行
         return originalFetch.apply(this, args).then(async response => {
           if (response.ok) {
             try {
-              // レスポンスをクローンして読み取り
               const responseClone = response.clone()
-              const responseData = await responseClone.json()
+              const data = await responseClone.json()
+              console.log('✅ 予約成功 - サーバー経由GAS送信開始:', data)
               
-              console.log('✅ 予約成功 - サーバー経由GAS送信開始:', responseData)
-              
-              // サーバー経由でGASにデータ送信（非同期、CORSエラー回避）
+              // 少し待ってからGAS同期実行
               setTimeout(async () => {
                 try {
-                  const gasResponse = await originalFetch('/api/webhook/sync-unsynced', {
+                  console.log('📡 GAS同期リクエスト送信中...')
+                  const syncResponse = await originalFetch('/api/webhook/sync-unsynced', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
                     }
                   })
                   
-                  if (gasResponse.ok) {
-                    console.log('✅ サーバー経由GAS送信成功')
+                  if (syncResponse.ok) {
+                    const syncData = await syncResponse.json()
+                    console.log('✅ サーバー経由GAS送信成功:', syncData)
                   } else {
-                    console.warn('⚠️ サーバー経由GAS送信失敗:', gasResponse.status, gasResponse.statusText)
+                    const errorText = await syncResponse.text().catch(() => 'エラー詳細取得失敗')
+                    console.warn('⚠️ サーバー経由GAS送信失敗:', {
+                      status: syncResponse.status,
+                      statusText: syncResponse.statusText,
+                      error: errorText
+                    })
                   }
-                } catch (gasError) {
-                  console.warn('⚠️ サーバー経由GAS送信エラー:', gasError)
+                } catch (error) {
+                  console.warn('⚠️ サーバー経由GAS送信エラー:', error)
                 }
               }, 1000)
+              
             } catch (error) {
               console.warn('⚠️ 予約レスポンス処理エラー:', error)
             }
           }
-          
           return response
         })
       }
       
+      // その他のリクエストはそのまま処理
       return originalFetch.apply(this, args)
     }
     
-    console.log('✅ GAS統合スクリプト実行完了 - サーバー経由自動同期待機中')
+    console.log('✅ GAS統合スクリプト実行完了 - 修正版待機中')
     
-    // テスト関数をグローバルに追加（サーバー経由）
+    // テスト関数
     window.testGASConnection = async function() {
-      console.log('🧪 GAS接続テスト開始（サーバー経由）...')
+      console.log('🧪 GAS接続テスト開始（修正版）...')
       try {
-        const response = await originalFetch('/api/webhook/sync-unsynced', {
+        const response = await originalFetch('/api/test-sync', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: {
+            'Content-Type': 'application/json'
+          }
         })
         
         console.log('🧪 テスト結果:', response.status, response.statusText)
         
-        if (response.ok) {
-          const result = await response.json()
-          console.log('✅ GAS接続テスト成功!', result)
-          return true
-        } else {
-          console.error('❌ GAS接続テスト失敗:', response.status)
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'エラー詳細取得失敗')
+          console.error('❌ GAS接続テスト失敗:', {
+            status: response.status,
+            error: errorText
+          })
           return false
+        } else {
+          const data = await response.json()
+          console.log('✅ GAS接続テスト成功!', data)
+          return true
         }
       } catch (error) {
         console.error('❌ GAS接続テストエラー:', error)
@@ -413,9 +426,9 @@ ${errorDetails.join('\n')}
       }
     }
     
-    window.startGASIntegration = function() {
-      console.log('✅ GAS統合は既に実行中です（サーバー経由）')
-    }
+    console.log('📚 利用可能な関数:')
+    console.log('- window.testGASConnection() : GAS接続テスト')
+    console.log('✅ 準備完了 - 予約を作成すると自動でGAS同期が実行されます')
     
     // checkLiffReady()
   }, [])
