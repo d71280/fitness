@@ -48,6 +48,7 @@ export default function SchedulePage() {
   const [isLiffInitialized, setIsLiffInitialized] = useState(false)
   const [liffError, setLiffError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [isWebEnvironment, setIsWebEnvironment] = useState(false)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
 
   // デバッグログ追加
@@ -83,6 +84,7 @@ export default function SchedulePage() {
           // WEB環境での処理（LINE ID無しで予約可能）
           console.log('🌐 WEB環境での初期化')
           addDebugLog('WEB環境を検出 - LINE通知なしモード')
+          setIsWebEnvironment(true)
           setIsLiffInitialized(true)
           setLiffUserId(null) // LINE IDなし
         }
@@ -93,6 +95,7 @@ export default function SchedulePage() {
         addDebugLog(`初期化エラー: ${error}`)
         setLiffError('初期化に失敗しました')
         // エラーでもWEBモードとして続行
+        setIsWebEnvironment(true)
         setIsLiffInitialized(true)
         setLiffUserId(null)
       }
@@ -656,8 +659,8 @@ ${errorDetails.join('\n')}
     )
   }
 
-  // LINE IDが取得できていない場合
-  if (!liffUserId) {
+  // LINE IDが取得できていない場合（WEB環境は除く）
+  if (!liffUserId && !isWebEnvironment) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
         <div className="max-w-md text-center">
