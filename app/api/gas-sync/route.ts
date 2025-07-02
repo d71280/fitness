@@ -1,15 +1,17 @@
-// @ts-nocheck
+// app/api/gas-sync/route.ts
+// 安全版 - Supabaseを使わずGAS直接接続
+
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
+  console.log('🔄 GAS同期処理開始')
+  
   try {
-    console.log('🔄 GAS同期処理開始')
-    
     // GAS Webhook URL（確認済みで動作中）
     const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWY5L9tmVgDBL7A/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
-    // リクエストボディを取得
+    // リクエストボディを安全に取得
     let requestData = {}
     try {
       const body = await request.text()
@@ -17,40 +19,35 @@ export async function POST(request: NextRequest) {
         requestData = JSON.parse(body)
         console.log('📥 受信データ:', requestData)
       }
-    } catch (error) {
-      console.log('📝 リクエストボディ解析失敗、デフォルトデータを使用')
+    } catch (bodyError) {
+      console.log('📝 リクエストボディ解析失敗:', bodyError)
+      // デフォルトデータを使用
     }
     
-    // GASに送信するテストデータ（実際の予約データがない場合）
+    // GASに送信するデータ（型安全）
     const gasData = {
-      customerName: requestData.customerName || 'テストユーザー',
-      experienceDate: requestData.experienceDate || new Date().toLocaleDateString('ja-JP'),
-      timeSlot: requestData.timeSlot || '10:00-11:00',
-      programName: requestData.programName || 'テストプログラム',
-      email: requestData.email || '',
-      phone: requestData.phone || '',
-      notes: requestData.notes || 'API自動テスト',
-      status: requestData.status || '新規'
+      customerName: (requestData as any)?.customerName || 'テストユーザー',
+      experienceDate: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
+      timeSlot: (requestData as any)?.timeSlot || '10:00-11:00',
+      programName: (requestData as any)?.programName || 'テストプログラム',
+      email: (requestData as any)?.email || '',
+      phone: (requestData as any)?.phone || '',
+      notes: (requestData as any)?.notes || 'API自動テスト',
+      status: (requestData as any)?.status || '新規'
     }
     
     console.log('📤 GAS送信データ:', gasData)
     
-    // GASに送信
+    // GASに送信（シンプル版）
     const response = await fetch(gasWebhookUrl, {
       method: 'POST',
       headers: { 
-        'Content-Type': 'application/json',
-        'User-Agent': 'FitnessApp/1.0'
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(gasData),
-      signal: AbortSignal.timeout(10000)
+      body: JSON.stringify(gasData)
     })
     
-    console.log('📡 GAS応答:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    })
+    console.log('📡 GAS応答ステータス:', response.status)
     
     if (response.ok) {
       const responseText = await response.text()
@@ -70,17 +67,24 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `GAS送信失敗: ${response.status}`,
         details: errorText
-      }, { status: 500 })
+      }, { status: 400 }) // 500ではなく400を返す
     }
     
   } catch (error) {
     console.error('🚨 GAS同期エラー:', error)
     
+    // エラーの詳細情報を含める
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'UnknownError',
+      stack: error instanceof Error ? error.stack : undefined
+    }
+    
     return NextResponse.json({
       success: false,
       error: 'GAS同期処理でエラーが発生しました',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+      details: errorDetails
+    }, { status: 400 }) // 500ではなく400を返す
   }
 }
 
@@ -89,7 +93,6 @@ export async function GET() {
     status: 'active',
     message: 'GAS同期エンドポイントは正常に動作しています',
     timestamp: new Date().toISOString(),
-    endpoint: '/api/gas-sync',
-    gasUrl: 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOL QNh2CX2HkY-y4pTtNWY5L9tmVgDBL7A/exec'
+    endpoint: '/api/gas-sync'
   })
 }
