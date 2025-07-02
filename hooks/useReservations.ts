@@ -186,18 +186,21 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
-        // 予約成功後、手動ボタンと同じ仕組みで未同期データを自動送信
-        if (typeof window !== 'undefined' && result?.reservation) {
+        // 予約成功後、確実に自動同期を実行
+        if (typeof window !== 'undefined' && result && result.success !== false) {
+          console.log('✅ 予約成功確認 - 自動同期準備')
           setTimeout(() => {
+            console.log('🔄 自動同期API呼び出し開始（Web）')
             // 手動ボタンと同じAPI（未同期データ送信）を呼び出し
             fetch('/api/webhook/sync-unsynced', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' }
             }).then(response => {
+              console.log('🔄 自動同期API応答（Web）:', response.status)
               if (response.ok) {
-                console.log('✅ 予約完了後の自動同期成功')
+                console.log('✅ 予約完了後の自動同期成功（Web）')
               } else {
-                console.warn('⚠️ 予約完了後の自動同期失敗:', response.status)
+                console.warn('⚠️ 予約完了後の自動同期失敗（Web）:', response.status)
               }
             }).catch((error) => {
               console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)

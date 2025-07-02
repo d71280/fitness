@@ -79,16 +79,22 @@ export function BookingModal({
         lineId: liffUserId
       }
       
+      console.log('📝 予約データ送信開始:', reservationData)
       const result = await onSubmit(reservationData)
+      console.log('📝 予約データ送信結果:', result)
       
-      // 予約完了後、手動ボタンと同じ仕組みで自動同期
-      if (result?.reservation) {
+      // 予約が成功した場合のみ処理続行
+      if (result && (result.success !== false)) {
+        console.log('✅ 予約成功確認 - 自動同期開始')
+        
+        // 自動同期を確実に実行（エラーでも予約成功表示は維持）
         setTimeout(() => {
-          // 手動ボタンと同じAPI（未同期データ送信）を呼び出し
+          console.log('🔄 自動同期API呼び出し開始')
           fetch('/api/webhook/sync-unsynced', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           }).then(response => {
+            console.log('🔄 自動同期API応答:', response.status)
             if (response.ok) {
               console.log('✅ 予約完了後の自動同期成功（LINE）')
             } else {
@@ -98,18 +104,21 @@ export function BookingModal({
             console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
           })
         }, 2000) // 2秒後に実行
+        
+        // 成功時のUI処理
+        onClose()
+        setFormData({
+          scheduleId: 0,
+          customerNameKanji: '',
+          customerNameKatakana: '',
+          lineId: '',
+          phone: '',
+        })
+        alert('予約が完了しました！LINEに確認メッセージをお送りします。')
+      } else {
+        // 明確な失敗の場合
+        throw new Error(result?.error || '予約処理が失敗しました')
       }
-      
-      onClose()
-      // フォームをリセット
-      setFormData({
-        scheduleId: 0,
-        customerNameKanji: '',
-        customerNameKatakana: '',
-        lineId: '',
-        phone: '',
-      })
-      alert('予約が完了しました！LINEに確認メッセージをお送りします。')
     } catch (error: any) {
       console.error('📱 予約処理エラー:', error)
       
