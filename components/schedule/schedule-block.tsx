@@ -17,9 +17,7 @@ export function ScheduleBlock({ schedule, onClick, className = '' }: ScheduleBlo
   const availableSlots = schedule.availableSlots || (schedule.capacity - currentBookings)
   const isFullyBooked = currentBookings >= schedule.capacity
   
-  // デバッグ用ログ
-  console.log('ScheduleBlock - schedule:', schedule)
-  console.log('ScheduleBlock - currentBookings:', currentBookings, 'availableSlots:', availableSlots)
+  // デバッグ用ログを削除（パフォーマンス改善）
   
   return (
     <div
