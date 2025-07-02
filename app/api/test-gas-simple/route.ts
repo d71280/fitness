@@ -15,15 +15,16 @@ export async function POST(request: NextRequest) {
   try {
     const GAS_URL = 'https://script.google.com/macros/s/AKfycby2nuyWwi_zwyytQ0-CJcI94uoGnEZV2sTVyrZJsaMbpvhpHT9c0U5il8tUb4SH65TElA/exec'
     
+    // 現在時刻を「2025/07/02 20:31:16」形式で生成
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+    
     const testData = {
-      customerName: 'テスト太郎',
-      experienceDate: new Date().toLocaleDateString('ja-JP'),
-      timeSlot: '10:00-11:00',
-      programName: 'テストプログラム',
-      email: 'test@example.com',
-      phone: '090-1234-5678',
-      notes: '簡単テスト',
-      status: '新規'
+      '名前（漢字）': 'テスト太郎',
+      '名前（カタカナ）': 'テストタロウ',
+      時間: '10:00-11:00',
+      電話番号: '090-1234-5678',
+      入力日: timestamp
     }
     
     console.log('📤 テストデータ送信:', testData)

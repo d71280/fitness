@@ -24,16 +24,17 @@ export async function POST(request: NextRequest) {
       // デフォルトデータを使用
     }
     
-    // GASに送信するデータ（型安全）
+    // 現在時刻を「2025/07/02 20:31:16」形式で生成
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+    
+    // GASに送信するデータ（シンプル版）
     const gasData = {
-      customerName: (requestData as any)?.customerName || 'テストユーザー',
-      experienceDate: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
-      timeSlot: (requestData as any)?.timeSlot || '10:00-11:00',
-      programName: (requestData as any)?.programName || 'テストプログラム',
-      email: (requestData as any)?.email || '',
-      phone: (requestData as any)?.phone || '',
-      notes: (requestData as any)?.notes || 'API自動テスト',
-      status: (requestData as any)?.status || '新規'
+      '名前（漢字）': (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || 'テストユーザー',
+      '名前（カタカナ）': (requestData as any)?.customerNameKatakana || 'テストユーザー',
+      時間: (requestData as any)?.timeSlot || '10:00-11:00',
+      電話番号: (requestData as any)?.phone || '',
+      入力日: timestamp
     }
     
     console.log('📤 GAS送信データ:', gasData)
