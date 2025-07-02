@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   
   try {
     // GAS Webhook URL（最新URL）
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycby2nuyWwi_zwyytQ0-CJcI94uoGnEZV2sTVyrZJsaMbpvhpHT9c0U5il8tUb4SH65TElA/exec'
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbzbr8zH7YOd0h7g8DJdv-tj4qb01bMvSic1g71gdi6WvqQyRcOtkGlPO9AJdUiYxJ-oaA/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
     // リクエストボディを安全に取得

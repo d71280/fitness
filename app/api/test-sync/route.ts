@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     console.log('🧪 テスト同期開始')
     
     // GAS Webhook URL
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycby2nuyWwi_zwyytQ0-CJcI94uoGnEZV2sTVyrZJsaMbpvhpHT9c0U5il8tUb4SH65TElA/exec'
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbzbr8zH7YOd0h7g8DJdv-tj4qb01bMvSic1g71gdi6WvqQyRcOtkGlPO9AJdUiYxJ-oaA/exec'
     console.log('🔗 GAS URL:', gasWebhookUrl)
     
     // 現在時刻を「2025/07/02 20:31:16」形式で生成
