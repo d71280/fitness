@@ -56,15 +56,49 @@ export default function SchedulePage() {
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
   }
 
-  // LIFF初期化とユーザー情報取得（簡略版）
+  // LIFF初期化とユーザー情報取得
   useEffect(() => {
-    // 緊急対応: LIFF認証を完全スキップ
-    console.log('🔧 簡略版: LIFF認証を完全スキップ')
-    setIsLiffInitialized(true)
-    setLiffUserId('simple-test-user-id')
-    addDebugLog('🔧 簡略版モード有効')
+    const initializeLiff = async () => {
+      try {
+        // LIFF環境かどうかをチェック
+        const isLiffApp = window.location.href.includes('liff.line.me')
+        
+        if (isLiffApp) {
+          // LIFF環境での初期化
+          console.log('🔄 LIFF環境での初期化開始')
+          addDebugLog('LIFF環境を検出')
+          
+          if (typeof window.liff !== 'undefined') {
+            await window.liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID })
+            
+            if (window.liff.isLoggedIn()) {
+              const profile = await window.liff.getProfile()
+              setLiffUserId(profile.userId)
+              setUserProfile(profile)
+              setIsLiffInitialized(true)
+              addDebugLog(`LIFF認証成功: ${profile.displayName}`)
+            }
+          }
+        } else {
+          // WEB環境での処理（LINE ID無しで予約可能）
+          console.log('🌐 WEB環境での初期化')
+          addDebugLog('WEB環境を検出 - LINE通知なしモード')
+          setIsLiffInitialized(true)
+          setLiffUserId(null) // LINE IDなし
+        }
+        
+        console.log('✅ 初期化完了 - 予約機能が利用可能です')
+      } catch (error) {
+        console.error('❌ 初期化エラー:', error)
+        addDebugLog(`初期化エラー: ${error}`)
+        setLiffError('初期化に失敗しました')
+        // エラーでもWEBモードとして続行
+        setIsLiffInitialized(true)
+        setLiffUserId(null)
+      }
+    }
     
-    console.log('✅ 簡略版準備完了 - 予約機能が利用可能です')
+    initializeLiff()
     
     // テスト関数を追加
     window.testSimpleReservation = async function() {

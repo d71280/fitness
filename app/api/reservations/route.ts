@@ -10,7 +10,7 @@ const createReservationSchema = z.object({
   scheduleId: z.number(),
   customerNameKanji: z.string().min(1),
   customerNameKatakana: z.string().min(1),
-  lineId: z.string().min(1),
+  lineId: z.string(), // 空文字も許可（WEB環境対応）
   phone: z.string().min(1),
 })
 
@@ -134,12 +134,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // 顧客を取得または作成
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('line_id', lineId)
-        .single()
+      // 顧客を取得または作成（LINE IDが空の場合は名前で検索）
+      let existingCustomer = null
+      if (lineId && lineId.trim() !== '') {
+        const { data } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('line_id', lineId)
+          .single()
+        existingCustomer = data
+      }
 
       let customer
       if (existingCustomer) {
@@ -151,7 +155,7 @@ export async function POST(request: NextRequest) {
             phone: phone,
             last_booking_date: new Date().toISOString(),
           })
-          .eq('line_id', lineId)
+          .eq('id', existingCustomer.id)
           .select()
           .single()
 
@@ -163,7 +167,7 @@ export async function POST(request: NextRequest) {
           .from('customers')
           .insert({
             name: `${customerNameKanji} (${customerNameKatakana})`,
-            line_id: lineId,
+            line_id: lineId && lineId.trim() !== '' ? lineId : null, // 空文字の場合はnull
             phone: phone,
             preferred_programs: [],
             last_booking_date: new Date().toISOString(),

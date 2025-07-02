@@ -73,10 +73,10 @@ export function BookingModal({
 
     setLoading(true)
     try {
-      // LIFF ユーザーIDを確実に設定 + スケジュール情報を追加
+      // ユーザーIDを設定 + スケジュール情報を追加
       const reservationData = {
         ...formData,
-        lineId: liffUserId,
+        lineId: liffUserId || '', // WEB環境の場合は空文字
         experienceDate: schedule.date,
         timeSlot: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
         programName: schedule.program?.name || 'プログラム'
@@ -101,7 +101,12 @@ export function BookingModal({
           lineId: '',
           phone: '',
         })
-        alert('予約が完了しました！LINEに確認メッセージをお送りします。')
+        // LINE環境とWEB環境で異なるメッセージ
+        if (liffUserId) {
+          alert('予約が完了しました！LINEに確認メッセージをお送りします。')
+        } else {
+          alert('予約が完了しました！')
+        }
       } else {
         // 明確な失敗の場合
         throw new Error(result?.error || '予約処理が失敗しました')
