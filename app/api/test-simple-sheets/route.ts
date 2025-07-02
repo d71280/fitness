@@ -91,9 +91,9 @@ export async function POST(request: NextRequest) {
     // 2. データを書き込む
     console.log('=== Step 2: データ書き込み ===')
     
-    // B5から書き込みを開始（見出し行をスキップ）
+    // A5から書き込みを開始（見出し行をスキップし、A列から全列に書き込み）
     const writeResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/B5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A5:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         headers: {

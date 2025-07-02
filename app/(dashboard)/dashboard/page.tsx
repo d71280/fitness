@@ -3,6 +3,7 @@
 import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardStats } from '@/components/admin/dashboard-stats'
+import { WebhookSyncSection } from '@/components/admin/webhook-sync-section'
 import { Calendar, Users, Activity, TrendingUp } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -18,6 +19,9 @@ export default function DashboardPage() {
 
       {/* 統計カード */}
       <DashboardStats />
+
+      {/* Google Sheets同期セクション */}
+      <WebhookSyncSection />
 
       {/* グリッドレイアウト */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

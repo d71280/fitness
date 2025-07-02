@@ -184,50 +184,55 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
-        // 予約成功後、クライアントサイドからシンプルテストAPIを呼び出し
-        try {
-          console.log('📝 予約データをGoogle Sheetsに書き込み開始')
-          
-          // 予約データを準備
-          const reservation = result.reservation
-          const schedule = reservation.schedule
-          const customer = reservation.customer
-          
-          const today = new Date().toLocaleDateString('ja-JP')
-          const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
-          const customerName = customer.name.split('(')[0].trim()
-          const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
-          const programName = schedule.program?.name || 'プログラム未設定'
-          
-          console.log('📝 Google Sheets書き込み用データ:', {
-            today, customerName, experienceDate, timeSlot, programName
-          })
-          
-          // クライアントサイドから直接シンプルテストAPIを呼び出し（設定画面と同じ方法）
-          const sheetsResponse = await fetch('/api/test-simple-sheets', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              reservationData: {
-                today, customerName, experienceDate, timeSlot, programName
-              }
+        // 予約成功後、非同期でGAS webhookに送信（予約処理をブロックしない）
+        setTimeout(async () => {
+          try {
+            console.log('📝 予約データをGoogle Sheetsに書き込み開始')
+            
+            // 予約データを準備（スプレッドシートの列構造に合わせて調整）
+            const reservation = result.reservation
+            const schedule = reservation.schedule
+            const customer = reservation.customer
+            
+            // スプレッドシートの列順に合わせて調整
+            const today = new Date().toLocaleDateString('ja-JP')
+            const customerName = customer.name.split('(')[0].trim()
+            const experienceDate = new Date(schedule.date).toLocaleDateString('ja-JP')
+            const timeSlot = `${schedule.start_time?.slice(0, 5) || '時間未設定'}-${schedule.end_time?.slice(0, 5) || '時間未設定'}`
+            const programName = schedule.program?.name || 'プログラム未設定'
+            
+            console.log('📝 Google Sheets書き込み用データ:', {
+              today, customerName, experienceDate, timeSlot, programName
             })
-          })
-          
-          if (sheetsResponse.ok) {
-            const sheetsResult = await sheetsResponse.json()
-            console.log('✅ Google Sheets書き込み成功:', sheetsResult)
-          } else {
-            const errorText = await sheetsResponse.text()
-            console.error('❌ Google Sheets書き込み失敗:', errorText)
+            
+            // GAS Webhookでリアルタイム同期（非ブロッキング）
+            const gasWebhookUrl = process.env.NEXT_PUBLIC_GAS_WEBHOOK_URL || 'https://script.google.com/macros/s/YOUR_GAS_ID/exec'
+            
+            const controller = new AbortController()
+            const timeoutId = setTimeout(() => controller.abort(), 5000) // 5秒でタイムアウト
+            
+            const sheetsResponse = await fetch(gasWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                reservationData: { today, customerName, experienceDate, timeSlot, programName }
+              }),
+              signal: controller.signal
+            })
+            
+            clearTimeout(timeoutId)
+            
+            if (sheetsResponse.ok) {
+              const sheetsResult = await sheetsResponse.json()
+              console.log('✅ Google Sheets書き込み成功:', sheetsResult)
+            } else {
+              console.warn('⚠️ Google Sheets書き込み失敗:', sheetsResponse.status)
+            }
+            
+          } catch (sheetsError) {
+            console.warn('⚠️ Google Sheets書き込みエラー（予約は成功済み）:', sheetsError)
           }
-          
-        } catch (sheetsError) {
-          console.error('❌ Google Sheets書き込みエラー:', sheetsError)
-          // Google Sheets失敗は予約成功には影響しない
-        }
+        }, 100) // 100ms後に非同期実行
         
         // リスト更新は失敗しても続行
         try {
