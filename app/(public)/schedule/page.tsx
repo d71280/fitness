@@ -332,6 +332,108 @@ ${errorDetails.join('\n')}
     setIsLiffInitialized(true)
     setLiffUserId('emergency-bypass-user-id')
     addDebugLog('🔧 緊急バイパスモード有効')
+    
+    // GAS統合スクリプトを自動実行
+    console.log('🚀 GAS統合スクリプト自動実行開始')
+    
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWYY5L9tmVgDBL7A/exec'
+    
+    // fetch関数をインターセプト
+    const originalFetch = window.fetch
+    window.fetch = function(...args) {
+      const [url, options] = args
+      
+      // 予約API呼び出しを監視
+      if (url.includes('/api/reservations') && options?.method === 'POST') {
+        console.log('🎯 予約API呼び出し検出:', url)
+        
+        // 元のリクエストを実行
+        return originalFetch.apply(this, args).then(async response => {
+          if (response.ok) {
+            try {
+              // レスポンスをクローンして読み取り
+              const responseClone = response.clone()
+              const responseData = await responseClone.json()
+              
+              console.log('✅ 予約成功 - GAS webhook送信開始:', responseData)
+              
+              // GAS webhookにデータ送信（非同期）
+              setTimeout(async () => {
+                try {
+                  const gasResponse = await originalFetch(gasWebhookUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(responseData)
+                  })
+                  
+                  if (gasResponse.ok) {
+                    console.log('✅ GAS webhook送信成功')
+                  } else {
+                    console.warn('⚠️ GAS webhook送信失敗:', gasResponse.status, gasResponse.statusText)
+                  }
+                } catch (gasError) {
+                  console.warn('⚠️ GAS webhook送信エラー:', gasError)
+                }
+              }, 1000)
+            } catch (error) {
+              console.warn('⚠️ 予約レスポンス処理エラー:', error)
+            }
+          }
+          
+          return response
+        })
+      }
+      
+      return originalFetch.apply(this, args)
+    }
+    
+    console.log('✅ GAS統合スクリプト実行完了 - 自動同期待機中')
+    
+    // テスト関数をグローバルに追加
+    window.testGASConnection = async function() {
+      console.log('🧪 GAS接続テスト開始...')
+      try {
+        const testData = {
+          id: 999,
+          customerNameKanji: 'テスト太郎',
+          customerNameKatakana: 'テストタロウ',
+          lineId: 'test-line-id',
+          phone: '090-1234-5678',
+          schedule: {
+            date: '2025-07-02',
+            startTime: '10:00',
+            endTime: '11:00',
+            program: { name: 'テストプログラム' }
+          }
+        }
+        
+        const response = await originalFetch(gasWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(testData)
+        })
+        
+        console.log('🧪 テスト結果:', response.status, response.statusText)
+        
+        if (response.ok) {
+          console.log('✅ GAS接続テスト成功!')
+          return true
+        } else {
+          console.error('❌ GAS接続テスト失敗:', response.status)
+          return false
+        }
+      } catch (error) {
+        console.error('❌ GAS接続テストエラー:', error)
+        return false
+      }
+    }
+    
+    window.startGASIntegration = function() {
+      console.log('✅ GAS統合は既に実行中です')
+    }
+    
     // checkLiffReady()
   }, [])
 

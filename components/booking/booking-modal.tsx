@@ -87,24 +87,7 @@ export function BookingModal({
       if (result && (result.success !== false)) {
         console.log('✅ 予約成功確認 - 自動同期開始')
         
-        // TODO: 自動同期を一時的に無効化（ネットワークエラーデバッグ用）
-        console.log('⚠️ 自動同期は一時的に無効化されています（LINE）')
-        // setTimeout(() => {
-        //   console.log('🔄 自動同期API呼び出し開始')
-        //   fetch('/api/webhook/sync-unsynced', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' }
-        //   }).then(response => {
-        //     console.log('🔄 自動同期API応答:', response.status)
-        //     if (response.ok) {
-        //       console.log('✅ 予約完了後の自動同期成功（LINE）')
-        //     } else {
-        //       console.warn('⚠️ 予約完了後の自動同期失敗（LINE）:', response.status)
-        //     }
-        //   }).catch((error) => {
-        //     console.warn('⚠️ 予約完了後の自動同期エラー（予約成功には影響なし）:', error)
-        //   })
-        // }, 2000)
+        console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
         // 成功時のUI処理
         onClose()
