@@ -243,14 +243,15 @@ export function useReservations() {
         const result = await response.json()
         console.log('🎉 予約作成成功:', result)
         
-        // TODO: webhook送信を一時的に無効化（デバッグ用）
-        // if (typeof window !== 'undefined' && result?.reservation) {
-        //   Promise.resolve().then(() => {
-        //     setTimeout(() => {
-        //       sendToGASWebhook(result.reservation).catch(() => {})
-        //     }, 1000)
-        //   })
-        // }
+        // 予約成功後、バックグラウンドでwebhook送信（予約処理には影響しない）
+        if (typeof window !== 'undefined' && result?.reservation) {
+          // 完全に非同期で実行、エラーは無視
+          setTimeout(() => {
+            sendToGASWebhook(result.reservation).catch((error) => {
+              console.warn('⚠️ バックグラウンドwebhook送信失敗（予約成功には影響なし）:', error)
+            })
+          }, 2000) // 2秒後に実行でより確実に分離
+        }
         
         // リスト更新は失敗しても続行
         try {

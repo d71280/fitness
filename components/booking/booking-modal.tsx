@@ -81,23 +81,22 @@ export function BookingModal({
       
       const result = await onSubmit(reservationData)
       
-      // TODO: 予約完了後APIトリガーを一時的に無効化（デバッグ用）
-      // try {
-      //   if (result?.reservation) {
-      //     console.log('予約完了トリガー実行中...')
-      //     await fetch('/api/trigger-reservation-complete', {
-      //       method: 'POST',
-      //       headers: { 'Content-Type': 'application/json' },
-      //       body: JSON.stringify({
-      //         reservation: result.reservation,
-      //         trigger: 'reservation_complete'
-      //       })
-      //     })
-      //     console.log('予約完了トリガー実行完了')
-      //   }
-      // } catch (triggerError) {
-      //   console.warn('予約完了トリガーエラー（予約は成功しています）:', triggerError)
-      // }
+      // 予約完了後、バックグラウンドでトリガー実行（予約処理には影響しない）
+      if (result?.reservation) {
+        // 非同期でトリガー実行、エラーは無視
+        setTimeout(() => {
+          fetch('/api/trigger-reservation-complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              reservation: result.reservation,
+              trigger: 'reservation_complete'
+            })
+          }).catch((error) => {
+            console.warn('⚠️ バックグラウンドトリガー実行失敗（予約成功には影響なし）:', error)
+          })
+        }, 1500) // 1.5秒後に実行
+      }
       
       onClose()
       // フォームをリセット
