@@ -64,7 +64,7 @@ export default function SchedulePage() {
         addDebugLog('LIFF環境での初期化')
         
         if (typeof window.liff !== 'undefined') {
-          await window.liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID })
+          await window.liff.init({ liffId: '2007611355-VOqXANop' })
           
           if (window.liff.isLoggedIn()) {
             const profile = await window.liff.getProfile()
@@ -167,7 +167,7 @@ export default function SchedulePage() {
         addDebugLog('🔄 LIFF初期化開始...')
         
         // 環境変数チェック
-        const liffId = process.env.NEXT_PUBLIC_LIFF_ID
+        const liffId = '2007611355-VOqXANop'
         addDebugLog(`📋 LIFF ID: ${liffId || '未設定'}`)
         addDebugLog(`🌍 環境: ${process.env.NODE_ENV || '未設定'}`)
         addDebugLog(`🔧 デバッグモード: ${process.env.LINE_DEBUG_MODE || '未設定'}`)
@@ -290,7 +290,7 @@ export default function SchedulePage() {
         }
       } catch (error: any) {
         // 詳細なエラー情報を収集
-        const currentLiffId = process.env.NEXT_PUBLIC_LIFF_ID
+        const currentLiffId = '2007611355-VOqXANop'
         const errorInfo = {
           message: error.message || 'Unknown error',
           code: error.code || 'No code',

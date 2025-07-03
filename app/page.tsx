@@ -47,15 +47,11 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <a 
-                href={`https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href="/schedule">
                 <Button className="w-full">
-                  LINEで予約する
+                  予約する
                 </Button>
-              </a>
+              </Link>
             </CardContent>
           </Card>
 
