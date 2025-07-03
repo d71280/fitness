@@ -719,7 +719,7 @@ ${errorDetails.join('\n')}
       <WeeklyCalendar
         schedules={schedulesByDate}
         onScheduleClick={handleScheduleClick}
-        onAddSchedule={handleDateClick}
+        onAddSchedule={handleAddSchedule}
         showAddButton={true}
         currentWeek={new Date(currentWeekStart)}
         onWeekChange={(week) => setCurrentWeekStart(formatDate(week))}
