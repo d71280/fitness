@@ -1,27 +1,9 @@
-'use client'
-
-import { useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Calendar, Users, Settings, BookOpen } from 'lucide-react'
 
 export default function Home() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
-  // Google OAuth認証コールバックの一時的な処理
-  useEffect(() => {
-    const code = searchParams.get('code')
-    if (code) {
-      console.log('Auth code detected on root page, redirecting to callback...')
-      // Google認証のcodeパラメータがある場合、正しいコールバックURLにリダイレクト
-      const currentUrl = new URL(window.location.href)
-      const callbackUrl = `/auth/callback${currentUrl.search}`
-      router.replace(callbackUrl)
-    }
-  }, [searchParams, router])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
@@ -47,11 +29,14 @@ export default function Home() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/schedule">
+              <a 
+                href="https://liff.line.me/2007611355-VOqXANop"
+                className="block w-full"
+              >
                 <Button className="w-full">
-                  予約する
+                  LINEアプリで予約する
                 </Button>
-              </Link>
+              </a>
             </CardContent>
           </Card>
 
