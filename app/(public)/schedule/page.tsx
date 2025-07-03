@@ -717,12 +717,12 @@ ${errorDetails.join('\n')}
       )}
 
       <WeeklyCalendar
-        currentWeekStart={currentWeekStart}
-        onWeekChange={setCurrentWeekStart}
-        schedulesByDate={schedulesByDate}
+        schedules={schedulesByDate}
         onScheduleClick={handleScheduleClick}
-        onDateClick={handleDateClick}
+        onAddSchedule={handleDateClick}
         showAddButton={true}
+        currentWeek={new Date(currentWeekStart)}
+        onWeekChange={(week) => setCurrentWeekStart(formatDate(week))}
       />
 
       <BookingModal
