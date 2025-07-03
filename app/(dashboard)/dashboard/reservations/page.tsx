@@ -321,11 +321,11 @@ export default function ReservationsCustomersPage() {
                                 <div className="flex items-center gap-1 font-medium text-blue-600">
                                   <Clock className="w-3 h-3" />
                                   {console.log('Time debug:', { 
-                                    startTime: reservation.schedule?.startTime || reservation.schedule?.start_time,
-                                    endTime: reservation.schedule?.endTime || reservation.schedule?.end_time,
+                                    startTime: reservation.schedule?.startTime,
+                                    endTime: reservation.schedule?.endTime,
                                     schedule: reservation.schedule
                                   })}
-                                  {(reservation.schedule?.startTime || reservation.schedule?.start_time)?.slice(0, 5)} - {(reservation.schedule?.endTime || reservation.schedule?.end_time)?.slice(0, 5)}
+                                  {reservation.schedule?.startTime?.slice(0, 5)} - {reservation.schedule?.endTime?.slice(0, 5)}
                                 </div>
                                 <div className="text-gray-600">
                                   プログラム: {reservation.schedule?.program?.name || '不明'}
