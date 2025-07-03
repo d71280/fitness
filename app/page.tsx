@@ -40,29 +40,10 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                WEB版予約
+                週間スケジュール
               </CardTitle>
               <CardDescription>
-                ブラウザから簡単予約（LINE通知なし）
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/public-schedule">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                  WEB版で予約する
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                LINE版予約
-              </CardTitle>
-              <CardDescription>
-                LINE認証で予約完了通知あり
+                スタジオのレッスンスケジュールを確認して予約
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -71,8 +52,8 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Button className="w-full bg-green-600 hover:bg-green-700">
-                  LINEアプリで予約する
+                <Button className="w-full">
+                  LINEで予約する
                 </Button>
               </a>
             </CardContent>

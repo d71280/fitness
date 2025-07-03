@@ -48,7 +48,6 @@ export default function SchedulePage() {
   const [isLiffInitialized, setIsLiffInitialized] = useState(false)
   const [liffError, setLiffError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
-  const [isWebEnvironment, setIsWebEnvironment] = useState(false)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
 
   // デバッグログ追加
