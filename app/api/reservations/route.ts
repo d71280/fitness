@@ -263,65 +263,60 @@ export async function POST(request: NextRequest) {
       // Google Sheets連携はクライアントサイドで実行（コメントアウト）
       console.log('ℹ️ Google Sheets書き込みはクライアントサイドで実行されます')
 
-      // LINE通知のみ非同期で実行
-      Promise.resolve().then(async () => {
-        // LINE通知送信（堅牢性向上）
-        try {
-          console.log('LINE通知処理を開始します...')
-          console.log('環境変数チェック:', {
-            hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
-            debugMode: process.env.LINE_DEBUG_MODE,
-            nodeEnv: process.env.NODE_ENV
-          })
+      // LINE通知を同期処理で実行（確実に実行するため）
+      try {
+        console.log('LINE通知処理を開始します...')
+        console.log('環境変数チェック:', {
+          hasAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
+          debugMode: process.env.LINE_DEBUG_MODE,
+          nodeEnv: process.env.NODE_ENV
+        })
+        
+        if (customer.line_id) {
+          console.log('顧客のLINE ID:', customer.line_id)
           
-          if (customer.line_id) {
-            console.log('顧客のLINE ID:', customer.line_id)
-            
-            // 環境変数の詳細チェック
-            const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
-            console.log('LINE アクセストークン確認:', {
+          // 環境変数の詳細チェック
+          const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN
+          console.log('LINE アクセストークン確認:', {
               hasToken: !!accessToken,
-              tokenStart: accessToken?.substring(0, 10),
-              isTestToken: accessToken === 'test_token',
-              startsWithPlaceholder: accessToken?.startsWith('your_line_channel')
-            })
+            tokenStart: accessToken?.substring(0, 10),
+            isTestToken: accessToken === 'test_token',
+            startsWithPlaceholder: accessToken?.startsWith('your_line_channel')
+          })
             
-            if (!accessToken || accessToken === 'test_token' || accessToken.startsWith('your_line_channel')) {
-              console.warn('⚠️ LINE_CHANNEL_ACCESS_TOKEN が正しく設定されていません:', accessToken)
-              return // LINE通知をスキップ
-            }
-            
-            try {
-              const lineClient = new LineMessagingClient()
-              
-              // シンプルなメッセージ
-              const messageText = `✅ 予約が完了しました！\n\n📅 日時: ${schedule.date} ${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}\n🏃 プログラム: ${schedule.program.name}\n\nお忘れなくお越しください！`
-              
-              console.log('送信メッセージ:', messageText)
-              
-              // LINE通知送信
-              const lineResult = await lineClient.pushMessage(customer.line_id, {
-                type: 'text',
-                text: messageText
-              })
-              
-              if (lineResult.success) {
-                console.log('✅ LINE通知送信成功:', lineResult)
-              } else {
-                console.error('❌ LINE通知送信失敗:', lineResult.error)
-              }
-            } catch (lineApiError) {
-              console.error('❌ LINE API呼び出しエラー:', lineApiError)
-            }
-          } else {
-            console.log('⚠️ 顧客のLINE IDが設定されていません')
+          if (!accessToken || accessToken === 'test_token' || accessToken.startsWith('your_line_channel')) {
+            console.warn('⚠️ LINE_CHANNEL_ACCESS_TOKEN が正しく設定されていません:', accessToken)
+            return // LINE通知をスキップ
           }
-        } catch (lineError) {
-          console.error('❌ LINE通知処理エラー:', lineError)
+            
+          try {
+            const lineClient = new LineMessagingClient()
+              
+            // シンプルなメッセージ
+            const messageText = `✅ 予約が完了しました！\n\n📅 日時: ${schedule.date} ${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}\n🏃 プログラム: ${schedule.program.name}\n\nお忘れなくお越しください！`
+            
+            console.log('送信メッセージ:', messageText)
+              
+            // LINE通知送信
+            const lineResult = await lineClient.pushMessage(customer.line_id, {
+              type: 'text',
+              text: messageText
+            })
+              
+            if (lineResult.success) {
+              console.log('✅ LINE通知送信成功:', lineResult)
+            } else {
+              console.error('❌ LINE通知送信失敗:', lineResult.error)
+            }
+          } catch (lineApiError) {
+            console.error('❌ LINE API呼び出しエラー:', lineApiError)
+          }
+        } else {
+          console.log('⚠️ 顧客のLINE IDが設定されていません')
         }
-      }).catch(error => {
-        console.error('❌ 非同期処理でエラーが発生しました:', error)
-      })
+      } catch (lineError) {
+        console.error('❌ LINE通知処理エラー:', lineError)
+      }
 
       return NextResponse.json({
         success: true,
