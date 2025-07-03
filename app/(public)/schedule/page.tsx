@@ -720,7 +720,7 @@ ${errorDetails.join('\n')}
         schedules={schedulesByDate}
         onScheduleClick={handleScheduleClick}
         onAddSchedule={handleAddSchedule}
-        showAddButton={true}
+        showAddButton={false}
         currentWeek={new Date(currentWeekStart)}
         onWeekChange={(week) => setCurrentWeekStart(formatDate(week))}
       />
