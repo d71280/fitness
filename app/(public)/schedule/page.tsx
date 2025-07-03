@@ -169,14 +169,14 @@ export default function SchedulePage() {
         // 環境変数チェック
         const liffId = '2007611355-VOqXANop'
         addDebugLog(`📋 LIFF ID: ${liffId || '未設定'}`)
-        addDebugLog(`🌍 環境: ${process.env.NODE_ENV || '未設定'}`)
-        addDebugLog(`🔧 デバッグモード: ${process.env.LINE_DEBUG_MODE || '未設定'}`)
+        addDebugLog(`🌍 環境: production`)
+        addDebugLog(`🔧 デバッグモード: false`)
         
         if (!liffId || liffId === 'your_liff_id_here' || liffId === '2000000000-abcdefgh') {
           setLiffError(`❌ LIFF IDが設定されていません。
           
 現在のLIFF ID: ${liffId || '未設定'}
-環境: ${process.env.NODE_ENV || '未設定'}
+環境: production
 
 【Vercel管理者向け】
 1. Vercelダッシュボード → Settings → Environment Variables
@@ -192,7 +192,7 @@ export default function SchedulePage() {
         console.log('🔍 デバッグモード確認:', {
           hostname: window.location.hostname,
           search: window.location.search,
-          nodeEnv: process.env.NODE_ENV,
+          nodeEnv: 'production',
           isDebugMode
         })
         
@@ -706,7 +706,7 @@ ${errorDetails.join('\n')}
   return (
     <div className="container mx-auto p-4 md:p-6">
       {/* LIFFユーザー情報表示（開発時のみ） */}
-      {process.env.NODE_ENV === 'development' && (
+      {false && (
         <div className="mb-4 p-3 bg-green-100 rounded-md text-sm">
           <div><strong>✅ LIFF認証済み</strong></div>
           <div>ユーザーID: {liffUserId}</div>
