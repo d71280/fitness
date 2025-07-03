@@ -40,18 +40,41 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                週間スケジュール
+                WEB版予約
               </CardTitle>
               <CardDescription>
-                スタジオのレッスンスケジュールを確認して予約
+                ブラウザから簡単予約（LINE通知なし）
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/schedule">
-                <Button className="w-full">
-                  スケジュールを見る
+              <Link href="/public-schedule">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  WEB版で予約する
                 </Button>
               </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                LINE版予約
+              </CardTitle>
+              <CardDescription>
+                LINE認証で予約完了通知あり
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <a 
+                href={`https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="w-full bg-green-600 hover:bg-green-700">
+                  LINEアプリで予約する
+                </Button>
+              </a>
             </CardContent>
           </Card>
 

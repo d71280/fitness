@@ -57,51 +57,58 @@ export default function SchedulePage() {
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
   }
 
-  // LIFF初期化とユーザー情報取得
+  // LIFF初期化とユーザー情報取得（LIFF専用）
   useEffect(() => {
     const initializeLiff = async () => {
       try {
-        // LIFF環境かどうかをチェック
-        const isLiffApp = window.location.href.includes('liff.line.me')
+        console.log('🔄 LIFF環境での初期化開始')
+        addDebugLog('LIFF環境での初期化')
         
-        if (isLiffApp) {
-          // LIFF環境での初期化
-          console.log('🔄 LIFF環境での初期化開始')
-          addDebugLog('LIFF環境を検出')
+        if (typeof window.liff !== 'undefined') {
+          await window.liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID })
           
-          if (typeof window.liff !== 'undefined') {
-            await window.liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID })
-            
-            if (window.liff.isLoggedIn()) {
-              const profile = await window.liff.getProfile()
-              setLiffUserId(profile.userId)
-              setUserProfile(profile)
-              setIsLiffInitialized(true)
-              addDebugLog(`LIFF認証成功: ${profile.displayName}`)
-            }
+          if (window.liff.isLoggedIn()) {
+            const profile = await window.liff.getProfile()
+            setLiffUserId(profile.userId)
+            setUserProfile(profile)
+            setIsLiffInitialized(true)
+            addDebugLog(`LIFF認証成功: ${profile.displayName}`)
+          } else {
+            // ログインしていない場合はログインを促す
+            setLiffError('LINEにログインしてください')
           }
         } else {
-          // WEB環境での処理（LINE ID無しで予約可能）
-          console.log('🌐 WEB環境での初期化')
-          addDebugLog('WEB環境を検出 - LINE通知なしモード')
-          setIsWebEnvironment(true)
-          setIsLiffInitialized(true)
-          setLiffUserId(null) // LINE IDなし
+          throw new Error('LIFF SDKが読み込まれていません')
         }
         
-        console.log('✅ 初期化完了 - 予約機能が利用可能です')
+        console.log('✅ LIFF初期化完了')
       } catch (error) {
-        console.error('❌ 初期化エラー:', error)
-        addDebugLog(`初期化エラー: ${error}`)
-        setLiffError('初期化に失敗しました')
-        // エラーでもWEBモードとして続行
-        setIsWebEnvironment(true)
-        setIsLiffInitialized(true)
-        setLiffUserId(null)
+        console.error('❌ LIFF初期化エラー:', error)
+        addDebugLog(`LIFF初期化エラー: ${error}`)
+        setLiffError('LIFF初期化に失敗しました')
       }
     }
     
-    initializeLiff()
+    // LIFF SDKの読み込み待ち
+    const checkLiffReady = () => {
+      let attempts = 0
+      const maxAttempts = 30
+
+      const intervalId = setInterval(() => {
+        attempts++
+        
+        if (typeof window !== 'undefined' && window.liff && typeof window.liff.init === 'function') {
+          clearInterval(intervalId)
+          addDebugLog('✅ LIFF SDK読み込み完了')
+          initializeLiff()
+        } else if (attempts >= maxAttempts) {
+          clearInterval(intervalId)
+          setLiffError('LIFF SDKの読み込みがタイムアウトしました')
+        }
+      }, 200)
+    }
+
+    checkLiffReady()
     
     // テスト関数を追加
     window.testSimpleReservation = async function() {
@@ -560,8 +567,7 @@ ${errorDetails.join('\n')}
   }
 
   const handleScheduleClick = (schedule: Schedule) => {
-    // WEB環境では認証チェックをスキップ
-    if (!liffUserId && !isWebEnvironment) {
+    if (!liffUserId) {
       alert('LINE認証が必要です。ページを再読み込みしてください。')
       return
     }
@@ -660,8 +666,8 @@ ${errorDetails.join('\n')}
     )
   }
 
-  // LINE IDが取得できていない場合（WEB環境は除く）
-  if (!liffUserId && !isWebEnvironment) {
+  // LINE IDが取得できていない場合
+  if (!liffUserId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6">
         <div className="max-w-md text-center">
@@ -712,9 +718,12 @@ ${errorDetails.join('\n')}
       )}
 
       <WeeklyCalendar
-        schedules={schedulesByDate}
+        currentWeekStart={currentWeekStart}
+        onWeekChange={setCurrentWeekStart}
+        schedulesByDate={schedulesByDate}
         onScheduleClick={handleScheduleClick}
-        showAddButton={false}
+        onDateClick={handleDateClick}
+        showAddButton={true}
       />
 
       <BookingModal
