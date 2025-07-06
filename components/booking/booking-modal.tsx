@@ -131,14 +131,23 @@ export function BookingModal({
         })
         
         // 直接外部LIFFアプリへリダイレクト
-        if (window.liff && window.liff.isInClient()) {
-          // LIFF環境内で開く
-          window.liff.openWindow({
-            url: `${targetUrl}?${params.toString()}`,
-            external: false
-          })
-        } else {
-          // 通常のブラウザで開く
+        try {
+          if (window.liff && window.liff.isInClient()) {
+            // LIFF環境内で開く
+            console.log('🔗 LIFF環境でのリダイレクト開始')
+            await window.liff.openWindow({
+              url: `${targetUrl}?${params.toString()}`,
+              external: false
+            })
+          } else {
+            // 通常のブラウザで開く
+            console.log('🔗 ブラウザでのリダイレクト開始')
+            window.location.href = `${targetUrl}?${params.toString()}`
+          }
+        } catch (liffError) {
+          console.error('🚨 LIFFリダイレクトエラー:', liffError)
+          // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
+          console.log('🔄 通常のブラウザリダイレクトにフォールバック')
           window.location.href = `${targetUrl}?${params.toString()}`
         }
       } else {

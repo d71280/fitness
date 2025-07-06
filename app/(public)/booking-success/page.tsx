@@ -32,12 +32,21 @@ export default function BookingSuccessPage() {
       reservation_id: reservationId || ''
     })
     
-    if (window.liff && window.liff.isInClient()) {
-      window.liff.openWindow({
-        url: `${targetUrl}?${params.toString()}`,
-        external: false
-      })
-    } else {
+    try {
+      if (window.liff && window.liff.isInClient()) {
+        console.log('🔗 LIFF環境でのリダイレクト開始')
+        await window.liff.openWindow({
+          url: `${targetUrl}?${params.toString()}`,
+          external: false
+        })
+      } else {
+        console.log('🔗 ブラウザでのリダイレクト開始')
+        window.location.href = `${targetUrl}?${params.toString()}`
+      }
+    } catch (liffError) {
+      console.error('🚨 LIFFリダイレクトエラー:', liffError)
+      // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
+      console.log('🔄 通常のブラウザリダイレクトにフォールバック')
       window.location.href = `${targetUrl}?${params.toString()}`
     }
   }
