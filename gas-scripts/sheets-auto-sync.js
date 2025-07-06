@@ -38,6 +38,8 @@ function doPost(e) {
     console.log('解析済みデータ:', data);
     const { reservationData } = data;
     
+    console.log('📊 予約データ詳細:', JSON.stringify(reservationData));
+    
     if (!reservationData) {
       return createResponse(false, '予約データが見つかりません');
     }
@@ -79,7 +81,15 @@ function writeToSheet(reservationData) {
     } = reservationData;
     
     // プログラム名と時間を結合してC列に記録
-    const programWithTime = timeSlot ? `${programName} (${timeSlot})` : programName;
+    // timeSlotが無効な場合はstart_timeとend_timeから生成を試行
+    let finalTimeSlot = timeSlot;
+    if (!timeSlot || timeSlot.includes('undefined')) {
+      if (start_time && end_time) {
+        finalTimeSlot = `${start_time.slice(0, 5)}-${end_time.slice(0, 5)}`;
+      }
+    }
+    
+    const programWithTime = finalTimeSlot ? `${programName} (${finalTimeSlot})` : programName;
     
     // スプレッドシートの列に合わせたデータ配列
     const rowData = [
@@ -103,6 +113,13 @@ function writeToSheet(reservationData) {
     };
     
     console.log('書き込みデータ:', rowData);
+    console.log('📊 時間情報確認:', {
+      originalTimeSlot: timeSlot,
+      start_time: start_time,
+      end_time: end_time,
+      finalTimeSlot: finalTimeSlot,
+      programWithTime: programWithTime
+    });
     
     // 最後の行の次に追加
     const lastRow = sheet.getLastRow();

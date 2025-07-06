@@ -80,7 +80,7 @@ export function BookingModal({
         ...formData,
         lineId: liffUserId,
         experienceDate: schedule.date,
-        timeSlot: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
+        timeSlot: `${(schedule.startTime || schedule.start_time)?.slice(0, 5)}-${(schedule.endTime || schedule.end_time)?.slice(0, 5)}`,
         programName: schedule.program?.name || 'プログラム',
         // GAS用に追加（formDataには既に含まれているが明示的に追加）
         customerNameKanji: formData.customerNameKanji,
