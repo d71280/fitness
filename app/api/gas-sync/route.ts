@@ -28,15 +28,27 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     
-    // GASに送信するデータ
+    // GASに送信するデータ（時間情報を含む）
     const gasData = {
-      予約入力日時: timestamp,
-      体験日: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
-      体験プログラム: (requestData as any)?.programName || '',
-      '名前（漢字）': (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
-      '名前（カタカナ）': (requestData as any)?.customerNameKatakana || '',
-      電話番号: (requestData as any)?.phone || '',
-      lineId: (requestData as any)?.lineId || ''  // LINE通知用
+      reservationData: {
+        // 基本情報
+        experienceDate: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
+        programName: (requestData as any)?.programName || '',
+        timeSlot: (requestData as any)?.timeSlot || '',
+        
+        // 顧客情報
+        customerNameKanji: (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
+        customerNameKatakana: (requestData as any)?.customerNameKatakana || '',
+        phone: (requestData as any)?.phone || '',
+        lineId: (requestData as any)?.lineId || '',
+        
+        // 時間情報（GAS側の期待する形式）
+        start_time: (requestData as any)?.start_time || '',
+        end_time: (requestData as any)?.end_time || '',
+        
+        // 追加データ
+        reservationDateTime: timestamp
+      }
     }
     
     console.log('📤 GAS送信データ:', gasData)

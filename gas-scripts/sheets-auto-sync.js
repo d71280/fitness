@@ -6,6 +6,10 @@
 // スプレッドシートIDを設定
 const SPREADSHEET_ID = '1fE2aimUZu7yGyswe5rGau27ehxuYnY85pI37x13b0Q4';
 
+// LINE設定（必要に応じて設定）
+const LINE_CHANNEL_ACCESS_TOKEN = 'YOUR_LINE_CHANNEL_ACCESS_TOKEN';
+const PERSONAL_LINE_ID = 'YOUR_PERSONAL_LINE_ID_HERE';
+
 /**
  * GET リクエスト処理（デバッグ用）
  */
@@ -131,7 +135,7 @@ function writeToSheet(reservationData) {
     
     console.log('✅ Google Sheets書き込み完了:', `行${targetRow}に追加`);
     
-    return {
+    const result = {
       success: true,
       message: `Google Sheetsに書き込み完了（行${targetRow}）`,
       rowNumber: targetRow,
@@ -139,6 +143,19 @@ function writeToSheet(reservationData) {
       sheetName: sheet.getName(),
       data: writeResultData
     };
+    
+    // LINE通知の送信
+    try {
+      console.log('📱 LINE通知処理開始');
+      const notificationResult = sendPersonalReservationNotification(reservationData, result);
+      console.log('📱 LINE通知結果:', JSON.stringify(notificationResult));
+      result.lineNotification = notificationResult;
+    } catch (notificationError) {
+      console.error('❌ LINE通知処理エラー:', notificationError);
+      result.lineNotificationError = notificationError.message;
+    }
+    
+    return result;
     
   } catch (error) {
     console.error('❌ Google Sheets書き込みエラー:', error);
@@ -282,4 +299,227 @@ function setupTrigger() {
     .create();
     
   console.log('✅ 1時間毎の定期実行トリガーを設定しました');
+}
+
+/**
+ * LINE通知関数
+ */
+function sendLineMessage(lineId, message) {
+  if (!LINE_CHANNEL_ACCESS_TOKEN || LINE_CHANNEL_ACCESS_TOKEN === 'YOUR_LINE_CHANNEL_ACCESS_TOKEN') {
+    console.log('⚠️ LINE_CHANNEL_ACCESS_TOKEN が設定されていません');
+    return { success: false, error: 'LINE設定が不完全です' };
+  }
+  
+  try {
+    const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LINE_CHANNEL_ACCESS_TOKEN}`
+      },
+      payload: JSON.stringify({
+        to: lineId,
+        messages: [{
+          type: 'text',
+          text: message
+        }]
+      })
+    });
+    
+    if (response.getResponseCode() === 200) {
+      console.log('✅ LINE通知送信成功');
+      return { success: true };
+    } else {
+      console.error('❌ LINE通知送信失敗:', response.getContentText());
+      return { success: false, error: response.getContentText() };
+    }
+  } catch (error) {
+    console.error('❌ LINE通知エラー:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =================================================================
+// 予約時間対応版：writeResult.dataをそのまま使用するLINE通知関数
+// =================================================================
+
+function sendPersonalReservationNotification(reservationData, writeResult) {
+  console.log('📱 個人通知送信開始（予約時間対応版）');
+  console.log('📱 writeResult:', JSON.stringify(writeResult));
+  
+  if (!LINE_CHANNEL_ACCESS_TOKEN || LINE_CHANNEL_ACCESS_TOKEN === 'YOUR_LINE_CHANNEL_ACCESS_TOKEN') {
+    console.error('❌ LINE_CHANNEL_ACCESS_TOKEN が設定されていません');
+    return { success: false, error: 'LINE設定が不完全です' };
+  }
+  
+  if (!writeResult || !writeResult.success || !writeResult.data) {
+    console.error('❌ writeResultが不正です');
+    return { success: false, error: 'writeResultが不正です' };
+  }
+  
+  try {
+    // writeResult.dataから直接取得（スプレッドシートに書き込まれたのと同じデータ）
+    const data = writeResult.data;
+    
+    console.log('📱 使用するデータ:', JSON.stringify(data));
+    
+    const customerName = data.nameKanji || '未設定';
+    const customerNameKana = data.nameKatakana || '未入力';
+    const experienceDate = data.experienceDate || '未設定';
+    const startTime = data.start_time || data.startTime || '未設定';  // 開始時間（スネークケース対応）
+    const endTime = data.end_time || data.endTime || '未設定';  // 終了時間（スネークケース対応）
+    const programName = data.experienceProgram || '未設定';
+    const phone = data.phoneNumber || '未登録';
+    const reservationDateTime = data.reservationDateTime || '未記録';
+    
+    // 体験時間の表示形式を作成（HH:MM形式に整形）
+    const formatTime = (time) => {
+      if (!time || time === '未設定') return time;
+      return time.slice(0, 5);  // "HH:MM:SS" -> "HH:MM"
+    };
+    
+    const experienceTimeDisplay = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+    
+    console.log('📱 抽出したデータ:');
+    console.log('  - 名前（漢字）:', customerName);
+    console.log('  - 名前（カタカナ）:', customerNameKana);
+    console.log('  - 体験日:', experienceDate);
+    console.log('  - 体験時間:', experienceTimeDisplay);
+    console.log('  - 体験プログラム:', programName);
+    console.log('  - 電話番号:', phone);
+    console.log('  - 予約入力日時:', reservationDateTime);
+    
+    // 個人用通知メッセージ
+    const personalMessage = `🎉 新しい予約が入りました！
+
+📋 予約詳細
+━━━━━━━━━━━━━━━━━━━━
+👤 名前（漢字）: ${customerName}
+👤 名前（カタカナ）: ${customerNameKana}
+📅 体験日: ${experienceDate}
+⏰ 体験時間: ${experienceTimeDisplay}
+🏃 体験プログラム: ${programName}
+📞 電話番号: ${phone}
+
+🆔 予約ID: ${writeResult.recordId}
+📊 行番号: ${writeResult.rowNumber}
+📝 受信時刻: ${reservationDateTime}
+━━━━━━━━━━━━━━━━━━━━
+💼 予約管理システムより自動送信`;
+
+    console.log('📱 作成されたメッセージ:');
+    console.log(personalMessage);
+
+    const results = [];
+    
+    // 個人（管理者）に通知送信
+    if (PERSONAL_LINE_ID && PERSONAL_LINE_ID !== 'YOUR_PERSONAL_ID_HERE') {
+      try {
+        console.log('📱 個人通知送信中...', PERSONAL_LINE_ID);
+        const personalResult = sendLineMessage(PERSONAL_LINE_ID, personalMessage);
+        results.push({ target: 'personal', result: personalResult });
+        console.log('✅ 個人通知送信完了');
+      } catch (error) {
+        console.error('❌ 個人通知送信失敗:', error);
+        results.push({ target: 'personal', error: error.message });
+      }
+    } else {
+      console.log('⚠️ 個人IDが設定されていません');
+      results.push({ target: 'personal', error: '個人ID未設定' });
+    }
+    
+    // 顧客確認メッセージ（LINE IDがある場合）
+    const customerLineId = reservationData.lineId || reservationData['lineId'] || reservationData.line_id;
+    if (customerLineId) {
+      console.log('📱 顧客LINE ID検出:', customerLineId);
+      const customerMessage = `✅ 予約が完了しました
+
+📋 ご予約内容
+━━━━━━━━━━━━━━━━━━━━
+👤 お名前: ${customerName}
+📅 体験日: ${experienceDate}
+⏰ 体験時間: ${experienceTimeDisplay}
+🏃 体験プログラム: ${programName}
+
+🆔 予約番号: ${writeResult.recordId}
+━━━━━━━━━━━━━━━━━━━━
+ご来店をお待ちしております！
+ご不明な点がございましたら、お気軽にお声かけください 😊`;
+
+      try {
+        const customerResult = sendLineMessage(customerLineId, customerMessage);
+        results.push({ target: 'customer', result: customerResult });
+        console.log('✅ 顧客確認メッセージ送信完了');
+      } catch (error) {
+        console.error('❌ 顧客確認メッセージ送信失敗:', error);
+        results.push({ target: 'customer', error: error.message });
+      }
+    } else {
+      console.log('📱 顧客LINE IDが見つかりませんでした');
+    }
+    
+    const finalResult = {
+      success: true,
+      results: results,
+      sentCount: results.filter(r => r.result && r.result.success).length,
+      usedData: {
+        customerName: customerName,
+        customerNameKana: customerNameKana,
+        experienceDate: experienceDate,
+        experienceTime: experienceTimeDisplay,
+        startTime: startTime,
+        endTime: endTime,
+        programName: programName,
+        phone: phone
+      }
+    };
+    
+    console.log('📱 最終通知結果:', JSON.stringify(finalResult));
+    return finalResult;
+    
+  } catch (error) {
+    console.error('❌ 通知処理でエラー:', error);
+    console.error('❌ エラー詳細:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+// =================================================================
+// テスト関数（予約時間を含むwriteResult.dataを使用）
+// =================================================================
+
+function testNotificationWithWriteResultData() {
+  console.log('🧪 writeResult.dataを使用したテスト開始（予約時間対応版）');
+  
+  // 実際のwriteResult.dataの構造に基づくテスト
+  const testWriteResult = {
+    success: true,
+    rowNumber: 2,
+    recordId: 'R250703192509',
+    sheetName: 'シート1',
+    data: {
+      reservationDateTime: '2025/07/03 19:25:09',
+      experienceDate: '2025-06-30',
+      start_time: '14:00:00',  // 開始時間（スネークケース）
+      end_time: '15:00:00',    // 終了時間（スネークケース）
+      experienceProgram: 'ピラティス',
+      nameKanji: 'あきやまさよ',
+      nameKatakana: 'アキヤマ',
+      phoneNumber: '2223'
+    }
+  };
+  
+  // reservationDataは空でもOK（writeResult.dataを使用するため）
+  const testReservationData = {};
+  
+  console.log('🧪 テスト用writeResult:', JSON.stringify(testWriteResult));
+  
+  try {
+    const result = sendPersonalReservationNotification(testReservationData, testWriteResult);
+    console.log('🧪 テスト結果:', JSON.stringify(result));
+    return result;
+  } catch (error) {
+    console.error('🧪 テスト失敗:', error);
+    return { success: false, error: error.message };
+  }
 }
