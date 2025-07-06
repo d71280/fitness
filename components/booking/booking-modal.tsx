@@ -94,13 +94,19 @@ export function BookingModal({
         
         console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
-        // 予約情報をURLパラメータで引き継ぐ
+        // 外部LIFFアプリへ直接リダイレクト
+        const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
         const params = new URLSearchParams({
-          id: result.id || '',
-          program: schedule.program?.name || 'プログラム',
+          follow: '@080larlo',
+          lp: 'tWteWL',
+          liff_id: '2006887302-vbBy55Qj',
+          // 予約情報も渡す
+          from_booking: 'true',
+          reservation_id: result.id || '',
+          program: schedule.program?.name || '',
           date: schedule.date || '',
           time: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
-          name: formData.customerNameKanji
+          customer_name: formData.customerNameKanji
         })
         
         // 成功時のUI処理
@@ -113,8 +119,17 @@ export function BookingModal({
           phone: '',
         })
         
-        // 予約完了ページへ遷移（LIFF環境を維持）
-        router.push(`/booking-success?${params.toString()}`)
+        // 直接外部LIFFアプリへリダイレクト
+        if (window.liff && window.liff.isInClient()) {
+          // LIFF環境内で開く
+          window.liff.openWindow({
+            url: `${targetUrl}?${params.toString()}`,
+            external: false
+          })
+        } else {
+          // 通常のブラウザで開く
+          window.location.href = `${targetUrl}?${params.toString()}`
+        }
       } else {
         // 明確な失敗の場合
         throw new Error(result?.error || '予約処理が失敗しました')
