@@ -65,8 +65,42 @@ function writeToSheet(reservationData) {
     const sheet = spreadsheet.getActiveSheet();
     
     // 書き込みデータを準備（B列から開始）
-    const { today, customerName, experienceDate, timeSlot, programName } = reservationData;
-    const rowData = [today, customerName, experienceDate, timeSlot, programName];
+    // スプレッドシートの列構成:
+    // B: 体験日, C: 体験プログラム, D: 名前（漢字）, E: 名前（カタカナ）, F: 電話番号
+    const { 
+      experienceDate, 
+      programName, 
+      timeSlot,
+      customerNameKanji,
+      customerNameKatakana,
+      phone,
+      start_time,
+      end_time
+    } = reservationData;
+    
+    // プログラム名と時間を結合してC列に記録
+    const programWithTime = timeSlot ? `${programName} (${timeSlot})` : programName;
+    
+    // スプレッドシートの列に合わせたデータ配列
+    const rowData = [
+      experienceDate,      // B列: 体験日
+      programWithTime,     // C列: 体験プログラム（時間付き）
+      customerNameKanji || reservationData.customerName || '', // D列: 名前（漢字）
+      customerNameKatakana || '',  // E列: 名前（カタカナ）
+      phone || ''          // F列: 電話番号
+    ];
+    
+    // 書き込み成功後のLINE通知用データを準備
+    const writeResultData = {
+      reservationDateTime: new Date().toLocaleString('ja-JP'),
+      experienceDate: experienceDate,
+      start_time: start_time,
+      end_time: end_time,
+      experienceProgram: programName,
+      nameKanji: customerNameKanji || reservationData.customerName || '',
+      nameKatakana: customerNameKatakana || '',
+      phoneNumber: phone || ''
+    };
     
     console.log('書き込みデータ:', rowData);
     
@@ -83,11 +117,10 @@ function writeToSheet(reservationData) {
     return {
       success: true,
       message: `Google Sheetsに書き込み完了（行${targetRow}）`,
-      data: {
-        row: targetRow,
-        data: rowData,
-        timestamp: new Date().toISOString()
-      }
+      rowNumber: targetRow,
+      recordId: `R${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}`,
+      sheetName: sheet.getName(),
+      data: writeResultData
     };
     
   } catch (error) {
@@ -104,11 +137,14 @@ function writeToSheet(reservationData) {
  */
 function testSheetWrite() {
   const testData = {
-    today: '2025/7/2',
-    customerName: 'GASテスト',
-    experienceDate: '2025/7/2',
+    experienceDate: '2025/7/6',
+    programName: 'ピラティス',
     timeSlot: '10:00-11:00',
-    programName: 'GASテストプログラム'
+    customerNameKanji: 'テスト太郎',
+    customerNameKatakana: 'テストタロウ',
+    phone: '090-1234-5678',
+    start_time: '10:00:00',
+    end_time: '11:00:00'
   };
   
   const result = writeToSheet(testData);

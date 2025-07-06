@@ -81,7 +81,18 @@ export function BookingModal({
         lineId: liffUserId,
         experienceDate: schedule.date,
         timeSlot: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
-        programName: schedule.program?.name || 'プログラム'
+        programName: schedule.program?.name || 'プログラム',
+        // GAS用に追加（formDataには既に含まれているが明示的に追加）
+        customerNameKanji: formData.customerNameKanji,
+        customerNameKatakana: formData.customerNameKatakana,
+        phone: formData.phone,
+        // GASの時間処理用に追加
+        start_time: schedule.startTime || schedule.start_time,
+        end_time: schedule.endTime || schedule.end_time,
+        experienceProgram: schedule.program?.name || 'プログラム',
+        nameKanji: formData.customerNameKanji,
+        nameKatakana: formData.customerNameKatakana,
+        phoneNumber: formData.phone
       }
       
       console.log('📝 予約データ送信開始:', reservationData)
