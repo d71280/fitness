@@ -39,6 +39,13 @@ export async function POST(request: NextRequest) {
     const lineClient = new LineMessagingClient()
     
     // 予約情報を取得
+    if (!reservationId) {
+      return NextResponse.json({
+        success: false,
+        message: '予約IDが指定されていません'
+      }, { status: 400 })
+    }
+    
     const { data: reservation, error } = await supabase
       .from('reservations')
       .select(`
@@ -153,6 +160,9 @@ export async function GET(request: NextRequest) {
     // 最新の予約でテスト実行
     const testRequest = new NextRequest(request.url, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         reservationId: latestReservation.id,
         hoursBeforeClass: 24 // デフォルトは24時間前
@@ -160,7 +170,16 @@ export async function GET(request: NextRequest) {
     })
     
     const result = await POST(testRequest)
-    const resultData = await result.json()
+    let resultData
+    try {
+      resultData = await result.json()
+    } catch (parseError) {
+      return NextResponse.json({
+        success: false,
+        message: 'テスト実行中にレスポンス解析エラーが発生しました',
+        error: parseError instanceof Error ? parseError.message : String(parseError)
+      }, { status: 500 })
+    }
     
     return NextResponse.json({
       ...resultData,

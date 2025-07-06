@@ -32,7 +32,18 @@ export default function TestReminderPage() {
         })
       })
       
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        setResult({
+          success: false,
+          message: 'サーバーからの応答の解析に失敗しました',
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          status: response.status
+        })
+        return
+      }
       setResult({ ...data, status: response.status })
     } catch (error) {
       setResult({
@@ -52,7 +63,18 @@ export default function TestReminderPage() {
     
     try {
       const response = await fetch('/api/test-reminder')
-      const data = await response.json()
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        setResult({
+          success: false,
+          message: 'サーバーからの応答の解析に失敗しました',
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          status: response.status
+        })
+        return
+      }
       setResult({ ...data, status: response.status })
     } catch (error) {
       setResult({
