@@ -22,7 +22,7 @@ export default function BookingSuccessPage() {
   const customerName = searchParams.get('name')
   
   // 自動リダイレクト処理
-  const performRedirect = () => {
+  const performRedirect = async () => {
     const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
     const params = new URLSearchParams({
       follow: '@080larlo',
