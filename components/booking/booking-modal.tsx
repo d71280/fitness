@@ -2,6 +2,7 @@
 // @ts-nocheck
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +26,7 @@ export function BookingModal({
   onSubmit,
   liffUserId 
 }: BookingModalProps) {
+  const router = useRouter()
   const [formData, setFormData] = useState<CreateReservationData>({
     scheduleId: 0,
     customerNameKanji: '',
@@ -92,6 +94,15 @@ export function BookingModal({
         
         console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
+        // 予約情報をURLパラメータで引き継ぐ
+        const params = new URLSearchParams({
+          id: result.id || '',
+          program: schedule.program?.name || 'プログラム',
+          date: schedule.date || '',
+          time: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
+          name: formData.customerNameKanji
+        })
+        
         // 成功時のUI処理
         onClose()
         setFormData({
@@ -101,7 +112,9 @@ export function BookingModal({
           lineId: '',
           phone: '',
         })
-        alert('予約が完了しました！LINEに確認メッセージをお送りします。')
+        
+        // 予約完了ページへ遷移（LIFF環境を維持）
+        router.push(`/booking-success?${params.toString()}`)
       } else {
         // 明確な失敗の場合
         throw new Error(result?.error || '予約処理が失敗しました')

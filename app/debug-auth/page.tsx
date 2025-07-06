@@ -93,6 +93,7 @@ export default function AuthDebugPage() {
   const testGoogleAuth = async () => {
     try {
       const supabase = createClient()
+      
       const redirectUrl = `${window.location.origin}/auth/callback?next=%2Fdashboard`
       
       console.log('Testing Google auth with redirect:', redirectUrl)
