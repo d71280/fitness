@@ -29,29 +29,46 @@ function doPost(e) {
   try {
     console.log('📝 予約データWebhook受信:', e);
     
-    // リクエストデータの取得方法を改善
-    let data;
+    // リクエストデータの取得
+    let reservationData;
     if (e && e.postData && e.postData.contents) {
-      data = JSON.parse(e.postData.contents);
+      reservationData = JSON.parse(e.postData.contents);
     } else if (e && e.parameter) {
-      data = e.parameter;
+      reservationData = e.parameter;
     } else {
       throw new Error('リクエストデータが取得できません');
     }
     
-    console.log('解析済みデータ:', data);
-    const { reservationData } = data;
-    
-    console.log('📊 予約データ詳細:', JSON.stringify(reservationData));
+    console.log('📊 受信した予約データ:', JSON.stringify(reservationData));
     
     if (!reservationData) {
       return createResponse(false, '予約データが見つかりません');
     }
     
-    // Google Sheetsに書き込み
-    const result = writeToSheet(reservationData);
+    // 新しいwriteToSpreadsheet関数を使用
+    const writeResult = writeToSpreadsheet(reservationData);
     
-    return createResponse(result.success, result.message, result.data);
+    if (writeResult.success) {
+      // LINE通知の送信
+      try {
+        console.log('📱 LINE通知処理開始');
+        const notificationResult = sendPersonalReservationNotification(reservationData, writeResult);
+        console.log('📱 LINE通知結果:', JSON.stringify(notificationResult));
+        
+        return createResponse(true, 'スプレッドシート書き込みとLINE通知が完了しました', {
+          writeResult: writeResult,
+          notificationResult: notificationResult
+        });
+      } catch (notificationError) {
+        console.error('❌ LINE通知処理エラー:', notificationError);
+        return createResponse(true, 'スプレッドシート書き込み完了、LINE通知エラー', {
+          writeResult: writeResult,
+          notificationError: notificationError.message
+        });
+      }
+    } else {
+      return createResponse(false, writeResult.error || 'スプレッドシート書き込み失敗');
+    }
     
   } catch (error) {
     console.error('❌ Webhook処理エラー:', error);
@@ -59,8 +76,100 @@ function doPost(e) {
   }
 }
 
+// =================================================================
+// スプレッドシート書き込み関数（新バージョン）
+// =================================================================
+
+function writeToSpreadsheet(reservationData) {
+  console.log('📊 スプレッドシート書き込み開始');
+  console.log('📊 書き込みデータ:', JSON.stringify(reservationData));
+  
+  try {
+    // スプレッドシートIDを取得
+    const SPREADSHEET_ID = PropertiesService.getScriptProperties().getProperty('NEXT_PUBLIC_GOOGLE_SPREADSHEET_ID') || '1fE2aimUZu7yGyswe5rGau27ehxuYnY85pI37x13b0Q4';
+    
+    if (!SPREADSHEET_ID) {
+      console.error('❌ SPREADSHEET_ID が設定されていません');
+      return { success: false, error: 'スプレッドシートIDが未設定' };
+    }
+    
+    console.log('📊 スプレッドシートID:', SPREADSHEET_ID);
+    
+    // スプレッドシートを開く
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = spreadsheet.getActiveSheet();
+    
+    console.log('📊 シート名:', sheet.getName());
+    
+    // 予約IDを生成
+    const recordId = 'R' + new Date().toISOString().replace(/[-:T.]/g, '').substring(0, 14);
+    
+    // 書き込むデータを準備
+    const dataToWrite = {
+      reservationDateTime: reservationData.reservationDateTime || new Date().toLocaleString('ja-JP'),
+      experienceDate: reservationData.experienceDate || '',
+      timeSlot: reservationData.timeSlot || '',
+      start_time: reservationData.start_time || '',
+      end_time: reservationData.end_time || '',
+      experienceProgram: reservationData.programName || '',
+      nameKanji: reservationData.customerNameKanji || '',
+      nameKatakana: reservationData.customerNameKatakana || '',
+      phoneNumber: reservationData.phone || ''
+    };
+    
+    console.log('📊 書き込み用データ:', JSON.stringify(dataToWrite));
+    
+    // 次の空行を取得
+    const lastRow = sheet.getLastRow();
+    const nextRow = lastRow + 1;
+    
+    console.log('📊 書き込み行:', nextRow);
+    
+    // 既存のスプレッドシート構造に合わせて書き込み（B列から開始）
+    // 既存の列構造: B=体験日, C=体験プログラム(時間付き), D=名前(漢字), E=名前(カタカナ), F=電話番号
+    
+    // 体験時間を組み合わせ
+    const experienceTime = reservationData.timeSlot || 
+                          (reservationData.start_time && reservationData.end_time ? 
+                           `${reservationData.start_time.slice(0, 5)}-${reservationData.end_time.slice(0, 5)}` : '') ||
+                          reservationData.start_time || '';
+    
+    // プログラム名と時間を結合（既存の形式に合わせる）
+    const programWithTime = experienceTime ? `${dataToWrite.experienceProgram} (${experienceTime})` : dataToWrite.experienceProgram;
+    
+    // データを書き込み（B列からF列に書き込み）
+    const rowData = [
+      dataToWrite.experienceDate,      // B列: 体験日
+      programWithTime,                 // C列: 体験プログラム（時間付き）
+      dataToWrite.nameKanji,          // D列: 名前（漢字）
+      dataToWrite.nameKatakana,       // E列: 名前（カタカナ）
+      dataToWrite.phoneNumber         // F列: 電話番号
+    ];
+    
+    // B列(2)から5列分に書き込み
+    sheet.getRange(nextRow, 2, 1, 5).setValues([rowData]);
+    
+    console.log('✅ スプレッドシート書き込み完了');
+    
+    const result = {
+      success: true,
+      rowNumber: nextRow,
+      recordId: recordId,
+      sheetName: sheet.getName(),
+      data: dataToWrite
+    };
+    
+    console.log('📊 書き込み結果:', JSON.stringify(result));
+    return result;
+    
+  } catch (error) {
+    console.error('❌ スプレッドシート書き込みエラー:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 /**
- * Google Sheetsに予約データを書き込み
+ * Google Sheetsに予約データを書き込み（旧バージョン - 互換性のため残す）
  */
 function writeToSheet(reservationData) {
   try {

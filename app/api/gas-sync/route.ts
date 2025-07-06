@@ -28,40 +28,38 @@ export async function POST(request: NextRequest) {
     const now = new Date()
     const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     
-    // GASに送信するデータ（時間情報を含む）
-    const gasData = {
-      reservationData: {
-        // 基本情報
-        experienceDate: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
-        programName: (requestData as any)?.programName || '',
-        timeSlot: (requestData as any)?.timeSlot || '',
-        
-        // 顧客情報
-        customerNameKanji: (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
-        customerNameKatakana: (requestData as any)?.customerNameKatakana || '',
-        phone: (requestData as any)?.phone || '',
-        lineId: (requestData as any)?.lineId || '',
-        
-        // 時間情報（GAS側の期待する形式）
-        start_time: (requestData as any)?.start_time || '',
-        end_time: (requestData as any)?.end_time || '',
-        
-        // 追加データ
-        reservationDateTime: timestamp
-      }
+    // 新しいGASコードに合わせたデータ形式
+    const reservationData = {
+      // 基本情報
+      experienceDate: (requestData as any)?.experienceDate || new Date().toLocaleDateString('ja-JP'),
+      programName: (requestData as any)?.programName || '',
+      timeSlot: (requestData as any)?.timeSlot || '',
+      
+      // 顧客情報
+      customerNameKanji: (requestData as any)?.customerNameKanji || (requestData as any)?.customerName || '',
+      customerNameKatakana: (requestData as any)?.customerNameKatakana || '',
+      phone: (requestData as any)?.phone || '',
+      lineId: (requestData as any)?.lineId || '',
+      
+      // 時間情報（GAS側の期待する形式）
+      start_time: (requestData as any)?.start_time || '',
+      end_time: (requestData as any)?.end_time || '',
+      
+      // 追加データ
+      reservationDateTime: timestamp
     }
     
-    console.log('📤 GAS送信データ:', gasData)
+    console.log('📤 GAS送信データ:', reservationData)
     console.log('📡 送信先URL:', gasWebhookUrl)
-    console.log('🔍 送信JSONサイズ:', JSON.stringify(gasData).length, 'bytes')
+    console.log('🔍 送信JSONサイズ:', JSON.stringify(reservationData).length, 'bytes')
     
-    // GASに送信（シンプル版）
+    // GASに送信（新しいwriteToSpreadsheet関数対応）
     const response = await fetch(gasWebhookUrl, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(gasData)
+      body: JSON.stringify(reservationData)
     })
     
     console.log('📡 GAS応答ステータス:', response.status)
@@ -74,7 +72,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'GAS同期が成功しました',
         gasResponse: responseText,
-        sentData: gasData
+        sentData: reservationData
       })
     } else {
       const errorText = await response.text().catch(() => 'レスポンス読み込み失敗')
