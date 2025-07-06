@@ -12,6 +12,38 @@ import { MessageSquare, Clock, Plus, Trash2, TestTube, Save, Mail } from 'lucide
 import type { MessageSettings, ReminderSchedule } from '@/lib/message-templates'
 
 export default function MessagesPage() {
+  // エラーダイアログを検出するためのグローバルエラーハンドラー
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('🚨 グローバルエラー検出:', event)
+      if (event.message && event.message.includes('リマインダストップ')) {
+        console.error('🔍 リマインダストップエラーの詳細:', {
+          message: event.message,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
+          error: event.error,
+          stack: event.error?.stack
+        })
+      }
+    }
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('🚨 未処理のPromise拒否:', event)
+      if (event.reason && String(event.reason).includes('リマインダストップ')) {
+        console.error('🔍 リマインダストップPromise拒否の詳細:', event.reason)
+      }
+    }
+
+    window.addEventListener('error', handleError)
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', handleError)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+    }
+  }, [])
+
   const [messageSettings, setMessageSettings] = useState({
     bookingConfirmation: {
       enabled: true,
