@@ -12,6 +12,7 @@ export default function BookingSuccessPage() {
   const searchParams = useSearchParams()
   const [liffProfile, setLiffProfile] = useState<any>(null)
   const [isLiffInitialized, setIsLiffInitialized] = useState(false)
+  const [countdown, setCountdown] = useState(3) // 3秒カウントダウン
   
   // URLパラメータから予約情報を取得
   const reservationId = searchParams.get('id')
@@ -19,6 +20,27 @@ export default function BookingSuccessPage() {
   const date = searchParams.get('date')
   const time = searchParams.get('time')
   const customerName = searchParams.get('name')
+  
+  // 自動リダイレクト処理
+  const performRedirect = () => {
+    const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
+    const params = new URLSearchParams({
+      follow: '@080larlo',
+      lp: 'tWteWL',
+      liff_id: '2006887302-vbBy55Qj',
+      from_booking: 'true',
+      reservation_id: reservationId || ''
+    })
+    
+    if (window.liff && window.liff.isInClient()) {
+      window.liff.openWindow({
+        url: `${targetUrl}?${params.toString()}`,
+        external: false
+      })
+    } else {
+      window.location.href = `${targetUrl}?${params.toString()}`
+    }
+  }
   
   useEffect(() => {
     // LIFF初期化と認証状態確認
@@ -44,6 +66,19 @@ export default function BookingSuccessPage() {
     
     initializeLiff()
   }, [])
+  
+  // カウントダウンと自動リダイレクト
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      // カウントダウン終了後にリダイレクト
+      performRedirect()
+    }
+  }, [countdown])
   
   // 日付フォーマット
   const formatDateJp = (dateStr: string | null) => {
@@ -119,6 +154,23 @@ export default function BookingSuccessPage() {
           </CardContent>
         </Card>
         
+        {/* 自動リダイレクト通知 */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+          <p className="text-sm font-medium text-blue-900 mb-2">
+            {countdown}秒後に自動的にページが切り替わります
+          </p>
+          <div className="flex justify-center gap-1">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  i < (3 - countdown) ? 'bg-blue-600' : 'bg-blue-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+        
         {/* 注意事項 */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h3 className="font-medium text-blue-900 mb-2">ご予約にあたって</h3>
@@ -131,35 +183,16 @@ export default function BookingSuccessPage() {
         
         {/* アクションボタン */}
         <div className="space-y-3">
-          {/* メインCTA: 外部LIFFアプリへ */}
+          {/* メインCTA: 外部LIFFアプリへ（すぐに移動） */}
           <Button
             className="w-full"
             variant="default"
             size="lg"
             onClick={() => {
-              const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
-              const params = new URLSearchParams({
-                follow: '@080larlo',
-                lp: 'tWteWL',
-                liff_id: '2006887302-vbBy55Qj',
-                // 予約情報も渡す
-                from_booking: 'true',
-                reservation_id: reservationId || ''
-              })
-              
-              if (window.liff && window.liff.isInClient()) {
-                // LIFF環境内で開く
-                window.liff.openWindow({
-                  url: `${targetUrl}?${params.toString()}`,
-                  external: false
-                })
-              } else {
-                // 通常のブラウザで開く
-                window.location.href = `${targetUrl}?${params.toString()}`
-              }
+              setCountdown(0) // カウントダウンを0にして即座にリダイレクト
             }}
           >
-            次へ進む
+            今すぐ次へ進む
           </Button>
           
           <Link href="/schedule" className="block">
