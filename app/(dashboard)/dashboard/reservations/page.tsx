@@ -320,12 +320,7 @@ export default function ReservationsCustomersPage() {
                                 </div>
                                 <div className="flex items-center gap-1 font-medium text-blue-600">
                                   <Clock className="w-3 h-3" />
-                                  {console.log('Time debug:', { 
-                                    startTime: reservation.schedule?.startTime,
-                                    endTime: reservation.schedule?.endTime,
-                                    schedule: reservation.schedule
-                                  })}
-                                  {reservation.schedule?.startTime?.slice(0, 5)} - {reservation.schedule?.endTime?.slice(0, 5)}
+                                  {(reservation.schedule?.start_time || reservation.schedule?.startTime)?.slice(0, 5)} - {(reservation.schedule?.end_time || reservation.schedule?.endTime)?.slice(0, 5)}
                                 </div>
                                 <div className="text-gray-600">
                                   プログラム: {reservation.schedule?.program?.name || '不明'}
@@ -421,7 +416,7 @@ export default function ReservationsCustomersPage() {
             <div className="bg-gray-50 p-4 rounded mb-6">
               <div className="text-sm">
                 <div><strong>予約者:</strong> {selectedReservation.customer?.name}</div>
-                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {(selectedReservation.schedule?.startTime || selectedReservation.schedule?.start_time)?.slice(0, 5)}-{(selectedReservation.schedule?.endTime || selectedReservation.schedule?.end_time)?.slice(0, 5)}</div>
+                <div><strong>日時:</strong> {selectedReservation.schedule?.date} {(selectedReservation.schedule?.start_time || selectedReservation.schedule?.startTime)?.slice(0, 5)}-{(selectedReservation.schedule?.end_time || selectedReservation.schedule?.endTime)?.slice(0, 5)}</div>
                 <div><strong>プログラム:</strong> {selectedReservation.schedule?.program?.name}</div>
               </div>
             </div>
