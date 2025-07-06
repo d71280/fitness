@@ -125,8 +125,8 @@ function writeToSpreadsheet(reservationData) {
     
     console.log('📊 書き込み行:', nextRow);
     
-    // 既存のスプレッドシート構造に合わせて書き込み（B列から開始）
-    // 既存の列構造: B=体験日, C=体験プログラム(時間付き), D=名前(漢字), E=名前(カタカナ), F=電話番号
+    // 新しいスプレッドシート構造に合わせて書き込み（A列から開始）
+    // 新しい列構造: A=予約入力日時, B=体験日, C=体験時間, D=体験プログラム, E=名前(漢字), F=名前(カタカナ), G=電話番号
     
     // 体験時間を組み合わせ
     const experienceTime = reservationData.timeSlot || 
@@ -134,20 +134,19 @@ function writeToSpreadsheet(reservationData) {
                            `${reservationData.start_time.slice(0, 5)}-${reservationData.end_time.slice(0, 5)}` : '') ||
                           reservationData.start_time || '';
     
-    // プログラム名と時間を結合（既存の形式に合わせる）
-    const programWithTime = experienceTime ? `${dataToWrite.experienceProgram} (${experienceTime})` : dataToWrite.experienceProgram;
-    
-    // データを書き込み（B列からF列に書き込み）
+    // データを書き込み（A列からG列に書き込み）
     const rowData = [
-      dataToWrite.experienceDate,      // B列: 体験日
-      programWithTime,                 // C列: 体験プログラム（時間付き）
-      dataToWrite.nameKanji,          // D列: 名前（漢字）
-      dataToWrite.nameKatakana,       // E列: 名前（カタカナ）
-      dataToWrite.phoneNumber         // F列: 電話番号
+      dataToWrite.reservationDateTime,  // A列: 予約入力日時
+      dataToWrite.experienceDate,       // B列: 体験日
+      experienceTime,                   // C列: 体験時間
+      dataToWrite.experienceProgram,    // D列: 体験プログラム
+      dataToWrite.nameKanji,           // E列: 名前（漢字）
+      dataToWrite.nameKatakana,        // F列: 名前（カタカナ）
+      dataToWrite.phoneNumber          // G列: 電話番号
     ];
     
-    // B列(2)から5列分に書き込み
-    sheet.getRange(nextRow, 2, 1, 5).setValues([rowData]);
+    // A列(1)から7列分に書き込み
+    sheet.getRange(nextRow, 1, 1, 7).setValues([rowData]);
     
     console.log('✅ スプレッドシート書き込み完了');
     
