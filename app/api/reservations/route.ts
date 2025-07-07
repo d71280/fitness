@@ -147,11 +147,12 @@ export async function POST(request: NextRequest) {
 
       let customer
       if (existingCustomer) {
-        // 既存顧客の場合は、名前と最終予約日を更新
+        // 既存顧客の場合は、名前、LINE ID、最終予約日を更新
         const { data: updatedCustomer, error: updateError } = await supabase
           .from('customers')
           .update({
             name: `${customerNameKanji} (${customerNameKatakana})`,
+            line_id: lineId && lineId.trim() !== '' ? lineId : existingCustomer.line_id, // LINE IDも更新
             phone: phone,
             last_booking_date: new Date().toISOString(),
           })
