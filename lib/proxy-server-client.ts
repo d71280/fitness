@@ -35,10 +35,10 @@ export class ProxyServerClient {
   constructor() {
     this.apiUrl = process.env.PROXY_SERVER_URL || ''
     this.apiKey = process.env.PROXY_SERVER_API_KEY || ''
-    this.enabled = !!this.apiUrl && !!this.apiKey
+    this.enabled = !!this.apiUrl // API キーは必須ではない
     
     if (!this.enabled && process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ PROXY_SERVER_URL or PROXY_SERVER_API_KEY environment variable is not set')
+      console.warn('⚠️ PROXY_SERVER_URL environment variable is not set')
     }
   }
 
@@ -56,12 +56,18 @@ export class ProxyServerClient {
         }
       }
 
-      const response = await axios.post(`${this.apiUrl}/api/messages`, message, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'FitnessBookingSystem/1.0'
-        },
+      const headers: any = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'FitnessBookingSystem/1.0'
+      }
+      
+      // APIキーが設定されている場合のみ追加
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
+
+      const response = await axios.post(this.apiUrl, message, {
+        headers,
         timeout: 15000
       })
 
@@ -184,10 +190,13 @@ export class ProxyServerClient {
         return true // 開発モードでは常にOK
       }
 
+      const headers: any = {}
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
+
       const response = await axios.get(`${this.apiUrl}/health`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         timeout: 5000
       })
 
@@ -210,10 +219,13 @@ export class ProxyServerClient {
         return { healthy: true, messageCount: 0 }
       }
 
+      const headers: any = {}
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`
+      }
+
       const response = await axios.get(`${this.apiUrl}/api/status`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        },
+        headers,
         timeout: 5000
       })
 
