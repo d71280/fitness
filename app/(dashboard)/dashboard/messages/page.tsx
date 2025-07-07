@@ -142,20 +142,25 @@ export default function MessagesPage() {
     }
 
     try {
+      const payload = {
+        action: 'addReminderSchedule',
+        schedule: newSchedule
+      }
+      console.log('📤 カスタムスケジュール追加リクエスト:', payload)
+
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          action: 'addReminderSchedule',
-          schedule: newSchedule
-        })
+        body: JSON.stringify(payload)
       })
       
       const data = await response.json()
+      console.log('📥 カスタムスケジュール追加レスポンス:', data)
       
       if (data.success) {
+        alert('カスタムリマインドスケジュールが追加されました')
         await loadSettings()
         setIsAddModalOpen(false)
         setNewSchedule({
@@ -165,13 +170,13 @@ export default function MessagesPage() {
           timingHours: 1,
           messageTemplate: ''
         })
-        alert('リマインドスケジュールが追加されました')
       } else {
-        alert(`追加に失敗しました: ${data.error}`)
+        console.error('❌ カスタムスケジュール追加失敗:', data)
+        alert(`追加に失敗しました: ${data.error}${data.details ? '\n詳細: ' + JSON.stringify(data.details) : ''}`)
       }
     } catch (error) {
-      console.error('スケジュール追加エラー:', error)
-      alert('スケジュールの追加でエラーが発生しました')
+      console.error('❌ カスタムスケジュール追加エラー:', error)
+      alert('スケジュールの追加でエラーが発生しました: ' + (error instanceof Error ? error.message : String(error)))
     }
   }
 

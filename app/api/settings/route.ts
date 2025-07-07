@@ -195,28 +195,36 @@ export async function POST(request: NextRequest) {
     }
     
     if (action === 'addReminderSchedule') {
-      const validatedSchedule = reminderScheduleSchema.parse(schedule)
+      console.log('📝 カスタムリマインドスケジュール追加開始:', schedule)
       
-      const settings = getMessageSettings()
+      try {
+        const validatedSchedule = reminderScheduleSchema.parse(schedule)
+        console.log('✅ スケジュールバリデーション成功:', validatedSchedule)
       
-      // IDの重複チェック
-      const allSchedules = [...settings.reminder.schedules, ...settings.reminder.customSchedules]
-      if (allSchedules.some(s => s.id === validatedSchedule.id)) {
-        return NextResponse.json(
-          { 
-            success: false,
-            error: 'このIDは既に使用されています' 
-          },
-          { status: 400 }
-        )
-      }
-      
-      // カスタムスケジュールに追加
-      settings.reminder.customSchedules.push(validatedSchedule)
-      
-      const success = saveMessageSettings(settings)
-      
-      if (!success) {
+        const settings = getMessageSettings()
+        console.log('📖 現在の設定:', settings)
+        
+        // IDの重複チェック
+        const allSchedules = [...settings.reminder.schedules, ...settings.reminder.customSchedules]
+        if (allSchedules.some(s => s.id === validatedSchedule.id)) {
+          console.log('❌ ID重複エラー:', validatedSchedule.id)
+          return NextResponse.json(
+            { 
+              success: false,
+              error: 'このIDは既に使用されています' 
+            },
+            { status: 400 }
+          )
+        }
+        
+        // カスタムスケジュールに追加
+        settings.reminder.customSchedules.push(validatedSchedule)
+        console.log('📝 スケジュール追加後:', settings.reminder.customSchedules)
+        
+        const success = saveMessageSettings(settings)
+        console.log('💾 保存結果:', success)
+        
+        if (!success) {
         return NextResponse.json(
           { 
             success: false,
@@ -226,11 +234,35 @@ export async function POST(request: NextRequest) {
         )
       }
       
-      return NextResponse.json({
-        success: true,
-        message: 'リマインドスケジュールが追加されました',
-        schedule: validatedSchedule
-      })
+        return NextResponse.json({
+          success: true,
+          message: 'リマインドスケジュールが追加されました',
+          schedule: validatedSchedule
+        })
+        
+      } catch (scheduleError) {
+        console.error('❌ カスタムスケジュール追加エラー:', scheduleError)
+        
+        if (scheduleError instanceof z.ZodError) {
+          return NextResponse.json(
+            { 
+              success: false,
+              error: '入力データが無効です',
+              details: scheduleError.errors
+            },
+            { status: 400 }
+          )
+        }
+        
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'スケジュールの追加に失敗しました',
+            details: scheduleError instanceof Error ? scheduleError.message : String(scheduleError)
+          },
+          { status: 500 }
+        )
+      }
     }
     
     return NextResponse.json(
