@@ -8,6 +8,7 @@ const createRecurringScheduleSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   programId: z.number(),
+  instructorId: z.number().optional(),
   capacity: z.number(),
   repeatWeeks: z.number().min(1).max(52),
   daysOfWeek: z.array(z.number().min(0).max(6)),
@@ -31,6 +32,7 @@ export async function POST(request: NextRequest) {
           start_time: data.startTime,
           end_time: data.endTime,
           program_id: data.programId,
+          instructor_id: data.instructorId || 1, // デフォルトインストラクター
           studio_id: 1,
           capacity: data.capacity,
         })
