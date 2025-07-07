@@ -296,6 +296,14 @@ export async function POST(request: NextRequest) {
               
             // 設定されたメッセージテンプレートを使用
             const messageSettings = getMessageSettings()
+            console.log('📖 使用する予約完了メッセージテンプレート:', messageSettings.bookingConfirmation.textMessage)
+            console.log('📊 置換データ:', {
+              date: schedule.date,
+              time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
+              program: schedule.program.name,
+              instructor: schedule.instructor?.name || 'スタッフ',
+              studio: schedule.studio?.name || 'スタジオ'
+            })
             const messageText = processMessageTemplate(
               messageSettings.bookingConfirmation.textMessage,
               {
@@ -306,6 +314,7 @@ export async function POST(request: NextRequest) {
                 studio: schedule.studio?.name || 'スタジオ'
               }
             )
+            console.log('📝 処理後のメッセージ:', messageText)
             
             console.log('送信メッセージ:', messageText)
               

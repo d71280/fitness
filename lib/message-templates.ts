@@ -58,11 +58,18 @@ export interface MessageSettings {
 }
 
 export function getMessageSettings(): MessageSettings {
+  // Vercel環境ではキャッシュされた設定を優先的に使用
+  if (global.cachedMessageSettings) {
+    console.log('💾 キャッシュからメッセージ設定を読み込み')
+    return global.cachedMessageSettings
+  }
+  
   try {
     const settingsPath = path.join(process.cwd(), 'message-settings.json')
     
     if (fs.existsSync(settingsPath)) {
       const content = fs.readFileSync(settingsPath, 'utf8')
+      console.log('📁 ファイルからメッセージ設定を読み込み')
       return JSON.parse(content)
     }
   } catch (error) {

@@ -134,9 +134,12 @@ export default function MessagesPage() {
       console.log('📥 サーバーレスポンス:', result)
       
       if (result.success) {
+        console.log('✅ 保存成功、再読み込み前のstate:', messageSettings)
         alert('設定が保存されました')
         // 保存後にデータを再読み込み
+        console.log('🔄 設定再読み込み開始...')
         await loadSettings()
+        console.log('🔄 設定再読み込み完了')
       } else {
         alert(`設定保存に失敗しました: ${result.error}`)
       }
