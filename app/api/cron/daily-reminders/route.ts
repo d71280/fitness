@@ -67,36 +67,25 @@ export async function GET(request: NextRequest) {
         targetDateTime.setHours(targetDateTime.getHours() + schedule.timingHours)
         
         const targetDate = targetDateTime.toISOString().split('T')[0] // YYYY-MM-DD
-        const targetHour = targetDateTime.getHours()
         
         console.log(`🎯 ターゲット日時: ${targetDateTime.toISOString()} (JST: ${targetDateTime.toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'})})`)
-        console.log(`📅 対象日: ${targetDate}, 対象時間帯: ${targetHour}時台`)
+        console.log(`📅 対象日: ${targetDate}`)
 
         try {
-          // 対象時間帯の予約を取得
-          // まずスケジュールを取得してから予約を取得
-          // 少し幅を広げて検索（15分前後の余裕を持たせる）
-          const startHour = Math.max(0, targetHour - 1)
-          const endHour = Math.min(23, targetHour + 1)
-          
+          // 対象日の全スケジュールを取得（時間帯の制限を削除）
           const { data: schedules, error: scheduleError } = await supabase
             .from('schedules')
             .select('id, date, start_time')
             .eq('date', targetDate)
-            .gte('start_time', `${startHour.toString().padStart(2, '0')}:00:00`)
-            .lt('start_time', `${(endHour + 1).toString().padStart(2, '0')}:00:00`)
           
-          console.log(`🔍 検索範囲を拡大: ${startHour}:00 - ${endHour + 1}:00`)
+          console.log(`🔍 対象日の全スケジュール取得: ${targetDate}`)
 
           if (scheduleError) {
             console.error('スケジュール取得エラー:', {
               error: scheduleError,
               targetDate,
-              targetHour,
               query: {
-                date: targetDate,
-                start_time_gte: `${targetHour.toString().padStart(2, '0')}:00:00`,
-                start_time_lt: `${(targetHour + 1).toString().padStart(2, '0')}:00:00`
+                date: targetDate
               }
             })
             throw scheduleError
@@ -104,9 +93,10 @@ export async function GET(request: NextRequest) {
 
           const scheduleIds = schedules?.map(s => s.id) || []
           console.log(`📅 対象スケジュールID: ${scheduleIds.join(', ')}`)
+          console.log(`📅 対象スケジュール詳細:`, schedules?.map(s => `${s.id}:${s.start_time}`).join(', '))
 
           if (scheduleIds.length === 0) {
-            console.log('対象時間帯のスケジュールがありません')
+            console.log('対象日のスケジュールがありません')
             continue
           }
 
@@ -127,8 +117,7 @@ export async function GET(request: NextRequest) {
 
           console.log(`🔍 データベースクエリ実行完了`)
           console.log(`   - 対象日: ${targetDate}`)
-          console.log(`   - 開始時間範囲: ${targetHour.toString().padStart(2, '0')}:00:00 以上`)
-          console.log(`   - 終了時間範囲: ${(targetHour + 1).toString().padStart(2, '0')}:00:00 未満`)
+          console.log(`   - 対象スケジュール数: ${scheduleIds.length}`)
 
           if (error) {
             console.error('予約取得エラー:', {
@@ -145,7 +134,7 @@ export async function GET(request: NextRequest) {
           console.log(`📊 クエリ結果: ${reservations?.length || 0}件の予約`)
           if (reservations && reservations.length > 0) {
             reservations.forEach((res, index) => {
-              console.log(`   ${index + 1}. 予約ID: ${res.id}, 顧客: ${res.customer?.name}, スケジュール: ${res.schedule?.date} ${res.schedule?.start_time}, LINE ID: ${res.customer?.line_id}`)
+              console.log(`   ${index + 1}. 予約ID: ${res.id}, 顧客: ${res.customer?.name}, スケジュール: ${res.schedule?.date} ${res.schedule?.start_time}-${res.schedule?.end_time}, プログラム: ${res.schedule?.program?.name}, LINE ID: ${res.customer?.line_id}`)
             })
           }
 
@@ -168,6 +157,21 @@ export async function GET(request: NextRequest) {
                 console.warn(`LINE IDがありません - 顧客: ${customer?.name}`)
                 continue
               }
+
+              // 現在時刻からスケジュール開始時刻までの時間差をチェック
+              const scheduleStartTime = new Date(`${scheduleData.date}T${scheduleData.start_time}`)
+              const timeDiffHours = (scheduleStartTime.getTime() - jstTime.getTime()) / (1000 * 60 * 60)
+              
+              console.log(`⏰ 時間差チェック: ${customer.name} - スケジュール開始: ${scheduleStartTime.toISOString()}, 現在時刻: ${jstTime.toISOString()}, 時間差: ${timeDiffHours.toFixed(2)}時間, 設定値: ${schedule.timingHours}時間`)
+
+              // 許容範囲内（±30分）かチェック
+              const hoursDiff = Math.abs(timeDiffHours - schedule.timingHours)
+              if (hoursDiff > 0.5) {
+                console.log(`⏭️ 時間差が範囲外 - 顧客: ${customer.name}, 時間差: ${timeDiffHours.toFixed(2)}時間, 設定: ${schedule.timingHours}時間前`)
+                continue
+              }
+
+              console.log(`✅ 時間差が範囲内 - 顧客: ${customer.name}, リマインド送信対象`)
 
               // 重複送信防止のチェック（同じ予約に対して同じタイプのリマインドを1日に1回まで）
               const today = new Date().toISOString().split('T')[0]
