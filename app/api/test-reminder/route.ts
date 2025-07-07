@@ -73,10 +73,19 @@ export async function POST(request: NextRequest) {
     const customer = reservation.customer
     const schedule = reservation.schedule
     
+    console.log('顧客データ:', customer)
+    console.log('顧客LINE ID:', customer?.line_id)
+    
     if (!customer?.line_id) {
+      console.error('LINE IDが見つかりません。顧客データ:', customer)
       return NextResponse.json({
         success: false,
-        message: 'お客様のLINE IDが登録されていません'
+        message: 'お客様のLINE IDが登録されていません',
+        debug: {
+          customerId: customer?.id,
+          customerName: customer?.name || customer?.name_kanji,
+          lineId: customer?.line_id
+        }
       }, { status: 400 })
     }
     
@@ -111,7 +120,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'リマインダーメッセージを送信しました',
         details: {
-          customerName: customer.name_kanji,
+          customerName: customer.name || customer.name_kanji,
           scheduleName: `${schedule.date} ${schedule.program.name}`,
           timing: `${hoursBeforeClass}時間前`,
           messagePreview: messageText.substring(0, 100) + '...'
@@ -144,7 +153,7 @@ export async function GET(request: NextRequest) {
     // 最新の確認済み予約を取得
     const { data: latestReservation, error } = await supabase
       .from('reservations')
-      .select('id, customer:customers(name_kanji), schedule:schedules(date, program:programs(name))')
+      .select('id, customer:customers(name), schedule:schedules(date, program:programs(name))')
       .eq('status', 'confirmed')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -187,7 +196,7 @@ export async function GET(request: NextRequest) {
         message: '最新の予約を使用してテストを実行しました',
         reservation: {
           id: latestReservation.id,
-          customer: latestReservation.customer?.name_kanji,
+          customer: latestReservation.customer?.name,
           schedule: `${latestReservation.schedule?.date} ${latestReservation.schedule?.program?.name}`
         }
       }
