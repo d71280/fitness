@@ -52,11 +52,17 @@ export async function GET(request: NextRequest) {
         
         // 現在時刻を詳細出力（JST基準で計算）
         const now = new Date()
-        const jstNow = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Tokyo'}))
-        console.log(`🕐 現在時刻: ${now.toISOString()} (JST: ${jstNow.toISOString()})`)
+        
+        // JST時刻を正確に計算
+        const utcTime = now.getTime()
+        const jstOffset = 9 * 60 * 60 * 1000 // 9時間をミリ秒に変換
+        const jstTime = new Date(utcTime + jstOffset)
+        
+        console.log(`🕐 UTC時刻: ${now.toISOString()}`)
+        console.log(`🕐 JST時刻: ${jstTime.toISOString()}`)
         
         // リマインド対象の日時を計算（JST基準）
-        const targetDateTime = new Date(jstNow)
+        const targetDateTime = new Date(jstTime)
         targetDateTime.setHours(targetDateTime.getHours() + schedule.timingHours)
         
         const targetDate = targetDateTime.toISOString().split('T')[0] // YYYY-MM-DD
