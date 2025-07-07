@@ -203,7 +203,7 @@ export default function MessagesPage() {
     if (!reminderSettings) return
 
     const newSettings = { ...reminderSettings }
-    const targetArray = isCustom ? newSettings.reminder.customSchedules : newSettings.reminder.schedules
+    const targetArray = isCustom ? newSettings.reminder?.customSchedules || [] : newSettings.reminder?.schedules || []
     const scheduleIndex = targetArray.findIndex(s => s.id === scheduleId)
     
     if (scheduleIndex !== -1) {
@@ -394,7 +394,9 @@ export default function MessagesPage() {
             <div>
               <h4 className="font-semibold mb-3">デフォルトスケジュール</h4>
               <div className="space-y-3">
-                {reminderSettings.reminder.schedules.map((schedule) => (
+                {loading ? (
+                  <div className="p-4 text-center text-gray-500">設定を読み込み中...</div>
+                ) : reminderSettings?.reminder?.schedules?.map((schedule) => (
                   <div key={schedule.id} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
@@ -420,16 +422,16 @@ export default function MessagesPage() {
                       disabled={!schedule.isActive}
                     />
                   </div>
-                ))}
+                )) || <div className="p-4 text-center text-gray-500">スケジュールが設定されていません</div>}
               </div>
             </div>
 
             {/* カスタムスケジュール */}
-            {reminderSettings.reminder.customSchedules.length > 0 && (
+            {reminderSettings?.reminder?.customSchedules?.length > 0 && (
               <div>
                 <h4 className="font-semibold mb-3">カスタムスケジュール</h4>
                 <div className="space-y-3">
-                  {reminderSettings.reminder.customSchedules.map((schedule) => (
+                  {reminderSettings?.reminder?.customSchedules?.map((schedule) => (
                     <div key={schedule.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">

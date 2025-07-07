@@ -18,6 +18,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const data = createRecurringScheduleSchema.parse(body)
+    
+    console.log('🔄 繰り返しスケジュール作成開始:', {
+      baseDate: data.baseDate,
+      repeatWeeks: data.repeatWeeks,
+      daysOfWeek: data.daysOfWeek,
+      startTime: data.startTime,
+      endTime: data.endTime
+    })
 
     const schedules = []
     const baseDate = new Date(data.baseDate)
@@ -25,9 +33,12 @@ export async function POST(request: NextRequest) {
     for (let week = 0; week < data.repeatWeeks; week++) {
       for (const dayOfWeek of data.daysOfWeek) {
         const scheduleDate = new Date(baseDate)
-        scheduleDate.setDate(baseDate.getDate() + (week * 7) + (dayOfWeek - baseDate.getDay()))
+        
+        // より正確な日付計算：週数分の日数を追加してから曜日調整
+        const daysToAdd = (week * 7) + (dayOfWeek - baseDate.getDay())
+        scheduleDate.setTime(baseDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000))
 
-        schedules.push({
+        const scheduleData = {
           date: scheduleDate.toISOString().split('T')[0],
           start_time: data.startTime,
           end_time: data.endTime,
@@ -35,7 +46,10 @@ export async function POST(request: NextRequest) {
           instructor_id: data.instructorId || 1, // デフォルトインストラクター
           studio_id: 1,
           capacity: data.capacity,
-        })
+        }
+        
+        console.log(`📅 スケジュール生成 - 週${week + 1}, 曜日${dayOfWeek}: ${scheduleData.date}`)
+        schedules.push(scheduleData)
       }
     }
 
