@@ -166,9 +166,30 @@ export async function POST(request: NextRequest) {
         
         const saved = saveMessageSettings(convertedSettings)
         if (!saved) {
-          console.warn('⚠️ ファイル保存に失敗（Vercel制限）、メモリ内で保持')
-          // Vercel環境では書き込み制限があるため、グローバル変数にキャッシュ
+          console.warn('⚠️ ファイル保存に失敗（Vercel制限）、データベースとメモリに保存')
+          // Vercel環境では書き込み制限があるため、データベースとグローバル変数にキャッシュ
           global.cachedMessageSettings = convertedSettings
+          
+          // データベースにも保存
+          try {
+            const { createClient } = await import('@/utils/supabase/server')
+            const supabase = createClient()
+            const { error: dbError } = await supabase
+              .from('app_settings')
+              .upsert({
+                id: 'default',
+                message_settings: convertedSettings,
+                updated_at: new Date().toISOString()
+              })
+            
+            if (dbError) {
+              console.error('❌ データベース保存エラー:', dbError)
+            } else {
+              console.log('✅ データベースに保存されました')
+            }
+          } catch (dbSaveError) {
+            console.error('❌ データベース保存処理エラー:', dbSaveError)
+          }
         } else {
           console.log('✅ ファイルに保存されました')
         }

@@ -294,8 +294,26 @@ export async function POST(request: NextRequest) {
           try {
             const lineClient = new LineMessagingClient()
               
-            // 設定されたメッセージテンプレートを使用（キャッシュ優先）
-            const messageSettings = global.cachedMessageSettings || getMessageSettings()
+            // 設定されたメッセージテンプレートを使用（データベース優先）
+            let messageSettings
+            try {
+              // データベースから設定を取得
+              const { data: dbSettings } = await supabase
+                .from('app_settings')
+                .select('message_settings')
+                .eq('id', 'default')
+                .single()
+              
+              if (dbSettings?.message_settings) {
+                messageSettings = dbSettings.message_settings
+                console.log('📖 データベースからメッセージ設定を読み込み')
+              } else {
+                throw new Error('データベース設定なし')
+              }
+            } catch (dbError) {
+              console.warn('⚠️ データベース読み込み失敗、フォールバック:', dbError.message)
+              messageSettings = global.cachedMessageSettings || getMessageSettings()
+            }
             console.log('📖 使用する予約完了メッセージテンプレート:', messageSettings.bookingConfirmation.textMessage)
             console.log('📊 置換データ:', {
               date: schedule.date,
