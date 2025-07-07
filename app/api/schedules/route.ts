@@ -108,21 +108,14 @@ export async function POST(request: NextRequest) {
         schedule: formattedSchedule,
       }, { status: 201 })
     } catch (dbError) {
-      console.warn('データベース接続エラー、モック応答を返します:', dbError)
+      console.error('データベース接続エラー:', dbError)
       
-      // モック応答を返す
+      // 実際のエラーを返す
       return NextResponse.json({
-        success: true,
-        schedule: {
-          id: Date.now(),
-          date: data.baseDate,
-          start_time: data.startTime,
-          end_time: data.endTime,
-          capacity: data.capacity,
-          program: { name: 'モックプログラム' },
-
-        },
-      }, { status: 201 })
+        success: false,
+        error: 'データベース接続に失敗しました',
+        details: dbError instanceof Error ? dbError.message : String(dbError)
+      }, { status: 500 })
     }
   } catch (error) {
     console.error('スケジュール作成エラー:', error)
