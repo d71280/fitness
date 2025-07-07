@@ -50,12 +50,13 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`📅 ${schedule.name}（${schedule.timingHours}時間前）のリマインド処理開始`)
         
-        // 現在時刻を詳細出力
+        // 現在時刻を詳細出力（JST基準で計算）
         const now = new Date()
-        console.log(`🕐 現在時刻: ${now.toISOString()} (JST: ${now.toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'})})`)
+        const jstNow = new Date(now.toLocaleString('en-US', {timeZone: 'Asia/Tokyo'}))
+        console.log(`🕐 現在時刻: ${now.toISOString()} (JST: ${jstNow.toISOString()})`)
         
-        // リマインド対象の日時を計算
-        const targetDateTime = new Date()
+        // リマインド対象の日時を計算（JST基準）
+        const targetDateTime = new Date(jstNow)
         targetDateTime.setHours(targetDateTime.getHours() + schedule.timingHours)
         
         const targetDate = targetDateTime.toISOString().split('T')[0] // YYYY-MM-DD
@@ -75,7 +76,16 @@ export async function GET(request: NextRequest) {
             .lt('start_time', `${(targetHour + 1).toString().padStart(2, '0')}:00:00`)
 
           if (scheduleError) {
-            console.error('スケジュール取得エラー:', scheduleError)
+            console.error('スケジュール取得エラー:', {
+              error: scheduleError,
+              targetDate,
+              targetHour,
+              query: {
+                date: targetDate,
+                start_time_gte: `${targetHour.toString().padStart(2, '0')}:00:00`,
+                start_time_lt: `${(targetHour + 1).toString().padStart(2, '0')}:00:00`
+              }
+            })
             throw scheduleError
           }
 
@@ -108,7 +118,14 @@ export async function GET(request: NextRequest) {
           console.log(`   - 終了時間範囲: ${(targetHour + 1).toString().padStart(2, '0')}:00:00 未満`)
 
           if (error) {
-            console.error('予約取得エラー:', error)
+            console.error('予約取得エラー:', {
+              error: error,
+              scheduleIds: scheduleIds,
+              query: {
+                status: 'confirmed',
+                schedule_id_in: scheduleIds
+              }
+            })
             throw error
           }
 
