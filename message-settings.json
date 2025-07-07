@@ -19,14 +19,14 @@
       {
         "id": "5d",
         "name": "5日前",
-        "enabled": true,
+        "enabled": false,
         "hoursBefore": 120,
         "messageText": "【5日後のレッスンのご案内】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\n5日後にレッスンがございます。スケジュールの確認をお願いします📝\nキャンセルをご希望の場合はお早めにご連絡ください。"
       },
       {
         "id": "3d",
         "name": "3日前",
-        "enabled": true,
+        "enabled": false,
         "hoursBefore": 72,
         "messageText": "【3日後のレッスンのお知らせ】\n\n{program}\n📅 {date}\n⏰ {time}\n👨‍🏫 {instructor}\n\n3日後にレッスンがございます。準備はいかがですか？✨\nご都合が悪くなった場合は、できるだけ早めにご連絡をお願いします。"
       },
