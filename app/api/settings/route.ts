@@ -172,20 +172,26 @@ export async function POST(request: NextRequest) {
           
           // データベースにも保存
           try {
+            console.log('📊 データベース保存開始:', JSON.stringify(convertedSettings, null, 2))
             const { createClient } = await import('@/utils/supabase/server')
             const supabase = createClient()
-            const { error: dbError } = await supabase
+            
+            const saveData = {
+              id: 'default',
+              message_settings: convertedSettings,
+              updated_at: new Date().toISOString()
+            }
+            console.log('📊 保存データ:', JSON.stringify(saveData, null, 2))
+            
+            const { data, error: dbError } = await supabase
               .from('app_settings')
-              .upsert({
-                id: 'default',
-                message_settings: convertedSettings,
-                updated_at: new Date().toISOString()
-              })
+              .upsert(saveData)
+              .select()
             
             if (dbError) {
               console.error('❌ データベース保存エラー:', dbError)
             } else {
-              console.log('✅ データベースに保存されました')
+              console.log('✅ データベースに保存されました:', data)
             }
           } catch (dbSaveError) {
             console.error('❌ データベース保存処理エラー:', dbSaveError)
