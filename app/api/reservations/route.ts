@@ -294,8 +294,18 @@ export async function POST(request: NextRequest) {
           try {
             const lineClient = new LineMessagingClient()
               
-            // シンプルなメッセージ
-            const messageText = `✅ 予約が完了しました！\n\n📅 日時: ${schedule.date} ${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}\n🏃 プログラム: ${schedule.program.name}\n\nお忘れなくお越しください！`
+            // 設定されたメッセージテンプレートを使用
+            const messageSettings = getMessageSettings()
+            const messageText = processMessageTemplate(
+              messageSettings.bookingConfirmation.textMessage,
+              {
+                date: schedule.date,
+                time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
+                program: schedule.program.name,
+                instructor: schedule.instructor?.name || 'スタッフ',
+                studio: schedule.studio?.name || 'スタジオ'
+              }
+            )
             
             console.log('送信メッセージ:', messageText)
               
