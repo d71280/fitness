@@ -82,8 +82,12 @@ export async function GET() {
       enabled: savedSettings.spreadsheetEnabled || false
     }
 
-    const rawMessageSettings = getMessageSettings()
+    // Vercel環境ではキャッシュされた設定を優先的に使用
+    const rawMessageSettings = global.cachedMessageSettings || getMessageSettings()
     console.log('📖 生のメッセージ設定:', JSON.stringify(rawMessageSettings, null, 2))
+    if (global.cachedMessageSettings) {
+      console.log('💾 キャッシュからメッセージ設定を読み込みました')
+    }
 
     // フロントエンドが期待する形式に変換
     const convertedMessageSettings = {
@@ -162,9 +166,11 @@ export async function POST(request: NextRequest) {
         
         const saved = saveMessageSettings(convertedSettings)
         if (!saved) {
-          console.error('❌ メッセージ設定の保存に失敗しました')
+          console.warn('⚠️ ファイル保存に失敗（Vercel制限）、メモリ内で保持')
+          // Vercel環境では書き込み制限があるため、グローバル変数にキャッシュ
+          global.cachedMessageSettings = convertedSettings
         } else {
-          console.log('✅ メッセージ設定が保存されました')
+          console.log('✅ ファイルに保存されました')
         }
       } catch (messageError) {
         console.error('❌ メッセージ設定保存エラー:', messageError)
