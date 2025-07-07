@@ -185,40 +185,44 @@ export async function POST(request: NextRequest) {
         // 古いキャッシュをクリア
         global.cachedMessageSettings = null
         
-        const saved = saveMessageSettings(convertedSettings)
-        if (!saved) {
-          console.warn('⚠️ ファイル保存に失敗（Vercel制限）、データベースとメモリに保存')
-          // Vercel環境では書き込み制限があるため、データベースとグローバル変数にキャッシュ
-          global.cachedMessageSettings = convertedSettings
+        // 常にデータベースに保存（Vercel環境対応）
+        try {
+          console.log('📊 データベース保存開始:', JSON.stringify(convertedSettings, null, 2))
+          const { createClient } = await import('@/utils/supabase/server')
+          const supabase = createClient()
           
-          // データベースにも保存
-          try {
-            console.log('📊 データベース保存開始:', JSON.stringify(convertedSettings, null, 2))
-            const { createClient } = await import('@/utils/supabase/server')
-            const supabase = createClient()
-            
-            const saveData = {
-              id: 'default',
-              message_settings: convertedSettings,
-              updated_at: new Date().toISOString()
-            }
-            console.log('📊 保存データ:', JSON.stringify(saveData, null, 2))
-            
-            const { data, error: dbError } = await supabase
-              .from('app_settings')
-              .upsert(saveData)
-              .select()
-            
-            if (dbError) {
-              console.error('❌ データベース保存エラー:', dbError)
-            } else {
-              console.log('✅ データベースに保存されました:', data)
-            }
-          } catch (dbSaveError) {
-            console.error('❌ データベース保存処理エラー:', dbSaveError)
+          const saveData = {
+            id: 'default',
+            message_settings: convertedSettings,
+            updated_at: new Date().toISOString()
           }
-        } else {
-          console.log('✅ ファイルに保存されました')
+          console.log('📊 保存データ:', JSON.stringify(saveData, null, 2))
+          
+          const { data, error: dbError } = await supabase
+            .from('app_settings')
+            .upsert(saveData)
+            .select()
+          
+          if (dbError) {
+            console.error('❌ データベース保存エラー:', dbError)
+            throw dbError
+          } else {
+            console.log('✅ データベースに保存されました:', data)
+            // データベース保存成功時はキャッシュも更新
+            global.cachedMessageSettings = convertedSettings
+          }
+        } catch (dbSaveError) {
+          console.error('❌ データベース保存処理エラー:', dbSaveError)
+          // データベース保存失敗時もキャッシュは更新（フォールバック）
+          global.cachedMessageSettings = convertedSettings
+        }
+        
+        // ファイル保存も試行（ベストエフォート）
+        try {
+          saveMessageSettings(convertedSettings)
+          console.log('✅ ファイルにも保存されました')
+        } catch (fileError) {
+          console.warn('⚠️ ファイル保存は失敗（Vercel制限）')
         }
       } catch (messageError) {
         console.error('❌ メッセージ設定保存エラー:', messageError)
