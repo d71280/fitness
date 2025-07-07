@@ -86,14 +86,27 @@ export default function MessagesPage() {
       console.log('📖 読み込んだデータ:', data)
       
       if (data.success) {
+        console.log('✅ API呼び出し成功. data.messages:', data.messages)
+        console.log('✅ API呼び出し成功. data.settings:', data.settings)
+        
         if (data.messages) {
           console.log('💾 メッセージ設定をセット:', data.messages)
+          console.log('🔍 予約完了メッセージ:', data.messages.bookingConfirmation?.messageText)
           setMessageSettings(data.messages)
+          
+          // state更新後の確認（非同期で実行）
+          setTimeout(() => {
+            console.log('🔍 State更新後のmessageSettings:', messageSettings)
+          }, 100)
+        } else {
+          console.warn('⚠️ data.messagesが空です')
         }
         if (data.settings) {
           console.log('⚙️ リマインド設定をセット:', data.settings)
           setReminderSettings(data.settings)
         }
+      } else {
+        console.error('❌ API呼び出し失敗:', data)
       }
     } catch (error) {
       console.error('設定読み込みエラー:', error)
