@@ -82,12 +82,30 @@ export async function GET() {
       enabled: savedSettings.spreadsheetEnabled || false
     }
 
-    // Vercel環境ではキャッシュされた設定を優先的に使用
-    const rawMessageSettings = global.cachedMessageSettings || getMessageSettings()
-    console.log('📖 生のメッセージ設定:', JSON.stringify(rawMessageSettings, null, 2))
-    if (global.cachedMessageSettings) {
-      console.log('💾 キャッシュからメッセージ設定を読み込みました')
+    // データベースから設定を読み込み（キャッシュより優先）
+    let rawMessageSettings
+    try {
+      const { createClient } = await import('@/utils/supabase/server')
+      const supabase = createClient()
+      const { data: dbSettings } = await supabase
+        .from('app_settings')
+        .select('message_settings')
+        .eq('id', 'default')
+        .single()
+      
+      if (dbSettings?.message_settings) {
+        rawMessageSettings = dbSettings.message_settings
+        console.log('💾 データベースからメッセージ設定を読み込み')
+      } else {
+        throw new Error('データベース設定なし')
+      }
+    } catch (dbError) {
+      console.warn('⚠️ データベース読み込み失敗、ファイル使用:', dbError.message)
+      // キャッシュを無視してファイルから読み込み
+      rawMessageSettings = getMessageSettings()
+      console.log('📁 ファイルからメッセージ設定を読み込み')
     }
+    console.log('📖 生のメッセージ設定:', JSON.stringify(rawMessageSettings, null, 2))
 
     // フロントエンドが期待する形式に変換
     const convertedMessageSettings = {
@@ -134,8 +152,8 @@ export async function POST(request: NextRequest) {
     if (messages) {
       console.log('💾 メッセージ設定保存開始:', JSON.stringify(messages, null, 2))
       try {
-        // 現在の設定を読み込み
-        const currentSettings = getMessageSettings()
+        // 現在の設定をファイルから読み込み（キャッシュ無視）
+        const currentSettings = getMessageSettings(true)
         console.log('📖 現在の設定構造:', JSON.stringify(currentSettings, null, 2))
         
         // フロントエンドの簡略化されたデータを既存の構造に変換
@@ -163,6 +181,9 @@ export async function POST(request: NextRequest) {
         }
         
         console.log('🔄 変換後の設定:', JSON.stringify(convertedSettings, null, 2))
+        
+        // 古いキャッシュをクリア
+        global.cachedMessageSettings = null
         
         const saved = saveMessageSettings(convertedSettings)
         if (!saved) {

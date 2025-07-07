@@ -57,9 +57,9 @@ export interface MessageSettings {
   }
 }
 
-export function getMessageSettings(): MessageSettings {
-  // Vercel環境ではキャッシュされた設定を優先的に使用
-  if (global.cachedMessageSettings) {
+export function getMessageSettings(ignoreCache = false): MessageSettings {
+  // キャッシュ無視オプションがない場合のみキャッシュを使用
+  if (!ignoreCache && global.cachedMessageSettings) {
     console.log('💾 キャッシュからメッセージ設定を読み込み')
     return global.cachedMessageSettings
   }
