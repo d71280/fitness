@@ -2,8 +2,8 @@ name: Daily Reminders Cron
 
 on:
   schedule:
-    # 毎時0分に実行（JST 9時〜24時の間で最も重要）
-    - cron: '0 * * * *'
+    # 15分ごとに実行（より確実にタイミングを捉える）
+    - cron: '*/15 * * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:

@@ -68,12 +68,18 @@ export async function GET(request: NextRequest) {
         try {
           // 対象時間帯の予約を取得
           // まずスケジュールを取得してから予約を取得
+          // 少し幅を広げて検索（15分前後の余裕を持たせる）
+          const startHour = Math.max(0, targetHour - 1)
+          const endHour = Math.min(23, targetHour + 1)
+          
           const { data: schedules, error: scheduleError } = await supabase
             .from('schedules')
-            .select('id')
+            .select('id, date, start_time')
             .eq('date', targetDate)
-            .gte('start_time', `${targetHour.toString().padStart(2, '0')}:00:00`)
-            .lt('start_time', `${(targetHour + 1).toString().padStart(2, '0')}:00:00`)
+            .gte('start_time', `${startHour.toString().padStart(2, '0')}:00:00`)
+            .lt('start_time', `${(endHour + 1).toString().padStart(2, '0')}:00:00`)
+          
+          console.log(`🔍 検索範囲を拡大: ${startHour}:00 - ${endHour + 1}:00`)
 
           if (scheduleError) {
             console.error('スケジュール取得エラー:', {
@@ -158,10 +164,21 @@ export async function GET(request: NextRequest) {
 
               // 重複送信防止のチェック（同じ予約に対して同じタイプのリマインドを1日に1回まで）
               const today = new Date().toISOString().split('T')[0]
-              const checkKey = `reminder_${schedule.id}_${reservation.id}_${today}`
+              const checkKey = `${schedule.id}_${reservation.id}_${today}`
               
-              // TODO: 実際のプロダクションでは Redis や データベースでの重複チェックを実装
-              // 現在は簡易的に処理をスキップ
+              // Supabaseでの重複チェック（notification_logsテーブルを使用）
+              const { data: existingLog } = await supabase
+                .from('notification_logs')
+                .select('id')
+                .eq('reservation_id', reservation.id)
+                .eq('reminder_type', schedule.id)
+                .eq('sent_date', today)
+                .single()
+              
+              if (existingLog) {
+                console.log(`⏭️ 重複送信をスキップ - 予約ID: ${reservation.id}, リマインダー: ${schedule.name}`)
+                continue
+              }
 
               // メッセージデータの準備
               const messageData = {
@@ -188,6 +205,18 @@ export async function GET(request: NextRequest) {
                 scheduleSeenCount++
                 totalSent++
                 console.log(`${schedule.name} リマインド送信成功 - 顧客: ${customer.name}`)
+                
+                // 送信ログを記録（重複防止のため）
+                await supabase
+                  .from('notification_logs')
+                  .insert({
+                    reservation_id: reservation.id,
+                    customer_id: customer.id,
+                    reminder_type: schedule.id,
+                    sent_date: today,
+                    message_content: messageText,
+                    status: 'sent'
+                  })
               } else {
                 const error = `${schedule.name} リマインド送信失敗 - 顧客: ${customer.name}, エラー: ${lineResult.error}`
                 console.error(error)
