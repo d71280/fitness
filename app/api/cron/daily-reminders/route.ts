@@ -66,6 +66,27 @@ export async function GET(request: NextRequest) {
 
         try {
           // 対象時間帯の予約を取得
+          // まずスケジュールを取得してから予約を取得
+          const { data: schedules, error: scheduleError } = await supabase
+            .from('schedules')
+            .select('id')
+            .eq('date', targetDate)
+            .gte('start_time', `${targetHour.toString().padStart(2, '0')}:00:00`)
+            .lt('start_time', `${(targetHour + 1).toString().padStart(2, '0')}:00:00`)
+
+          if (scheduleError) {
+            console.error('スケジュール取得エラー:', scheduleError)
+            throw scheduleError
+          }
+
+          const scheduleIds = schedules?.map(s => s.id) || []
+          console.log(`📅 対象スケジュールID: ${scheduleIds.join(', ')}`)
+
+          if (scheduleIds.length === 0) {
+            console.log('対象時間帯のスケジュールがありません')
+            continue
+          }
+
           const { data: reservations, error } = await supabase
             .from('reservations')
             .select(`
@@ -73,15 +94,13 @@ export async function GET(request: NextRequest) {
               schedule:schedules(
                 *,
                 program:programs(*),
-        
+                instructor:instructors(*),
                 studio:studios(*)
               ),
               customer:customers(*)
             `)
             .eq('status', 'confirmed')
-            .eq('schedule.date', targetDate)
-            .gte('schedule.start_time', `${targetHour.toString().padStart(2, '0')}:00:00`)
-            .lt('schedule.start_time', `${(targetHour + 1).toString().padStart(2, '0')}:00:00`)
+            .in('schedule_id', scheduleIds)
 
           console.log(`🔍 データベースクエリ実行完了`)
           console.log(`   - 対象日: ${targetDate}`)
