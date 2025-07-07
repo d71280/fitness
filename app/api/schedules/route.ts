@@ -11,6 +11,8 @@ const createScheduleSchema = z.object({
   endTime: z.string(),
   programId: z.number(),
   capacity: z.number().min(1).max(100),
+  instructorId: z.number().optional(),
+  studioId: z.number().optional(),
 })
 
 // スケジュール一覧取得
@@ -83,10 +85,14 @@ export async function POST(request: NextRequest) {
           end_time: data.endTime,
           program_id: data.programId,
           capacity: data.capacity,
+          instructor_id: data.instructorId || 1, // デフォルトインストラクター
+          studio_id: data.studioId || 1, // デフォルトスタジオ
         })
         .select(`
           *,
-          program:programs(*)
+          program:programs(*),
+          instructor:instructors(*),
+          studio:studios(*)
         `)
         .single()
 
