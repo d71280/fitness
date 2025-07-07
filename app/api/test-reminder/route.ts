@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     
     // 指定されたタイミングのリマインドスケジュールを探す
     const reminderSchedule = messageSettings.reminder.schedules.find(
-      s => s.timingHours === hoursBeforeClass && s.enabled
+      s => (s.hoursBefore === hoursBeforeClass || s.timingHours === hoursBeforeClass) && (s.enabled !== false)
     )
     
     if (!reminderSchedule) {
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     
     // テンプレートメッセージの生成
     const messageText = processMessageTemplate(
-      reminderSchedule.messageTemplate,
+      reminderSchedule.messageText || reminderSchedule.messageTemplate,
       messageData
     )
     

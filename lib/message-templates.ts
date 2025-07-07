@@ -127,7 +127,16 @@ export function getEnabledReminderSchedules(): ReminderSchedule[] {
     ...settings.reminder.customSchedules
   ]
   
-  return allSchedules.filter(schedule => schedule.isActive)
+  // JSONファイルのフィールド名をコードの期待するフィールド名に変換
+  return allSchedules
+    .filter(schedule => schedule.enabled !== false && schedule.isActive !== false)
+    .map(schedule => ({
+      id: schedule.id,
+      name: schedule.name,
+      timingHours: schedule.hoursBefore || schedule.timingHours,
+      messageTemplate: schedule.messageText || schedule.messageTemplate,
+      isActive: schedule.enabled !== false && schedule.isActive !== false
+    }))
 }
 
 export function processMessageTemplate(template: string, data: any): string {
