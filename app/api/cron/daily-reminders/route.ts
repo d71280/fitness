@@ -22,12 +22,19 @@ export async function GET(request: NextRequest) {
 
     const enabledSchedules = getEnabledReminderSchedules()
     
+    console.log('🔍 取得したリマインドスケジュール:', enabledSchedules)
+    
     if (enabledSchedules.length === 0) {
       console.log('有効なリマインドスケジュールがありません')
+      console.log('📋 メッセージ設定の詳細:', JSON.stringify(messageSettings, null, 2))
       return NextResponse.json({ 
         success: true, 
         message: '有効なリマインドスケジュールがありません',
-        sent: 0 
+        sent: 0,
+        debug: {
+          messageSettings,
+          enabledSchedules
+        }
       })
     }
 
@@ -43,6 +50,10 @@ export async function GET(request: NextRequest) {
       try {
         console.log(`📅 ${schedule.name}（${schedule.timingHours}時間前）のリマインド処理開始`)
         
+        // 現在時刻を詳細出力
+        const now = new Date()
+        console.log(`🕐 現在時刻: ${now.toISOString()} (JST: ${now.toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'})})`)
+        
         // リマインド対象の日時を計算
         const targetDateTime = new Date()
         targetDateTime.setHours(targetDateTime.getHours() + schedule.timingHours)
@@ -50,7 +61,8 @@ export async function GET(request: NextRequest) {
         const targetDate = targetDateTime.toISOString().split('T')[0] // YYYY-MM-DD
         const targetHour = targetDateTime.getHours()
         
-        console.log(`対象日時: ${targetDate}, 対象時間帯: ${targetHour}時台`)
+        console.log(`🎯 ターゲット日時: ${targetDateTime.toISOString()} (JST: ${targetDateTime.toLocaleString('ja-JP', {timeZone: 'Asia/Tokyo'})})`)
+        console.log(`📅 対象日: ${targetDate}, 対象時間帯: ${targetHour}時台`)
 
         try {
           // 対象時間帯の予約を取得
@@ -71,9 +83,21 @@ export async function GET(request: NextRequest) {
             .gte('schedule.start_time', `${targetHour.toString().padStart(2, '0')}:00:00`)
             .lt('schedule.start_time', `${(targetHour + 1).toString().padStart(2, '0')}:00:00`)
 
+          console.log(`🔍 データベースクエリ実行完了`)
+          console.log(`   - 対象日: ${targetDate}`)
+          console.log(`   - 開始時間範囲: ${targetHour.toString().padStart(2, '0')}:00:00 以上`)
+          console.log(`   - 終了時間範囲: ${(targetHour + 1).toString().padStart(2, '0')}:00:00 未満`)
+
           if (error) {
             console.error('予約取得エラー:', error)
             throw error
+          }
+
+          console.log(`📊 クエリ結果: ${reservations?.length || 0}件の予約`)
+          if (reservations && reservations.length > 0) {
+            reservations.forEach((res, index) => {
+              console.log(`   ${index + 1}. 予約ID: ${res.id}, 顧客: ${res.customer?.name}, スケジュール: ${res.schedule?.date} ${res.schedule?.start_time}, LINE ID: ${res.customer?.line_id}`)
+            })
           }
 
           if (!reservations || reservations.length === 0) {
