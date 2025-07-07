@@ -116,7 +116,16 @@ export default function ProgramsPage() {
     { value: 'bg-orange-500', label: 'オレンジ' },
     { value: 'bg-pink-500', label: 'ピンク' },
     { value: 'bg-yellow-500', label: 'イエロー' },
-    { value: 'bg-indigo-500', label: 'インディゴ' }
+    { value: 'bg-indigo-500', label: 'インディゴ' },
+    // PDFスケジュールのカラーパレットを追加
+    { value: 'bg-cyan-400', label: 'シアン' },
+    { value: 'bg-emerald-400', label: 'エメラルド' },
+    { value: 'bg-fuchsia-400', label: 'フューシャ' },
+    { value: 'bg-amber-400', label: 'アンバー' },
+    { value: 'bg-stone-400', label: 'ストーン' },
+    { value: 'bg-slate-300', label: 'スレート' },
+    { value: 'bg-teal-500', label: 'ティール' },
+    { value: 'bg-rose-400', label: 'ローズ' }
   ]
 
   return (
@@ -216,7 +225,7 @@ export default function ProgramsPage() {
 
             <div>
               <Label htmlFor="color">表示色</Label>
-              <div className="grid grid-cols-4 gap-2 mt-2">
+              <div className="grid grid-cols-4 gap-2 mt-2 max-h-32 overflow-y-auto">
                 {colorOptions.map((option) => (
                   <button
                     key={option.value}

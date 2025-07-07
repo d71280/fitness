@@ -101,7 +101,30 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, schedule, settings: userSettings } = body
+    const { action, schedule, settings: userSettings, messages } = body
+    
+    // メッセージ設定の保存
+    if (messages) {
+      try {
+        const saved = saveMessageSettings(messages)
+        if (!saved) {
+          console.error('メッセージ設定の保存に失敗しました')
+        } else {
+          console.log('メッセージ設定が保存されました')
+        }
+      } catch (messageError) {
+        console.error('メッセージ設定保存エラー:', messageError)
+      }
+    }
+    
+    // メッセージ設定のみが送信された場合
+    if (!action && !userSettings && messages) {
+      return NextResponse.json({
+        success: true,
+        message: 'メッセージ設定が保存されました',
+        messagesUpdated: true
+      })
+    }
     
     // 基本設定の保存（環境変数以外の設定）
     if (!action && userSettings) {
@@ -138,16 +161,18 @@ export async function POST(request: NextRequest) {
           // この場合、クライアントサイドのローカルストレージを使用するよう指示
           return NextResponse.json({
             success: true,
-            message: '設定が保存されました（クライアントサイドストレージ使用）',
+            message: messages ? 'メッセージ設定と基本設定が保存されました（クライアントサイドストレージ使用）' : '設定が保存されました（クライアントサイドストレージ使用）',
             settings: updatedSettings,
-            useClientStorage: true
+            useClientStorage: true,
+            messagesUpdated: !!messages
           })
         }
         
         return NextResponse.json({
           success: true,
-          message: '設定が保存されました',
-          settings: updatedSettings
+          message: messages ? 'メッセージ設定と基本設定が保存されました' : '設定が保存されました',
+          settings: updatedSettings,
+          messagesUpdated: !!messages
         })
       } catch (saveError) {
         console.error('設定保存エラー:', saveError)
