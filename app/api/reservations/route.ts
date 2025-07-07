@@ -294,8 +294,8 @@ export async function POST(request: NextRequest) {
           try {
             const lineClient = new LineMessagingClient()
               
-            // 設定されたメッセージテンプレートを使用
-            const messageSettings = getMessageSettings()
+            // 設定されたメッセージテンプレートを使用（キャッシュ優先）
+            const messageSettings = global.cachedMessageSettings || getMessageSettings()
             console.log('📖 使用する予約完了メッセージテンプレート:', messageSettings.bookingConfirmation.textMessage)
             console.log('📊 置換データ:', {
               date: schedule.date,
