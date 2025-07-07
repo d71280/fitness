@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { LineMessagingClient } from '@/lib/line-messaging'
+import { proxyServerClient } from '@/lib/proxy-server-client'
 import { getMessageSettings, getEnabledReminderSchedules, processMessageTemplate } from '@/lib/message-templates'
 
 // 複数タイミングでのリマインドメッセージ送信
@@ -211,6 +212,32 @@ export async function GET(request: NextRequest) {
                 scheduleSeenCount++
                 totalSent++
                 console.log(`${schedule.name} リマインド送信成功 - 顧客: ${customer.name}`)
+                
+                // プロキシサーバーへのリマインダーメッセージ送信
+                try {
+                  console.log('📡 プロキシサーバーリマインダー連携開始...')
+                  const proxyResult = await proxyServerClient.sendReminder({
+                    lineId: customer.line_id,
+                    customerName: customer.name,
+                    reservationId: reservation.id,
+                    messageContent: messageText,
+                    hoursUntil: schedule.timingHours,
+                    reminderType: schedule.name,
+                    date: scheduleData.date,
+                    time: `${scheduleData.start_time.slice(0, 5)} - ${scheduleData.end_time.slice(0, 5)}`,
+                    program: scheduleData.program.name,
+                    instructor: scheduleData.instructor?.name || '未定',
+                    studio: scheduleData.studio?.name || 'スタジオ'
+                  })
+                  
+                  if (proxyResult.success) {
+                    console.log(`✅ プロキシサーバーリマインダー連携成功 - 顧客: ${customer.name}`)
+                  } else {
+                    console.error(`❌ プロキシサーバーリマインダー連携失敗 - 顧客: ${customer.name}`, proxyResult.error)
+                  }
+                } catch (proxyError) {
+                  console.error(`❌ プロキシサーバーリマインダー連携エラー - 顧客: ${customer.name}`, proxyError)
+                }
                 
                 // 送信ログを記録（重複防止のため）
                 await supabase

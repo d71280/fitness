@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { SpreadsheetBookingData } from '@/lib/google-sheets'
 import { LineMessagingClient } from '@/lib/line-messaging'
+import { proxyServerClient } from '@/lib/proxy-server-client'
 import { getMessageSettings, processMessageTemplate } from '@/lib/message-templates'
 import { z } from 'zod'
 
@@ -306,6 +307,30 @@ export async function POST(request: NextRequest) {
               
             if (lineResult.success) {
               console.log('✅ LINE通知送信成功:', lineResult)
+              
+              // プロキシサーバーへの予約完了メッセージ送信
+              try {
+                console.log('📡 プロキシサーバー連携開始...')
+                const proxyResult = await proxyServerClient.sendBookingCompletion({
+                  lineId: customer.line_id,
+                  customerName: `${customerNameKanji} (${customerNameKatakana})`,
+                  reservationId: reservation.id,
+                  date: schedule.date,
+                  time: `${schedule.start_time?.slice(0, 5)} - ${schedule.end_time?.slice(0, 5)}`,
+                  program: schedule.program.name,
+                  instructor: schedule.instructor?.name || '未定',
+                  studio: schedule.studio?.name || 'スタジオ',
+                  messageContent: messageText
+                })
+                
+                if (proxyResult.success) {
+                  console.log('✅ プロキシサーバー連携成功:', proxyResult)
+                } else {
+                  console.error('❌ プロキシサーバー連携失敗:', proxyResult.error)
+                }
+              } catch (proxyError) {
+                console.error('❌ プロキシサーバー連携エラー:', proxyError)
+              }
             } else {
               console.error('❌ LINE通知送信失敗:', lineResult.error)
             }
