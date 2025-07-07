@@ -66,7 +66,21 @@ export class ProxyServerClient {
         headers['Authorization'] = `Bearer ${this.apiKey}`
       }
 
-      const response = await axios.post(this.apiUrl, message, {
+      // プロキシサーバーが期待する形式に変換
+      const proxyPayload = {
+        userId: message.lineId,
+        message: message.messageContent,
+        type: message.type,
+        customerName: message.customerName,
+        reservationId: message.reservationId,
+        timestamp: message.timestamp,
+        ...message.bookingData,
+        ...message.reminderData
+      }
+
+      console.log('📡 プロキシサーバーに送信するデータ:', JSON.stringify(proxyPayload, null, 2))
+
+      const response = await axios.post(this.apiUrl, proxyPayload, {
         headers,
         timeout: 15000
       })
