@@ -101,16 +101,20 @@ export default function MessagesPage() {
   const saveSettings = async () => {
     setSaving(true)
     try {
+      const payload = {
+        messages: messageSettings,
+        settings: reminderSettings
+      }
+      console.log('📤 フロントエンド送信データ:', payload)
+      
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messageSettings,
-          settings: reminderSettings
-        })
+        body: JSON.stringify(payload)
       })
 
       const result = await response.json()
+      console.log('📥 サーバーレスポンス:', result)
       
       if (result.success) {
         alert('設定が保存されました')

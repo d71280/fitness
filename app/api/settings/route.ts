@@ -101,20 +101,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('📝 POST /api/settings 受信データ:', JSON.stringify(body, null, 2))
     const { action, schedule, settings: userSettings, messages } = body
     
     // メッセージ設定の保存
     if (messages) {
+      console.log('💾 メッセージ設定保存開始:', JSON.stringify(messages, null, 2))
       try {
         const saved = saveMessageSettings(messages)
         if (!saved) {
-          console.error('メッセージ設定の保存に失敗しました')
+          console.error('❌ メッセージ設定の保存に失敗しました')
         } else {
-          console.log('メッセージ設定が保存されました')
+          console.log('✅ メッセージ設定が保存されました')
         }
       } catch (messageError) {
-        console.error('メッセージ設定保存エラー:', messageError)
+        console.error('❌ メッセージ設定保存エラー:', messageError)
       }
+    } else {
+      console.log('⚠️ メッセージ設定が送信されていません')
     }
     
     // メッセージ設定のみが送信された場合
