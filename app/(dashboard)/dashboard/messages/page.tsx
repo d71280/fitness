@@ -80,14 +80,18 @@ export default function MessagesPage() {
 
   const loadSettings = async () => {
     try {
+      console.log('📖 設定読み込み開始...')
       const response = await fetch('/api/settings')
       const data = await response.json()
+      console.log('📖 読み込んだデータ:', data)
       
       if (data.success) {
         if (data.messages) {
+          console.log('💾 メッセージ設定をセット:', data.messages)
           setMessageSettings(data.messages)
         }
         if (data.settings) {
+          console.log('⚙️ リマインド設定をセット:', data.settings)
           setReminderSettings(data.settings)
         }
       }
@@ -118,6 +122,8 @@ export default function MessagesPage() {
       
       if (result.success) {
         alert('設定が保存されました')
+        // 保存後にデータを再読み込み
+        await loadSettings()
       } else {
         alert(`設定保存に失敗しました: ${result.error}`)
       }

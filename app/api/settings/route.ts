@@ -55,6 +55,7 @@ const messageSettingsSchema = z.object({
 
 export async function GET() {
   try {
+    console.log('📖 GET /api/settings 呼び出し')
     const connection: ConnectionSettings = {
       appBaseUrl: process.env.APP_BASE_URL || '',
       lineChannelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || '',
@@ -81,14 +82,20 @@ export async function GET() {
       enabled: savedSettings.spreadsheetEnabled || false
     }
 
-    const settings = getMessageSettings()
+    const messageSettings = getMessageSettings()
+    console.log('📖 返却するメッセージ設定:', JSON.stringify(messageSettings, null, 2))
 
-    return NextResponse.json({
+    const response = {
       success: true,
       connection,
       googleSheets,
-      settings
-    })
+      settings: savedSettings,
+      messages: messageSettings
+    }
+    
+    console.log('📖 GET /api/settings レスポンス:', JSON.stringify(response, null, 2))
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('設定読み込みエラー:', error)
     return NextResponse.json(
