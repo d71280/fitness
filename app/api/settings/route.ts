@@ -22,9 +22,9 @@ interface GoogleSheetsSettings {
 const reminderScheduleSchema = z.object({
   id: z.string(),
   name: z.string(),
-  enabled: z.boolean(),
-      timingHours: z.number().min(0).max(168), // 最大1週間前
-  messageText: z.string().min(1).max(1000)
+  isActive: z.boolean().optional().default(true), // フロントエンドは isActive を使用
+  timingHours: z.number().min(0).max(168), // 最大1週間前
+  messageTemplate: z.string().min(1).max(1000) // フロントエンドは messageTemplate を使用
 })
 
 const messageSettingsSchema = z.object({
@@ -82,15 +82,30 @@ export async function GET() {
       enabled: savedSettings.spreadsheetEnabled || false
     }
 
-    const messageSettings = getMessageSettings()
-    console.log('📖 返却するメッセージ設定:', JSON.stringify(messageSettings, null, 2))
+    const rawMessageSettings = getMessageSettings()
+    console.log('📖 生のメッセージ設定:', JSON.stringify(rawMessageSettings, null, 2))
+
+    // フロントエンドが期待する形式に変換
+    const convertedMessageSettings = {
+      bookingConfirmation: {
+        enabled: rawMessageSettings.bookingConfirmation.enabled,
+        messageText: rawMessageSettings.bookingConfirmation.textMessage
+      },
+      reminder: {
+        enabled: rawMessageSettings.reminder.enabled,
+        hoursBefore: rawMessageSettings.reminder.schedules.find(s => s.id === '1d')?.hoursBefore || 24,
+        messageText: rawMessageSettings.reminder.schedules.find(s => s.id === '1d')?.messageText || ''
+      }
+    }
+    
+    console.log('📖 変換後のメッセージ設定:', JSON.stringify(convertedMessageSettings, null, 2))
 
     const response = {
       success: true,
       connection,
       googleSheets,
       settings: savedSettings,
-      messages: messageSettings
+      messages: convertedMessageSettings
     }
     
     console.log('📖 GET /api/settings レスポンス:', JSON.stringify(response, null, 2))
@@ -115,7 +130,37 @@ export async function POST(request: NextRequest) {
     if (messages) {
       console.log('💾 メッセージ設定保存開始:', JSON.stringify(messages, null, 2))
       try {
-        const saved = saveMessageSettings(messages)
+        // 現在の設定を読み込み
+        const currentSettings = getMessageSettings()
+        console.log('📖 現在の設定構造:', JSON.stringify(currentSettings, null, 2))
+        
+        // フロントエンドの簡略化されたデータを既存の構造に変換
+        const convertedSettings = {
+          ...currentSettings,
+          bookingConfirmation: {
+            ...currentSettings.bookingConfirmation,
+            enabled: messages.bookingConfirmation?.enabled ?? currentSettings.bookingConfirmation.enabled,
+            textMessage: messages.bookingConfirmation?.messageText ?? currentSettings.bookingConfirmation.textMessage
+          },
+          reminder: {
+            ...currentSettings.reminder,
+            enabled: messages.reminder?.enabled ?? currentSettings.reminder.enabled,
+            schedules: currentSettings.reminder.schedules.map(schedule => {
+              // 24時間前（1日前）のスケジュールを更新
+              if (schedule.id === '1d' && messages.reminder?.messageText) {
+                return {
+                  ...schedule,
+                  messageText: messages.reminder.messageText
+                }
+              }
+              return schedule
+            })
+          }
+        }
+        
+        console.log('🔄 変換後の設定:', JSON.stringify(convertedSettings, null, 2))
+        
+        const saved = saveMessageSettings(convertedSettings)
         if (!saved) {
           console.error('❌ メッセージ設定の保存に失敗しました')
         } else {
@@ -217,8 +262,17 @@ export async function POST(request: NextRequest) {
           )
         }
         
+        // フロントエンド形式をJSONファイル形式に変換
+        const convertedSchedule = {
+          id: validatedSchedule.id,
+          name: validatedSchedule.name,
+          enabled: validatedSchedule.isActive ?? true,
+          hoursBefore: validatedSchedule.timingHours,
+          messageText: validatedSchedule.messageTemplate
+        }
+        
         // カスタムスケジュールに追加
-        settings.reminder.customSchedules.push(validatedSchedule)
+        settings.reminder.customSchedules.push(convertedSchedule)
         console.log('📝 スケジュール追加後:', settings.reminder.customSchedules)
         
         const success = saveMessageSettings(settings)
