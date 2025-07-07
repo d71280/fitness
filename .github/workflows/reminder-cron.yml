@@ -1,0 +1,28 @@
+name: Daily Reminders Cron
+
+on:
+  schedule:
+    # 毎時0分に実行（JST 9時〜24時の間で最も重要）
+    - cron: '0 * * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Reminder API
+        run: |
+          echo "Calling reminder API..."
+          response=$(curl -s -w "%{http_code}" -X GET "https://fitness2-rho.vercel.app/api/cron/daily-reminders")
+          http_code="${response: -3}"
+          body="${response%???}"
+          
+          echo "HTTP Status Code: $http_code"
+          echo "Response Body: $body"
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "Error: API call failed with status code $http_code"
+            exit 1
+          fi
+          
+          echo "Reminder API call successful"
