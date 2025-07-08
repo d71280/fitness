@@ -18,6 +18,8 @@ export interface CreateScheduleData {
   programId: number;
   capacity: number;
   repeat: 'none' | 'weekly' | 'monthly';
+  repeatEndDate?: string;
+  repeatCount?: number;
 }
 
 export interface CreateReservationData {
@@ -92,4 +94,7 @@ export interface UpdateScheduleData {
   endTime: string;
   programId: number;
   capacity: number;
+  repeat?: 'none' | 'weekly' | 'monthly';
+  repeatEndDate?: string;
+  repeatCount?: number;
 }

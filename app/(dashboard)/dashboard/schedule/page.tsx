@@ -81,9 +81,23 @@ export default function AdminSchedulePage() {
         await createSchedule(data)
       } else {
         // 繰り返しスケジュールの場合、必要なパラメータを追加
+        let repeatWeeks = 4 // デフォルト値
+        
+        // repeatEndDateがある場合は週数を計算
+        if (data.repeatEndDate) {
+          const start = new Date(data.date)
+          const end = new Date(data.repeatEndDate)
+          const diffTime = end.getTime() - start.getTime()
+          repeatWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7))
+        }
+        // repeatCountがある場合はそれを使用
+        else if (data.repeatCount) {
+          repeatWeeks = data.repeatCount
+        }
+        
         const recurringData = {
           ...data,
-          repeatWeeks: 4, // デフォルト値
+          repeatWeeks,
           daysOfWeek: [new Date(data.date).getDay()], // 選択した日の曜日
         }
         await createRecurringSchedule(recurringData)

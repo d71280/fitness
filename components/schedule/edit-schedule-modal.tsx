@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { usePrograms } from '@/hooks/usePrograms'
+import { RecurringOptions } from './recurring-options'
 
 import { Schedule, UpdateScheduleData } from '@/types/api'
 
@@ -34,6 +35,9 @@ export function EditScheduleModal({
     startTime: '',
     endTime: '',
     programId: '',
+    repeat: 'none' as 'none' | 'weekly' | 'monthly',
+    repeatEndDate: '',
+    repeatCount: undefined as number | undefined,
   })
 
   // スケジュールデータを編集フォームに設定
@@ -55,6 +59,9 @@ export function EditScheduleModal({
         startTime: startTime.substring(0, 5), // HH:MM形式に変換
         endTime: endTime.substring(0, 5), // HH:MM形式に変換
         programId: schedule.programId?.toString() || '',
+        repeat: 'none',
+        repeatEndDate: '',
+        repeatCount: undefined,
       })
     } else {
       console.log('EditScheduleModal - no schedule provided')
@@ -88,7 +95,10 @@ export function EditScheduleModal({
         startTime: formData.startTime,
         endTime: formData.endTime,
         programId: parseInt(formData.programId),
-        capacity: 20 // 固定値
+        capacity: 20, // 固定値
+        repeat: formData.repeat,
+        repeatEndDate: formData.repeatEndDate || undefined,
+        repeatCount: formData.repeatCount
       })
       onClose()
     } catch (error) {
@@ -191,6 +201,14 @@ export function EditScheduleModal({
 
 
         </div>
+
+        {/* 繰り返し設定 */}
+        <RecurringOptions 
+          formData={formData}
+          onChange={(field, value) => {
+            setFormData(prev => ({ ...prev, [field]: value }))
+          }}
+        />
 
         {/* 操作ボタン */}
         <div className="flex justify-between pt-4">
