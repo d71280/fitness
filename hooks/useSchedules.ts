@@ -11,18 +11,18 @@ export function useSchedules() {
   const fetchSchedules = async () => {
     try {
       setLoading(true)
+      // より広い範囲でスケジュールを取得（現在の月から3ヶ月先まで）
       const today = new Date()
-      const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay())
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 6)
+      const startDate = new Date(today.getFullYear(), today.getMonth(), 1) // 今月の最初の日
+      const endDate = new Date(today.getFullYear(), today.getMonth() + 3, 0) // 3ヶ月後の最後の日
 
-      const response = await fetch(
-        `/api/schedules?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`
-      )
+      const response = await fetch('/api/schedules')
       
       if (!response.ok) throw new Error('スケジュール取得に失敗しました')
       
       const data = await response.json()
+      console.log('📅 取得したスケジュール数:', data.length)
+      console.log('📅 取得したスケジュール:', data)
       setSchedules(data)
       setError(null)
     } catch (err) {
