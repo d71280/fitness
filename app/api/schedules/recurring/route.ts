@@ -34,9 +34,13 @@ export async function POST(request: NextRequest) {
       for (const dayOfWeek of data.daysOfWeek) {
         const scheduleDate = new Date(baseDate)
         
-        // より正確な日付計算：週数分の日数を追加してから曜日調整
-        const daysToAdd = (week * 7) + (dayOfWeek - baseDate.getDay())
-        scheduleDate.setTime(baseDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000))
+        // より正確な日付計算：baseDate から週数分進めて指定した曜日に設定
+        scheduleDate.setDate(baseDate.getDate() + (week * 7))
+        
+        // 指定した曜日に調整（0=日曜、1=月曜...6=土曜）
+        const currentDayOfWeek = scheduleDate.getDay()
+        const dayDifference = dayOfWeek - currentDayOfWeek
+        scheduleDate.setDate(scheduleDate.getDate() + dayDifference)
 
         const scheduleData = {
           date: scheduleDate.toISOString().split('T')[0],
@@ -48,7 +52,7 @@ export async function POST(request: NextRequest) {
           capacity: data.capacity,
         }
         
-        console.log(`📅 スケジュール生成 - 週${week + 1}, 曜日${dayOfWeek}: ${scheduleData.date}`)
+        console.log(`📅 スケジュール生成 - 週${week + 1}, 曜日${dayOfWeek}(${['日','月','火','水','木','金','土'][dayOfWeek]}): ${scheduleData.date}`)
         schedules.push(scheduleData)
       }
     }

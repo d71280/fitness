@@ -75,12 +75,24 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
           <select
             id="repeat"
             value={formData.repeat}
-            onChange={(e) => setFormData(prev => ({ 
-              ...prev, 
-              repeat: e.target.value as CreateScheduleData['repeat'],
-              repeatEndDate: undefined,
-              repeatCount: undefined,
-            }))}
+            onChange={(e) => {
+              const value = e.target.value as CreateScheduleData['repeat']
+              if (onChange) {
+                onChange('repeat', value)
+                // 繰り返しパターンが変更された時は他の設定をリセット
+                if (value === 'none') {
+                  onChange('repeatEndDate', '')
+                  onChange('repeatCount', undefined)
+                }
+              } else {
+                setFormData(prev => ({ 
+                  ...prev, 
+                  repeat: value,
+                  repeatEndDate: value === 'none' ? undefined : prev.repeatEndDate,
+                  repeatCount: value === 'none' ? undefined : prev.repeatCount,
+                }))
+              }
+            }}
             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {repeatOptions.map((option) => (
@@ -106,11 +118,19 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                   id="repeatEndDate"
                   type="date"
                   value={formData.repeatEndDate || ''}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    repeatEndDate: e.target.value || undefined,
-                    repeatCount: undefined,
-                  }))}
+                  onChange={(e) => {
+                    const value = e.target.value || undefined
+                    if (onChange) {
+                      onChange('repeatEndDate', value)
+                      onChange('repeatCount', undefined)
+                    } else {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        repeatEndDate: value,
+                        repeatCount: undefined,
+                      }))
+                    }
+                  }}
                   min={formData.date}
                 />
               </div>
@@ -124,11 +144,19 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                   min="1"
                   max="365"
                   value={formData.repeatCount || ''}
-                  onChange={(e) => setFormData(prev => ({ 
-                    ...prev, 
-                    repeatCount: e.target.value ? parseInt(e.target.value) : undefined,
-                    repeatEndDate: undefined,
-                  }))}
+                  onChange={(e) => {
+                    const value = e.target.value ? parseInt(e.target.value) : undefined
+                    if (onChange) {
+                      onChange('repeatCount', value)
+                      onChange('repeatEndDate', undefined)
+                    } else {
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        repeatCount: value,
+                        repeatEndDate: undefined,
+                      }))
+                    }
+                  }}
                   placeholder="回数を入力"
                 />
               </div>
