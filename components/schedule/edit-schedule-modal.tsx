@@ -52,6 +52,9 @@ export function EditScheduleModal({
         startTime: startTime.substring(0, 5),
         endTime: endTime.substring(0, 5),
         programId: schedule.programId?.toString() || '',
+        recurringType: schedule.recurringType,
+        recurringEndDate: schedule.recurringEndDate,
+        recurringCount: schedule.recurringCount,
       })
       
       setFormData({
@@ -59,9 +62,9 @@ export function EditScheduleModal({
         startTime: startTime.substring(0, 5), // HH:MM形式に変換
         endTime: endTime.substring(0, 5), // HH:MM形式に変換
         programId: schedule.programId?.toString() || '',
-        repeat: 'none',
-        repeatEndDate: '',
-        repeatCount: undefined,
+        repeat: schedule.recurringType || 'none',
+        repeatEndDate: schedule.recurringEndDate || '',
+        repeatCount: schedule.recurringCount || undefined,
       })
     } else {
       console.log('EditScheduleModal - no schedule provided')

@@ -9,6 +9,11 @@ export interface Schedule {
   currentBookings?: number;
   availableSlots?: number;
   bookedCount?: number;
+  reservations?: Reservation[];
+  recurringGroupId?: string;
+  recurringType?: 'none' | 'weekly' | 'monthly';
+  recurringEndDate?: string;
+  recurringCount?: number;
 }
 
 export interface CreateScheduleData {

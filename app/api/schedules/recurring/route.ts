@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       success: true,
       schedules: formattedSchedules,
       count: formattedSchedules.length,
+      message: `${formattedSchedules.length}個のスケジュールを作成しました（重複は自動的にスキップされました）`,
     }, { status: 201 })
   } catch (error) {
     console.error('Recurring schedule creation error:', error)

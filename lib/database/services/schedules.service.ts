@@ -73,16 +73,45 @@ export class SchedulesService {
   }
 
   async createRecurring(schedules: ScheduleInsert[]) {
-    const { data, error } = await this.supabase
-      .from('schedules')
-      .insert(schedules)
-      .select()
+    const createdSchedules = []
+    const errors = []
 
-    if (error) {
-      throw new Error(`Failed to create recurring schedules: ${error.message}`)
+    // 一つずつ作成して、重複エラーをスキップ
+    for (const schedule of schedules) {
+      try {
+        const { data, error } = await this.supabase
+          .from('schedules')
+          .insert(schedule)
+          .select()
+          .single()
+
+        if (error) {
+          // 重複エラーの場合はスキップ、その他のエラーは記録
+          if (error.code === '23505') { // unique constraint violation
+            console.log(`スケジュール重複をスキップ: ${schedule.date} ${schedule.start_time}`)
+            continue
+          } else {
+            errors.push(`Failed to create schedule for ${schedule.date}: ${error.message}`)
+            continue
+          }
+        }
+
+        createdSchedules.push(data)
+      } catch (err) {
+        errors.push(`Error creating schedule for ${schedule.date}: ${err.message}`)
+      }
     }
 
-    return data
+    // エラーがあってもいくつかのスケジュールが作成された場合は成功とみなす
+    if (createdSchedules.length === 0 && errors.length > 0) {
+      throw new Error(`Failed to create any schedules: ${errors.join('; ')}`)
+    }
+
+    if (errors.length > 0) {
+      console.warn('Some schedules could not be created:', errors)
+    }
+
+    return createdSchedules
   }
 
   async update(id: number, schedule: ScheduleUpdate) {

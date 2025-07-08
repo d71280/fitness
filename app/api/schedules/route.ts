@@ -52,7 +52,12 @@ export async function GET(request: NextRequest) {
         program: schedule.program,
         currentBookings: confirmedReservations.length,
         availableSlots: schedule.capacity - confirmedReservations.length,
-        reservations: confirmedReservations
+        reservations: confirmedReservations,
+        recurringGroupId: schedule.recurring_group_id,
+        recurringType: schedule.recurring_type || 'none',
+        recurringEndDate: schedule.recurring_end_date,
+        recurringCount: schedule.recurring_count,
+        bookedCount: confirmedReservations.length
       }
     })
 
