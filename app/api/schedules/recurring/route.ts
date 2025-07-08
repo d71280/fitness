@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     console.error('Recurring schedule creation error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      type: typeof error,
+      error: error
+    })
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -93,7 +99,10 @@ export async function POST(request: NextRequest) {
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to create recurring schedules'
     return NextResponse.json(
-      { error: errorMessage },
+      { 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : String(error)
+      },
       { status: 500 }
     )
   }

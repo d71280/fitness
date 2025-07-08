@@ -95,6 +95,14 @@ export class SchedulesService {
           .single()
 
         if (error) {
+          console.error('Schedule creation error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            schedule: schedule
+          })
+          
           // 重複エラーの場合はスキップ、その他のエラーは記録
           if (error.code === '23505') { // unique constraint violation
             console.log(`スケジュール重複をスキップ: ${schedule.date} ${schedule.start_time}`)
