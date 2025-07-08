@@ -11,16 +11,15 @@ import { Repeat } from 'lucide-react'
 
 interface RecurringOptionsProps {
   formData: CreateScheduleData
-  setFormData: React.Dispatch<React.SetStateAction<CreateScheduleData>>
+  setFormData?: React.Dispatch<React.SetStateAction<CreateScheduleData>>
+  onChange?: (field: string, value: any) => void
 }
 
-export function RecurringOptions({ formData, setFormData }: RecurringOptionsProps) {
+export function RecurringOptions({ formData, setFormData, onChange }: RecurringOptionsProps) {
   const repeatOptions = [
     { value: 'none', label: 'なし（単発）' },
-    { value: 'daily', label: '毎日' },
     { value: 'weekly', label: '毎週' },
     { value: 'monthly', label: '毎月' },
-    { value: 'yearly', label: '毎年' },
   ]
 
   const getPreviewText = () => {
@@ -47,14 +46,10 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
     const diffTime = end.getTime() - start.getTime()
     
     switch (formData.repeat) {
-      case 'daily':
-        return Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
       case 'weekly':
         return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1
       case 'monthly':
         return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30)) + 1
-      case 'yearly':
-        return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365)) + 1
       default:
         return 1
     }
@@ -84,7 +79,7 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                   onChange('repeatEndDate', '')
                   onChange('repeatCount', undefined)
                 }
-              } else {
+              } else if (setFormData) {
                 setFormData(prev => ({ 
                   ...prev, 
                   repeat: value,
@@ -123,7 +118,7 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                     if (onChange) {
                       onChange('repeatEndDate', value)
                       onChange('repeatCount', undefined)
-                    } else {
+                    } else if (setFormData) {
                       setFormData(prev => ({ 
                         ...prev, 
                         repeatEndDate: value,
@@ -149,7 +144,7 @@ export function RecurringOptions({ formData, setFormData }: RecurringOptionsProp
                     if (onChange) {
                       onChange('repeatCount', value)
                       onChange('repeatEndDate', undefined)
-                    } else {
+                    } else if (setFormData) {
                       setFormData(prev => ({ 
                         ...prev, 
                         repeatCount: value,
