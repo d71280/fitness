@@ -161,7 +161,16 @@ export function AddScheduleModal({
               <select
                 id="programId"
                 value={formData.programId}
-                onChange={(e) => setFormData(prev => ({ ...prev, programId: parseInt(e.target.value) }))}
+                onChange={(e) => {
+                  const selectedId = parseInt(e.target.value)
+                  const selectedProgram = programs.find(p => p.id === selectedId)
+                  console.log('🎯 プログラム選択:', {
+                    selectedId,
+                    selectedProgram,
+                    programName: selectedProgram?.name
+                  })
+                  setFormData(prev => ({ ...prev, programId: selectedId }))
+                }}
                 required
                 className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >

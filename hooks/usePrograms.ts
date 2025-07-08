@@ -15,6 +15,8 @@ export function usePrograms() {
       if (!response.ok) throw new Error('プログラム取得に失敗しました')
       
       const data = await response.json()
+      console.log('🏋️ 取得したプログラム数:', data.length)
+      console.log('🏋️ 取得したプログラム:', data)
       setPrograms(data)
       setError(null)
     } catch (err) {
