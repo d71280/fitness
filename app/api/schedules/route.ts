@@ -80,19 +80,10 @@ export async function POST(request: NextRequest) {
     try {
       const supabase = createServiceRoleClient()
       
-      // 重複スケジュールの削除 - 既存の同じスケジュールを削除してから新しいスケジュールを作成
-      await supabase
-        .from('schedules')
-        .delete()
-        .eq('date', data.baseDate)
-        .eq('studio_id', data.studioId || 1)
-        .eq('start_time', data.startTime)
-        .eq('end_time', data.endTime)
-        .eq('program_id', data.programId)
-
+      // upsertを使用して既存のスケジュールがあれば更新、なければ挿入
       const { data: schedule, error } = await supabase
         .from('schedules')
-        .insert({
+        .upsert({
           date: data.baseDate,
           start_time: data.startTime,
           end_time: data.endTime,
@@ -100,6 +91,8 @@ export async function POST(request: NextRequest) {
           capacity: data.capacity,
           instructor_id: data.instructorId || 1, // デフォルトインストラクター
           studio_id: data.studioId || 1, // デフォルトスタジオ
+        }, {
+          onConflict: 'date,studio_id,start_time,end_time'
         })
         .select(`
           *,

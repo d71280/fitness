@@ -88,19 +88,12 @@ export class SchedulesService {
           recurring_group_id: recurringGroupId
         }
 
-        // 重複スケジュールの削除 - 既存の同じスケジュールを削除してから新しいスケジュールを作成
-        await this.supabase
-          .from('schedules')
-          .delete()
-          .eq('date', schedule.date)
-          .eq('studio_id', schedule.studio_id)
-          .eq('start_time', schedule.start_time)
-          .eq('end_time', schedule.end_time)
-          .eq('program_id', schedule.program_id)
-        
+        // upsertを使用して既存のスケジュールがあれば更新、なければ挿入
         const { data, error } = await this.supabase
           .from('schedules')
-          .insert(scheduleWithGroupId)
+          .upsert(scheduleWithGroupId, {
+            onConflict: 'date,studio_id,start_time,end_time'
+          })
           .select()
           .single()
 
