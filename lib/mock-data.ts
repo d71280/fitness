@@ -123,6 +123,16 @@ export const mockPrograms: Program[] = [
     color_class: 'bg-red-500',
     text_color_class: 'text-white',
   },
+  {
+    id: 5,
+    name: 'RPM45',
+    description: '高強度サイクリングワークアウト',
+    duration: 45,
+    capacity: 20,
+    color: '#06B6D4',
+    color_class: 'bg-cyan-500',
+    text_color_class: 'text-white',
+  },
 ]
 
 export const mockInstructors = [

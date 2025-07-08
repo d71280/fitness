@@ -76,12 +76,21 @@ export class SchedulesService {
     const createdSchedules = []
     const errors = []
 
+    // 繰り返しスケジュールグループIDを生成（UUIDまたはタイムスタンプベース）
+    const recurringGroupId = `recurring_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
     // 一つずつ作成して、重複エラーをスキップ
     for (const schedule of schedules) {
       try {
+        // 繰り返しスケジュールには共通のグループIDを設定
+        const scheduleWithGroupId = {
+          ...schedule,
+          recurring_group_id: recurringGroupId
+        }
+
         const { data, error } = await this.supabase
           .from('schedules')
-          .insert(schedule)
+          .insert(scheduleWithGroupId)
           .select()
           .single()
 
@@ -111,6 +120,8 @@ export class SchedulesService {
       console.warn('Some schedules could not be created:', errors)
     }
 
+    console.log(`Created ${createdSchedules.length} schedules with group ID: ${recurringGroupId}`)
+    
     return createdSchedules
   }
 

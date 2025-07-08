@@ -119,17 +119,70 @@ export function EditScheduleModal({
     console.log('handleDelete called - schedule:', schedule)
     console.log('Schedule ID:', schedule.id, 'Type:', typeof schedule.id)
     
-    if (confirm('このスケジュールを削除しますか？\n※既存の予約も削除されます。')) {
-      try {
-        setLoading(true)
-        await onDelete(schedule.id)
-        onClose()
-      } catch (error) {
-        console.error('スケジュール削除エラー:', error)
-        const errorMessage = error instanceof Error ? error.message : 'スケジュール削除に失敗しました'
-        alert(`エラー: ${errorMessage}`)
-      } finally {
-        setLoading(false)
+    // 繰り返しスケジュールの場合は削除オプションを選択
+    if (schedule.recurringGroupId) {
+      const choice = window.confirm(
+        '繰り返しスケジュールの削除オプション:\n\n' +
+        'OK = このスケジュールのみ削除\n' +
+        'キャンセル後、もう一度削除ボタンを押すと = 繰り返しスケジュール全体を削除'
+      )
+      
+      if (choice) {
+        // 単一スケジュールのみ削除
+        if (confirm('このスケジュールのみを削除しますか？\n※既存の予約も削除されます。')) {
+          try {
+            setLoading(true)
+            await onDelete(schedule.id)
+            onClose()
+          } catch (error) {
+            console.error('スケジュール削除エラー:', error)
+            const errorMessage = error instanceof Error ? error.message : 'スケジュール削除に失敗しました'
+            alert(`エラー: ${errorMessage}`)
+          } finally {
+            setLoading(false)
+          }
+        }
+      } else {
+        // 繰り返しスケジュール全体を削除
+        if (confirm('繰り返しスケジュール全体を削除しますか？\n※関連する全てのスケジュールと予約が削除されます。')) {
+          try {
+            setLoading(true)
+            // 繰り返しグループ全体を削除するAPIを呼び出し
+            const response = await fetch(`/api/schedules/recurring/${schedule.recurringGroupId}`, {
+              method: 'DELETE',
+            })
+            
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.error || '繰り返しスケジュール削除に失敗しました')
+            }
+            
+            onClose()
+            // ページをリフレッシュして変更を反映
+            window.location.reload()
+          } catch (error) {
+            console.error('繰り返しスケジュール削除エラー:', error)
+            const errorMessage = error instanceof Error ? error.message : '繰り返しスケジュール削除に失敗しました'
+            alert(`エラー: ${errorMessage}`)
+          } finally {
+            setLoading(false)
+          }
+        }
+      }
+    } else {
+      // 通常のスケジュール削除
+      if (confirm('このスケジュールを削除しますか？\n※既存の予約も削除されます。')) {
+        try {
+          setLoading(true)
+          await onDelete(schedule.id)
+          onClose()
+        } catch (error) {
+          console.error('スケジュール削除エラー:', error)
+          const errorMessage = error instanceof Error ? error.message : 'スケジュール削除に失敗しました'
+          alert(`エラー: ${errorMessage}`)
+        } finally {
+          setLoading(false)
+        }
       }
     }
   }
@@ -223,7 +276,7 @@ export function EditScheduleModal({
                 onClick={handleDelete}
                 disabled={loading}
               >
-                スケジュール削除
+                {schedule?.recurringGroupId ? '繰り返しスケジュール削除' : 'スケジュール削除'}
               </Button>
             )}
           </div>
