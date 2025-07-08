@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
     try {
       const supabase = createServiceRoleClient()
       
-      // upsertを使用して既存のスケジュールがあれば更新、なければ挿入
+      // upsertを使用して同じプログラムの既存スケジュールがあれば更新、なければ挿入
+      // program_idを含めることで異なるプログラムの並行実行を可能にする
       const { data: schedule, error } = await supabase
         .from('schedules')
         .upsert({
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
           instructor_id: data.instructorId || 1, // デフォルトインストラクター
           studio_id: data.studioId || 1, // デフォルトスタジオ
         }, {
-          onConflict: 'date,studio_id,start_time,end_time'
+          onConflict: 'date,studio_id,start_time,end_time,program_id'
         })
         .select(`
           *,

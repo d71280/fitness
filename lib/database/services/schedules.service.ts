@@ -88,11 +88,12 @@ export class SchedulesService {
           recurring_group_id: recurringGroupId
         }
 
-        // upsertを使用して既存のスケジュールがあれば更新、なければ挿入
+        // upsertを使用して同じプログラムの既存スケジュールがあれば更新、なければ挿入
+        // program_idを含めることで異なるプログラムの並行実行を可能にする
         const { data, error } = await this.supabase
           .from('schedules')
           .upsert(scheduleWithGroupId, {
-            onConflict: 'date,studio_id,start_time,end_time'
+            onConflict: 'date,studio_id,start_time,end_time,program_id'
           })
           .select()
           .single()
