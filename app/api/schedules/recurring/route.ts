@@ -17,6 +17,7 @@ const createRecurringScheduleSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('📝 受信したリクエストデータ:', body)
     const data = createRecurringScheduleSchema.parse(body)
     
     console.log('🔄 繰り返しスケジュール作成開始:', {
@@ -24,7 +25,8 @@ export async function POST(request: NextRequest) {
       repeatWeeks: data.repeatWeeks,
       daysOfWeek: data.daysOfWeek,
       startTime: data.startTime,
-      endTime: data.endTime
+      endTime: data.endTime,
+      programId: data.programId
     })
 
     const schedules = []
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
           capacity: data.capacity,
         }
         
-        console.log(`📅 スケジュール生成 - 週${week + 1}, 曜日${dayOfWeek}(${['日','月','火','水','木','金','土'][dayOfWeek]}): ${scheduleData.date}`)
+        console.log(`📅 スケジュール生成 - 週${week + 1}, 曜日${dayOfWeek}(${['日','月','火','水','木','金','土'][dayOfWeek]}): ${scheduleData.date}, programId: ${scheduleData.program_id}`)
         schedules.push(scheduleData)
       }
     }
