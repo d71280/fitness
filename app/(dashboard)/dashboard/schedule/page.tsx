@@ -77,9 +77,14 @@ export default function AdminSchedulePage() {
 
   const handleSubmitSchedule = async (data: CreateScheduleData) => {
     try {
+      console.log('🔄 handleSubmitSchedule called with data:', data)
+      
       if (data.repeat === 'none') {
+        console.log('➡️ Creating single schedule')
         await createSchedule(data)
       } else {
+        console.log('🔁 Creating recurring schedule')
+        
         // 繰り返しスケジュールの場合、必要なパラメータを追加
         let repeatWeeks = 4 // デフォルト値
         
@@ -89,21 +94,34 @@ export default function AdminSchedulePage() {
           const end = new Date(data.repeatEndDate)
           const diffTime = end.getTime() - start.getTime()
           repeatWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7))
+          console.log(`📅 End date provided: ${data.repeatEndDate}, calculated weeks: ${repeatWeeks}`)
         }
         // repeatCountがある場合はそれを使用
         else if (data.repeatCount) {
           repeatWeeks = data.repeatCount
+          console.log(`🔢 Repeat count provided: ${repeatWeeks}`)
         }
         
+        const dayOfWeek = new Date(data.date).getDay()
         const recurringData = {
           ...data,
           repeatWeeks,
-          daysOfWeek: [new Date(data.date).getDay()], // 選択した日の曜日
+          daysOfWeek: [dayOfWeek], // 選択した日の曜日
         }
-        await createRecurringSchedule(recurringData)
+        
+        console.log('🔁 Recurring schedule data:', {
+          date: data.date,
+          dayOfWeek: dayOfWeek,
+          repeatWeeks: repeatWeeks,
+          recurringData: recurringData
+        })
+        
+        const result = await createRecurringSchedule(recurringData)
+        console.log('✅ Recurring schedule creation result:', result)
       }
       await refetch()
     } catch (error) {
+      console.error('❌ handleSubmitSchedule error:', error)
       setDebugError(`handleSubmitSchedule error: ${error}`)
       throw error
     }

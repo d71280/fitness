@@ -69,30 +69,39 @@ export function useSchedules() {
     daysOfWeek: number[] 
   }) => {
     try {
+      const requestData = {
+        baseDate: scheduleData.date,
+        startTime: scheduleData.startTime,
+        endTime: scheduleData.endTime,
+        programId: scheduleData.programId,
+        capacity: scheduleData.capacity,
+        repeatWeeks: scheduleData.repeatWeeks,
+        daysOfWeek: scheduleData.daysOfWeek,
+      }
+      
+      console.log('🚀 Sending recurring schedule request:', requestData)
+      
       const response = await fetch('/api/schedules/recurring', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          baseDate: scheduleData.date,
-          startTime: scheduleData.startTime,
-          endTime: scheduleData.endTime,
-          programId: scheduleData.programId,
-          capacity: scheduleData.capacity,
-          repeatWeeks: scheduleData.repeatWeeks,
-          daysOfWeek: scheduleData.daysOfWeek,
-        }),
+        body: JSON.stringify(requestData),
       })
+
+      console.log('📡 Response status:', response.status, response.statusText)
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ API Error Response:', errorData)
         throw new Error(errorData.error || '繰り返しスケジュール作成に失敗しました')
       }
 
       const result = await response.json()
+      console.log('✅ API Success Response:', result)
+      
       await fetchSchedules()
       return result
     } catch (error) {
-      console.error('繰り返しスケジュール作成エラー:', error)
+      console.error('❌ 繰り返しスケジュール作成エラー:', error)
       throw error
     }
   }
