@@ -88,27 +88,51 @@ export class SchedulesService {
           recurring_group_id: recurringGroupId
         }
 
-        // upsertを使用して同じプログラムの既存スケジュールがあれば更新、なければ挿入
-        // program_idを含めることで異なるプログラムの並行実行を可能にする
+        // 通常のinsertを使用し、重複エラーは無視して処理を継続
         const { data, error } = await this.supabase
           .from('schedules')
-          .upsert(scheduleWithGroupId, {
-            onConflict: 'date,studio_id,start_time,end_time,program_id'
-          })
+          .insert(scheduleWithGroupId)
           .select()
           .single()
 
         if (error) {
-          console.error('Schedule creation error details:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            schedule: schedule
-          })
-          
-          errors.push(`Failed to create schedule for ${schedule.date}: ${error.message}`)
-          continue
+          // 重複エラーの場合は警告のみ表示して処理を継続
+          if (error.code === '23505') { // unique constraint violation
+            console.log(`⚠️ スケジュール重複のため既存スケジュールを維持:`, {
+              date: schedule.date,
+              startTime: schedule.start_time,
+              endTime: schedule.end_time,
+              programId: schedule.program_id,
+              studioId: schedule.studio_id
+            })
+            
+            // 重複エラーの場合は既存のスケジュールを取得
+            const { data: existing } = await this.supabase
+              .from('schedules')
+              .select()
+              .eq('date', schedule.date)
+              .eq('studio_id', schedule.studio_id)
+              .eq('start_time', schedule.start_time)
+              .eq('end_time', schedule.end_time)
+              .eq('program_id', schedule.program_id)
+              .single()
+            
+            if (existing) {
+              createdSchedules.push(existing)
+            }
+            continue
+          } else {
+            console.error('Schedule creation error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              schedule: schedule
+            })
+            
+            errors.push(`Failed to create schedule for ${schedule.date}: ${error.message}`)
+            continue
+          }
         }
 
         createdSchedules.push(data)
