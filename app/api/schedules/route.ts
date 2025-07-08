@@ -80,10 +80,11 @@ export async function POST(request: NextRequest) {
     try {
       const supabase = createServiceRoleClient()
       
-      // 通常のinsertを使用し、重複エラーは適切に処理
+      // upsertを使用して同じプログラムの既存スケジュールがあれば更新、なければ挿入
+      // 新しい制約: date,studio_id,start_time,end_time,program_id
       const { data: schedule, error } = await supabase
         .from('schedules')
-        .insert({
+        .upsert({
           date: data.baseDate,
           start_time: data.startTime,
           end_time: data.endTime,
@@ -91,6 +92,8 @@ export async function POST(request: NextRequest) {
           capacity: data.capacity,
           instructor_id: data.instructorId || 1, // デフォルトインストラクター
           studio_id: data.studioId || 1, // デフォルトスタジオ
+        }, {
+          onConflict: 'date,studio_id,start_time,end_time,program_id'
         })
         .select(`
           *,
@@ -100,52 +103,7 @@ export async function POST(request: NextRequest) {
         `)
         .single()
 
-      if (error) {
-        // 重複エラーの場合は既存のスケジュールを返す
-        if (error.code === '23505') { // unique constraint violation
-          console.log(`⚠️ スケジュール重複のため既存スケジュールを返します:`, {
-            date: data.baseDate,
-            startTime: data.startTime,
-            endTime: data.endTime,
-            programId: data.programId
-          })
-          
-          // 既存のスケジュールを取得
-          const { data: existing, error: fetchError } = await supabase
-            .from('schedules')
-            .select(`
-              *,
-              program:programs(*),
-              instructor:instructors(*),
-              studio:studios(*)
-            `)
-            .eq('date', data.baseDate)
-            .eq('studio_id', data.studioId || 1)
-            .eq('start_time', data.startTime)
-            .eq('end_time', data.endTime)
-            .eq('program_id', data.programId)
-            .single()
-          
-          if (fetchError) throw fetchError
-          
-          const formattedSchedule = {
-            id: existing.id,
-            date: existing.date,
-            startTime: existing.start_time,
-            endTime: existing.end_time,
-            programId: existing.program_id,
-            capacity: existing.capacity,
-            program: existing.program,
-          }
-          
-          return NextResponse.json({
-            success: true,
-            schedule: formattedSchedule,
-            message: '既存のスケジュールが存在するため、そちらを返します'
-          }, { status: 200 })
-        }
-        throw error
-      }
+      if (error) throw error
 
       // キャメルケースに変換してレスポンス
       const formattedSchedule = {
