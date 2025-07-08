@@ -105,14 +105,27 @@ export class SchedulesService {
           
           // 重複エラーの場合はスキップ、その他のエラーは記録
           if (error.code === '23505') { // unique constraint violation
-            console.log(`❌ スケジュール重複をスキップ:`, {
+            console.log(`❌ スケジュール重複をスキップ (詳細確認用):`, {
               date: schedule.date,
               startTime: schedule.start_time,
               endTime: schedule.end_time,
               programId: schedule.program_id,
+              studioId: schedule.studio_id,
               constraint: error.details,
-              hint: error.hint
+              hint: error.hint,
+              fullError: error
             })
+            
+            // 既存スケジュールを確認
+            const { data: existing } = await this.supabase
+              .from('schedules')
+              .select('id, program_id, programs(name)')
+              .eq('date', schedule.date)
+              .eq('studio_id', schedule.studio_id)
+              .eq('start_time', schedule.start_time)
+              .eq('end_time', schedule.end_time)
+            
+            console.log(`🔍 同じ時間帯の既存スケジュール:`, existing)
             continue
           } else {
             console.error(`❌ その他のスケジュール作成エラー:`, {
