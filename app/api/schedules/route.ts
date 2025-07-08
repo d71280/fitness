@@ -80,7 +80,15 @@ export async function POST(request: NextRequest) {
     try {
       const supabase = createServiceRoleClient()
       
-      // 重複チェックを削除 - 異なるプログラムなら同じ時間帯でもOK
+      // 重複スケジュールの削除 - 既存の同じスケジュールを削除してから新しいスケジュールを作成
+      await supabase
+        .from('schedules')
+        .delete()
+        .eq('date', data.baseDate)
+        .eq('studio_id', data.studioId || 1)
+        .eq('start_time', data.startTime)
+        .eq('end_time', data.endTime)
+        .eq('program_id', data.programId)
 
       const { data: schedule, error } = await supabase
         .from('schedules')

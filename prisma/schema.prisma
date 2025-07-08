@@ -80,7 +80,6 @@ model Schedule {
   reservations Reservation[]
   waiting_list WaitingList[]
 
-  @@unique([date, studio_id, start_time, end_time])
   @@map("schedules")
 }
 
