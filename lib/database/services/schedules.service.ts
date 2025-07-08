@@ -76,8 +76,8 @@ export class SchedulesService {
     const createdSchedules = []
     const errors = []
 
-    // 繰り返しスケジュールグループIDを生成（UUIDまたはタイムスタンプベース）
-    const recurringGroupId = `recurring_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    // 繰り返しスケジュールグループIDを生成（UUID v4形式）
+    const recurringGroupId = crypto.randomUUID()
 
     // 一つずつ作成して、重複エラーをスキップ
     for (const schedule of schedules) {
