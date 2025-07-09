@@ -64,7 +64,7 @@ export default function SchedulePage() {
         addDebugLog('LIFF環境での初期化')
         
         if (typeof window.liff !== 'undefined') {
-          await window.liff.init({ liffId: '2006887302-vbBy55Qj' })
+          await window.liff.init({ liffId: '2006887302-Q3erllVJ' })
           
           if (window.liff.isLoggedIn()) {
             const profile = await window.liff.getProfile()
@@ -167,7 +167,7 @@ export default function SchedulePage() {
         addDebugLog('🔄 LIFF初期化開始...')
         
         // 環境変数チェック
-        const liffId = '2006887302-vbBy55Qj'
+        const liffId = '2006887302-Q3erllVJ'
         addDebugLog(`📋 LIFF ID: ${liffId || '未設定'}`)
         addDebugLog(`🌍 環境: production`)
         addDebugLog(`🔧 デバッグモード: false`)
@@ -180,7 +180,7 @@ export default function SchedulePage() {
 
 【Vercel管理者向け】
 1. Vercelダッシュボード → Settings → Environment Variables
-2. NEXT_PUBLIC_LIFF_ID = 2006887302-vbBy55Qj を追加
+2. NEXT_PUBLIC_LIFF_ID = 2006887302-Q3erllVJ を追加
 3. 再デプロイを実行してください`)
           addDebugLog('❌ LIFF ID未設定エラー')
           return
@@ -290,7 +290,7 @@ export default function SchedulePage() {
         }
       } catch (error: any) {
         // 詳細なエラー情報を収集
-        const currentLiffId = '2006887302-vbBy55Qj'
+        const currentLiffId = '2006887302-Q3erllVJ'
         const errorInfo = {
           message: error.message || 'Unknown error',
           code: error.code || 'No code',
