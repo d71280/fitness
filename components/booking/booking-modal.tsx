@@ -106,11 +106,11 @@ export function BookingModal({
         console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
         // 外部LIFFアプリへ直接リダイレクト
-        const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
+        const targetUrl = 'https://liff.line.me/2006887302-Q3erllVJ/landing'
         const params = new URLSearchParams({
           follow: '@080larlo',
           lp: 'tWteWL',
-          liff_id: '2006887302-vbBy55Qj',
+          liff_id: '2006887302-Q3erllVJ',
           // 予約情報も渡す
           from_booking: 'true',
           reservation_id: result.id || '',
