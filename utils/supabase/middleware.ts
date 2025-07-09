@@ -50,7 +50,28 @@ export async function updateSession(request: NextRequest) {
       url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
       return NextResponse.redirect(url)
     } else {
-      console.log('Middleware - User authenticated, allowing access')
+      // Check if user has admin role
+      try {
+        const { data: admin, error } = await supabase
+          .from('admins')
+          .select('role')
+          .eq('email', user.email)
+          .single()
+        
+        if (error || !admin || (admin.role !== 'admin' && admin.role !== 'staff')) {
+          console.log('Middleware - User not authorized for dashboard')
+          const url = request.nextUrl.clone()
+          url.pathname = '/unauthorized'
+          return NextResponse.redirect(url)
+        }
+        
+        console.log('Middleware - User authorized for dashboard')
+      } catch (error) {
+        console.error('Middleware - Error checking admin role:', error)
+        const url = request.nextUrl.clone()
+        url.pathname = '/unauthorized'
+        return NextResponse.redirect(url)
+      }
     }
   }
 

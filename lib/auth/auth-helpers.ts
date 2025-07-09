@@ -25,12 +25,60 @@ export async function isAuthenticated() {
   return !!user
 }
 
-// 管理者権限チェック（将来的にSupabase RLSで実装）
+// 管理者権限チェック
 export async function isAdmin() {
   const user = await getUser()
   if (!user) return false
   
-  // 今のところは全ログインユーザーを管理者とする
-  // 将来的にはuser.app_metadataやカスタムクレームを使用
-  return true
+  const supabase = createApiRouteClient()
+  
+  try {
+    // Check if user exists in admins table
+    const { data: admin, error } = await supabase
+      .from('admins')
+      .select('role')
+      .eq('email', user.email)
+      .single()
+    
+    if (error || !admin) {
+      console.log('User not found in admins table:', user.email)
+      return false
+    }
+    
+    return admin.role === 'admin'
+  } catch (error) {
+    console.error('管理者チェックエラー:', error)
+    return false
+  }
+}
+
+// Get user role
+export async function getUserRole() {
+  const user = await getUser()
+  if (!user) return null
+  
+  const supabase = createApiRouteClient()
+  
+  try {
+    const { data: admin, error } = await supabase
+      .from('admins')
+      .select('role')
+      .eq('email', user.email)
+      .single()
+    
+    if (error || !admin) {
+      return 'customer'
+    }
+    
+    return admin.role
+  } catch (error) {
+    console.error('ロール取得エラー:', error)
+    return 'customer'
+  }
+}
+
+// Check if user can access dashboard
+export async function canAccessDashboard() {
+  const role = await getUserRole()
+  return role === 'admin' || role === 'staff'
 }
