@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     console.log(`📋 ${reservations.length}件の未同期予約データを処理中...`)
     
     // GAS Webhook URL（サーバーサイドでは直接設定）
-    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxdBJsI8pTHr-F0rfSazZbvowMIP_wfkYVdOLQNh2CX2HkY-y4pTtNWYY5L9tmVgDBL7A/exec'
+    const gasWebhookUrl = 'https://script.google.com/macros/s/AKfycbxtbYix8qD52jQWqg3sJjUbhTe_d3dvDhQBAEj_KlyxoFNZQeyPOl4vihqkvqsC2-dk1g/exec'
     
     console.log('🔗 GAS Webhook URL:', gasWebhookUrl)
     
