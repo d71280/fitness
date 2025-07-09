@@ -6,7 +6,7 @@
 // 設定
 const RESERVATION_API_URL = 'https://fitness2-rho.vercel.app/api/reservations/unsynced';
 const SPREADSHEET_ID = '1fE2aimUZu7yGyswe5rGqu27ohXnYB5pJ37x13bOQ4';
-const LINE_ACCESS_TOKEN = '1cUF6JvqNcLdHfWJPKmJs0KUUORmOoXHXT3ZC/QuahFUuoi/i+MHSfpy+vn41HUtXQBib4zoyOiliSNeEOmLFZyPjcq0fsOfHOSiO+kuyw6lx8Z/13t47A7QI/7+K5IjffNVDRs79LW7na8kzdm2ewdB04t89/1O/w1cDnyilFU=';
+const LINE_ACCESS_TOKEN = '1SLhTzln1vKVHV3PHuv+L9pSxr2kcVq9RcmjcaYUdIetU9YVNqOpQuQFiNtdos2sWh6h8Td+to7Gi57qI+o9/pHbY7GWOmB1/vTpjL0EhvbVyH0O+0BgnNgGU5NHzm/fQ/4a/af1TQ52GriYS/E1oAdB04t89/1O/w1cDnyilFU=';
 const STAFF_GROUP_ID = 'YOUR_GROUP_ID'; // 必要に応じて設定
 
 // メイン処理関数（5分ごとに実行される）
