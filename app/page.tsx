@@ -30,7 +30,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <a 
-                href="https://liff.line.me/2006887302-Q3erllVJ"
+                href="https://liff.line.me/2006887302-vbBy55Qj"
                 className="block w-full"
               >
                 <Button className="w-full">
