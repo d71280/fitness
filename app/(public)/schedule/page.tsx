@@ -716,6 +716,16 @@ ${errorDetails.join('\n')}
         </div>
       )}
 
+      {/* 案内テキスト */}
+      <div className="text-center mb-6">
+        <h2 className="text-lg font-semibold text-gray-700 mb-2">
+          好きなプログラムを選んで予約してね！
+        </h2>
+        <p className="text-sm text-gray-500">
+          下のスケジュールから参加したいプログラムをタップしてください
+        </p>
+      </div>
+
       <WeeklyCalendar
         schedules={schedulesByDate}
         onScheduleClick={handleScheduleClick}
