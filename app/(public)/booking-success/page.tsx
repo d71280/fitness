@@ -25,22 +25,35 @@ export default function BookingSuccessPage() {
   const performRedirect = async () => {
     const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing?follow=%40080larlo&lp=tWteWL&liff_id=2006887302-vbBy55Qj'
     
+    console.log('🎯 リダイレクト処理開始')
+    console.log('📍 ターゲットURL:', targetUrl)
+    console.log('🌐 LIFF利用可能:', !!window.liff)
+    console.log('📱 LIFFクライアント内:', window.liff?.isInClient?.() || false)
+    
     try {
       if (window.liff && window.liff.isInClient()) {
         console.log('🔗 LIFF環境でのリダイレクト開始')
+        // LIFF環境では external: true で外部URLとして開く
         await window.liff.openWindow({
           url: targetUrl,
-          external: false
+          external: true
         })
+        console.log('✅ LIFF openWindow 実行完了')
       } else {
         console.log('🔗 ブラウザでのリダイレクト開始')
-        window.location.href = targetUrl
+        // ブラウザ環境では直接リダイレクト
+        window.location.replace(targetUrl)
       }
     } catch (liffError) {
       console.error('🚨 LIFFリダイレクトエラー:', liffError)
-      // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
+      console.error('エラー詳細:', {
+        message: liffError.message,
+        stack: liffError.stack,
+        name: liffError.name
+      })
+      // エラーの場合は通常のブラウザリダイレクトにフォールバック
       console.log('🔄 通常のブラウザリダイレクトにフォールバック')
-      window.location.href = targetUrl
+      window.location.replace(targetUrl)
     }
   }
   
@@ -78,7 +91,9 @@ export default function BookingSuccessPage() {
       return () => clearTimeout(timer)
     } else {
       // カウントダウン終了後にリダイレクト
-      performRedirect()
+      setTimeout(() => {
+        performRedirect()
+      }, 100) // 少し遅延を入れる
     }
   }, [countdown])
   
@@ -190,8 +205,9 @@ export default function BookingSuccessPage() {
             className="w-full"
             variant="default"
             size="lg"
-            onClick={() => {
-              setCountdown(0) // カウントダウンを0にして即座にリダイレクト
+            onClick={async () => {
+              console.log('🚀 手動リダイレクトボタンクリック')
+              await performRedirect()
             }}
           >
             今すぐ次へ進む

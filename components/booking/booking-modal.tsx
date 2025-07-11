@@ -106,19 +106,7 @@ export function BookingModal({
         console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
         // 外部LIFFアプリへ直接リダイレクト
-        const targetUrl = 'https://liff.line.me/2006887302-Q3erllVJ/landing'
-        const params = new URLSearchParams({
-          follow: '@080larlo',
-          lp: 'tWteWL',
-          liff_id: '2006887302-Q3erllVJ',
-          // 予約情報も渡す
-          from_booking: 'true',
-          reservation_id: result.id || '',
-          program: schedule.program?.name || '',
-          date: schedule.date || '',
-          time: `${schedule.startTime?.slice(0, 5)}-${schedule.endTime?.slice(0, 5)}`,
-          customer_name: formData.customerNameKanji
-        })
+        const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing?follow=%40080larlo&lp=tWteWL&liff_id=2006887302-vbBy55Qj'
         
         // 成功時のUI処理
         onClose()
@@ -136,19 +124,19 @@ export function BookingModal({
             // LIFF環境内で開く
             console.log('🔗 LIFF環境でのリダイレクト開始')
             await window.liff.openWindow({
-              url: `${targetUrl}?${params.toString()}`,
+              url: targetUrl,
               external: false
             })
           } else {
             // 通常のブラウザで開く
             console.log('🔗 ブラウザでのリダイレクト開始')
-            window.location.href = `${targetUrl}?${params.toString()}`
+            window.location.href = targetUrl
           }
         } catch (liffError) {
           console.error('🚨 LIFFリダイレクトエラー:', liffError)
           // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
           console.log('🔄 通常のブラウザリダイレクトにフォールバック')
-          window.location.href = `${targetUrl}?${params.toString()}`
+          window.location.href = targetUrl
         }
       } else {
         // 明確な失敗の場合
