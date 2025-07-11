@@ -118,73 +118,55 @@ export function BookingModal({
           phone: '',
         })
         
-        // 直接URLリダイレクトを強制実行
-        console.log('🎯 強制リダイレクト処理開始')
+        // 直接URLリダイレクトを実行
+        console.log('🎯 リダイレクト処理開始')
         console.log('📍 ターゲットURL:', targetUrl)
         console.log('🌐 LIFF利用可能:', !!window.liff)
         console.log('📱 LIFFクライアント内:', window.liff?.isInClient?.() || false)
         
+        // リダイレクトを即座に実行
+        const executeRedirect = () => {
+          console.log('🚀 リダイレクト実行！')
+          // まず通常のリダイレクトを試す
+          window.location.href = targetUrl
+          
+          // バックアップとして他の方法も実行
+          setTimeout(() => {
+            window.location.replace(targetUrl)
+          }, 100)
+          
+          setTimeout(() => {
+            if (window.top) {
+              window.top.location.href = targetUrl
+            }
+          }, 200)
+        }
+        
         try {
           if (window.liff && window.liff.isInClient()) {
-            console.log('🔗 LIFF環境検出 - 複数の方法を試行')
+            console.log('🔗 LIFF環境内でリダイレクト')
             
-            // 方法1: LIFF closeWindow を試す
-            try {
-              console.log('📱 LIFF closeWindow を試行')
-              await window.liff.closeWindow()
-              console.log('✅ LIFF closeWindow 完了')
-            } catch (closeError) {
-              console.log('⚠️ LIFF closeWindow 失敗:', closeError)
-            }
+            // 即座にリダイレクトを実行
+            executeRedirect()
             
-            // 方法2: 強制的に location.href を実行
-            console.log('🔄 強制的な location.href リダイレクト')
-            setTimeout(() => {
-              window.location.href = targetUrl
-            }, 100)
-            
-            // 方法3: location.replace も試す
-            setTimeout(() => {
-              window.location.replace(targetUrl)
-            }, 300)
-            
-            // 方法4: top.location も試す
-            setTimeout(() => {
-              if (window.top) {
-                window.top.location.href = targetUrl
+            // LIFFを閉じる処理は後で実行（リダイレクトを妨げないため）
+            setTimeout(async () => {
+              try {
+                await window.liff.closeWindow()
+              } catch (e) {
+                console.log('LIFF closeWindow エラー（無視）:', e)
               }
-            }, 500)
-            
-            // 方法5: メタリフレッシュタグを動的に追加
-            setTimeout(() => {
-              console.log('🔄 メタリフレッシュタグを追加')
-              const meta = document.createElement('meta')
-              meta.httpEquiv = 'refresh'
-              meta.content = `0;url=${targetUrl}`
-              document.head.appendChild(meta)
-            }, 700)
-            
-            // 方法6: 強制的にページを置き換え
-            setTimeout(() => {
-              console.log('🔄 document.location.replace 試行')
-              document.location.replace(targetUrl)
-            }, 1000)
+            }, 2000)
             
           } else {
             // 通常のブラウザで開く
             console.log('🔗 ブラウザでのリダイレクト開始')
-            window.location.href = targetUrl
+            executeRedirect()
           }
-        } catch (liffError) {
-          console.error('🚨 LIFFリダイレクトエラー:', liffError)
-          console.error('エラー詳細:', {
-            message: liffError.message,
-            stack: liffError.stack,
-            name: liffError.name
-          })
-          // 最終的なフォールバック
-          console.log('🔄 最終フォールバック - 強制リダイレクト')
-          window.location.href = targetUrl
+        } catch (error) {
+          console.error('🚨 リダイレクトエラー:', error)
+          // エラーが発生しても強制的にリダイレクト
+          executeRedirect()
         }
       } else {
         // 明確な失敗の場合
