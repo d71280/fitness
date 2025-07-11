@@ -118,21 +118,58 @@ export function BookingModal({
           phone: '',
         })
         
-        // 直接外部LIFFアプリへリダイレクト
-        console.log('🎯 リダイレクト処理開始')
+        // 直接URLリダイレクトを強制実行
+        console.log('🎯 強制リダイレクト処理開始')
         console.log('📍 ターゲットURL:', targetUrl)
         console.log('🌐 LIFF利用可能:', !!window.liff)
         console.log('📱 LIFFクライアント内:', window.liff?.isInClient?.() || false)
         
         try {
           if (window.liff && window.liff.isInClient()) {
-            // LIFF環境では外部URLとして開く（認証状態を保持）
-            console.log('🔗 LIFF環境での外部URLリダイレクト開始')
-            await window.liff.openWindow({
-              url: targetUrl,
-              external: true  // 外部URLとして開く
-            })
-            console.log('✅ LIFF openWindow (external: true) 実行完了')
+            console.log('🔗 LIFF環境検出 - 複数の方法を試行')
+            
+            // 方法1: LIFF closeWindow を試す
+            try {
+              console.log('📱 LIFF closeWindow を試行')
+              await window.liff.closeWindow()
+              console.log('✅ LIFF closeWindow 完了')
+            } catch (closeError) {
+              console.log('⚠️ LIFF closeWindow 失敗:', closeError)
+            }
+            
+            // 方法2: 強制的に location.href を実行
+            console.log('🔄 強制的な location.href リダイレクト')
+            setTimeout(() => {
+              window.location.href = targetUrl
+            }, 100)
+            
+            // 方法3: location.replace も試す
+            setTimeout(() => {
+              window.location.replace(targetUrl)
+            }, 300)
+            
+            // 方法4: top.location も試す
+            setTimeout(() => {
+              if (window.top) {
+                window.top.location.href = targetUrl
+              }
+            }, 500)
+            
+            // 方法5: メタリフレッシュタグを動的に追加
+            setTimeout(() => {
+              console.log('🔄 メタリフレッシュタグを追加')
+              const meta = document.createElement('meta')
+              meta.httpEquiv = 'refresh'
+              meta.content = `0;url=${targetUrl}`
+              document.head.appendChild(meta)
+            }, 700)
+            
+            // 方法6: 強制的にページを置き換え
+            setTimeout(() => {
+              console.log('🔄 document.location.replace 試行')
+              document.location.replace(targetUrl)
+            }, 1000)
+            
           } else {
             // 通常のブラウザで開く
             console.log('🔗 ブラウザでのリダイレクト開始')
@@ -145,8 +182,8 @@ export function BookingModal({
             stack: liffError.stack,
             name: liffError.name
           })
-          // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
-          console.log('🔄 通常のブラウザリダイレクトにフォールバック')
+          // 最終的なフォールバック
+          console.log('🔄 最終フォールバック - 強制リダイレクト')
           window.location.href = targetUrl
         }
       } else {
