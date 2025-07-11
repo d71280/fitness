@@ -23,31 +23,24 @@ export default function BookingSuccessPage() {
   
   // 自動リダイレクト処理
   const performRedirect = async () => {
-    const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing'
-    const params = new URLSearchParams({
-      follow: '@080larlo',
-      lp: 'tWteWL',
-      liff_id: '2006887302-vbBy55Qj',
-      from_booking: 'true',
-      reservation_id: reservationId || ''
-    })
+    const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing?follow=%40080larlo&lp=tWteWL&liff_id=2006887302-vbBy55Qj'
     
     try {
       if (window.liff && window.liff.isInClient()) {
         console.log('🔗 LIFF環境でのリダイレクト開始')
         await window.liff.openWindow({
-          url: `${targetUrl}?${params.toString()}`,
+          url: targetUrl,
           external: false
         })
       } else {
         console.log('🔗 ブラウザでのリダイレクト開始')
-        window.location.href = `${targetUrl}?${params.toString()}`
+        window.location.href = targetUrl
       }
     } catch (liffError) {
       console.error('🚨 LIFFリダイレクトエラー:', liffError)
       // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
       console.log('🔄 通常のブラウザリダイレクトにフォールバック')
-      window.location.href = `${targetUrl}?${params.toString()}`
+      window.location.href = targetUrl
     }
   }
   
