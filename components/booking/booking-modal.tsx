@@ -106,7 +106,7 @@ export function BookingModal({
         console.log('✅ GAS統合による自動同期が有効です（fetch interception）')
         
         // 外部LIFFアプリへ直接リダイレクト
-        const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj?follow=%40080larlo&lp=tWteWL'
+        const targetUrl = 'https://liff.line.me/2006887302-vbBy55Qj/landing?follow=%40080larlo&lp=tWteWL&liff_id=2006887302-vbBy55Qj'
         
         // 成功時のUI処理
         onClose()
@@ -119,14 +119,20 @@ export function BookingModal({
         })
         
         // 直接外部LIFFアプリへリダイレクト
+        console.log('🎯 リダイレクト処理開始')
+        console.log('📍 ターゲットURL:', targetUrl)
+        console.log('🌐 LIFF利用可能:', !!window.liff)
+        console.log('📱 LIFFクライアント内:', window.liff?.isInClient?.() || false)
+        
         try {
           if (window.liff && window.liff.isInClient()) {
-            // LIFF環境内で開く
-            console.log('🔗 LIFF環境でのリダイレクト開始')
+            // LIFF環境では外部URLとして開く（認証状態を保持）
+            console.log('🔗 LIFF環境での外部URLリダイレクト開始')
             await window.liff.openWindow({
               url: targetUrl,
-              external: false
+              external: true  // 外部URLとして開く
             })
+            console.log('✅ LIFF openWindow (external: true) 実行完了')
           } else {
             // 通常のブラウザで開く
             console.log('🔗 ブラウザでのリダイレクト開始')
@@ -134,6 +140,11 @@ export function BookingModal({
           }
         } catch (liffError) {
           console.error('🚨 LIFFリダイレクトエラー:', liffError)
+          console.error('エラー詳細:', {
+            message: liffError.message,
+            stack: liffError.stack,
+            name: liffError.name
+          })
           // LIFFエラーの場合は通常のブラウザリダイレクトにフォールバック
           console.log('🔄 通常のブラウザリダイレクトにフォールバック')
           window.location.href = targetUrl
