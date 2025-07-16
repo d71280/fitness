@@ -541,7 +541,7 @@ export default function MessagesPage() {
               id="schedule-id"
               value={newSchedule.id}
               onChange={(e) => setNewSchedule(prev => ({ ...prev, id: e.target.value }))}
-              placeholder="例: custom_2hours"
+              placeholder="スケジュールIDを入力"
             />
           </div>
 
@@ -551,7 +551,7 @@ export default function MessagesPage() {
               id="schedule-name"
               value={newSchedule.name}
               onChange={(e) => setNewSchedule(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="例: 2時間前リマインド"
+              placeholder="スケジュール名を入力"
             />
           </div>
 

@@ -112,7 +112,7 @@ export default function TestReminderPage() {
               <Input
                 id="reservationId"
                 type="text"
-                placeholder="例: 123"
+                placeholder="予約IDを入力"
                 value={reservationId}
                 onChange={(e) => setReservationId(e.target.value)}
               />

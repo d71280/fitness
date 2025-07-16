@@ -208,7 +208,7 @@ export default function ProgramsPage() {
                 value={programForm.name}
                 onChange={(e) => setProgramForm({ ...programForm, name: e.target.value })}
                 required
-                placeholder="例: ヨガ、ピラティス"
+                placeholder="プログラム名を入力"
               />
             </div>
 
