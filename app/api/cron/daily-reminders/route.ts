@@ -164,30 +164,31 @@ export async function GET(request: NextRequest) {
               
               console.log(`⏰ 時間差チェック: ${customer.name} - スケジュール開始: ${scheduleStartTime.toISOString()}, 現在時刻: ${jstTime.toISOString()}, 時間差: ${timeDiffHours.toFixed(2)}時間, 設定値: ${schedule.timingHours}時間`)
 
-              // 許容範囲内（±30分）かチェック
+              // 許容範囲内（±15分）かチェック - より厳密な時間制御
               const hoursDiff = Math.abs(timeDiffHours - schedule.timingHours)
-              if (hoursDiff > 0.5) {
+              if (hoursDiff > 0.25) {
                 console.log(`⏭️ 時間差が範囲外 - 顧客: ${customer.name}, 時間差: ${timeDiffHours.toFixed(2)}時間, 設定: ${schedule.timingHours}時間前`)
                 continue
               }
 
               console.log(`✅ 時間差が範囲内 - 顧客: ${customer.name}, リマインド送信対象`)
 
-              // 重複送信防止のチェック（同じ予約に対して同じタイプのリマインドを1日に1回まで）
-              const today = new Date().toISOString().split('T')[0]
-              const checkKey = `${schedule.id}_${reservation.id}_${today}`
+              // 重複送信防止のチェック（同じ予約に対して同じタイプのリマインドを1時間以内に送信済みかチェック）
+              const now = new Date()
+              const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
               
               // Supabaseでの重複チェック（notification_logsテーブルを使用）
-              const { data: existingLog } = await supabase
+              const { data: existingLogs } = await supabase
                 .from('notification_logs')
-                .select('id')
+                .select('id, created_at')
                 .eq('reservation_id', reservation.id)
                 .eq('reminder_type', schedule.id)
-                .eq('sent_date', today)
-                .single()
+                .gte('created_at', oneHourAgo.toISOString())
+                .order('created_at', { ascending: false })
+                .limit(1)
               
-              if (existingLog) {
-                console.log(`⏭️ 重複送信をスキップ - 予約ID: ${reservation.id}, リマインダー: ${schedule.name}`)
+              if (existingLogs && existingLogs.length > 0) {
+                console.log(`⏭️ 重複送信をスキップ（1時間以内に送信済み） - 予約ID: ${reservation.id}, リマインダー: ${schedule.name}, 最終送信: ${existingLogs[0].created_at}`)
                 continue
               }
 
@@ -252,7 +253,8 @@ export async function GET(request: NextRequest) {
                     reminder_type: schedule.id,
                     sent_date: today,
                     message_content: messageText,
-                    status: 'sent'
+                    status: 'sent',
+                    created_at: now.toISOString()
                   })
               } else {
                 const error = `${schedule.name} リマインド送信失敗 - 顧客: ${customer.name}, エラー: ${lineResult.error}`
